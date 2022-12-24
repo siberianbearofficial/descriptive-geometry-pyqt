@@ -6,15 +6,6 @@ class RealSegment:
         self.p1 = p1
         self.p2 = p2
 
-    def __add__(self, other):
-        return RealSegment(self.p1 + other.p1, self.p2 + other.p2)
-
-    def __sub__(self, other):
-        return RealSegment(self.p1 - other.p1, self.p2 - other.p2)
-
-    def __mul__(self, other):
-        return RealSegment(self.p1 * other, self.p2 * other)
-
     @staticmethod
     def from_segment(segment, axis, plane):
         return RealSegment(RP.from_point(segment.p1, axis, plane),

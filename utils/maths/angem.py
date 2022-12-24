@@ -1,5 +1,5 @@
 import math
-from matrix import Matrix
+from utils.maths.matrix import Matrix
 
 
 class Point:
@@ -34,6 +34,12 @@ class Point:
         if isinstance(other, Plane):
             return abs(other.normal.x * self.x + other.normal.y * self.y + other.normal.z * self.z + other.d) < 1e-10
         raise ValueError(f'unsupported operand type: "{other.__class__.__name__}"')
+
+    def projection_xy(self):
+        return Point(self.x, self.y, 0)
+
+    def projection_xz(self):
+        return Point(self.x, 0, self.z)
 
 
 class Vector:
@@ -100,6 +106,9 @@ class Vector:
                    abs((self.y * other.z) - (self.z * other.y)) < 1e-10
         raise ValueError(f'unsupported operand type(s) for |: "Vector" and "{other.__class__.__name__}"')
 
+    def is_null_vector(self):
+        return not(self.x or self.y or self.z)
+
 
 class Line:
     def __init__(self, point, vector):
@@ -139,25 +148,32 @@ class Line:
             z = self.point.z + self.vector.z * k
             return Point(x, y, z)
         if isinstance(other, Line):
-            if abs((self.vector & other.vector) * Vector(self.point, other.point)) > 1e-10:
+            if abs((self.vector & other.vector) * Vector(self.point, other.point)) > 1e-10 or self | other:
                 return None
-            if self | other:
-                return None
-            try:
+            if self.vector.y != 0 and other.vector.y != 0:
                 y = (self.vector.x / self.vector.y * self.point.y - other.vector.x / other.vector.y * other.point.y -
                      self.point.x + other.point.x) / (self.vector.x / self.vector.y - other.vector.x / other.vector.y)
                 return Point(self.x(y=y), y, self.z(y=y))
-            except ZeroDivisionError:
-                pass
-            try:
+            if self.vector.z != 0 and other.vector.z != 0:
                 z = (self.vector.y / self.vector.z * self.point.z - other.vector.y / other.vector.z * other.point.z -
                      self.point.y + other.point.y) / (self.vector.y / self.vector.z - other.vector.y / other.vector.z)
                 return Point(self.x(z=z), self.y(z=z), z)
-            except ZeroDivisionError:
-                pass
-            x = (self.vector.z / self.vector.x * self.point.x - other.vector.z / other.vector.x * other.point.x -
-                 self.point.z + other.point.z) / (self.vector.z / self.vector.x - other.vector.z / other.vector.x)
-            return Point(x, self.y(x=x), self.z(x=x))
+            if self.vector.x != 0 and other.vector.x != 0:
+                x = (self.vector.z / self.vector.x * self.point.x - other.vector.z / other.vector.x * other.point.x -
+                     self.point.z + other.point.z) / (self.vector.z / self.vector.x - other.vector.z / other.vector.x)
+                return Point(x, self.y(x=x), self.z(x=x))
+            if self.vector.z == 0 and other.vector.z == 0:
+                if self.vector.x:
+                    return Point(other.point.x, self.point.y, self.z(x=other.point.x))
+                return Point(self.point.x, other.point.y, self.z(x=self.point.x))
+            if self.vector.y == 0 and other.vector.y == 0:
+                if self.vector.x:
+                    return Point(other.point.x, self.z(x=other.point.x), self.point.z)
+                return Point(self.point.x, self.z(x=self.point.x), other.point.z)
+            if self.vector.x == 0 and other.vector.x == 0:
+                if self.vector.y:
+                    return Point(self.x(y=other.point.y), other.point.y, self.point.z)
+                return Point(self.x(y=self.point.y), self.point.y, other.point.z)
         raise ValueError(f'unsupported operand type: "{other.__class__.__name__}"')
 
     def is_on(self, other):
@@ -185,6 +201,25 @@ class Line:
         if y is not None:
             return self.vector.z * (y - self.point.y) / self.vector.y + self.point.z
         raise ValueError('no operand')
+
+    def projection_xy(self):
+        if self.vector.x == 0 and self.vector.y == 0:
+            return Point(self.point.x, self.point.y, 0)
+        return Line(Point(self.point.x, self.point.y, 0), Vector(self.vector.x, self.vector.y, 0))
+
+    def projection_xz(self):
+        if self.vector.x == 0 and self.vector.z == 0:
+            return Point(self.point.x, 0, self.point.z)
+        return Line(Point(self.point.x, 0, self.point.z), Vector(self.vector.x, 0, self.vector.z))
+
+    def cut_by_x(self, min_x, max_x):
+        return Segment(Point(min_x, self.y(x=min_x), self.z(x=min_x)), Point(max_x, self.y(x=max_x), self.z(x=max_x)))
+
+    def cut_by_y(self, min_y, max_y):
+        return Segment(Point(self.x(y=min_y), min_y, self.z(y=min_y)), Point(self.x(y=max_y), max_y, self.z(y=max_y)))
+
+    def cut_by_z(self, min_z, max_z):
+        return Segment(Point(self.x(z=min_z), self.y(z=min_z), min_z), Point(self.x(z=max_z), self.y(z=max_z), max_z))
 
 
 class Plane:
@@ -333,6 +368,12 @@ class Plane:
     def trace_yz(self):
         return self.intersection(Plane(Vector(1, 0, 0), Point(0, 0, 0)))
 
+    def projection_xy(self):
+        return self.trace_xy()
+
+    def projection_xz(self):
+        return self.trace_xz()
+
 
 def distance(object1, object2):
     """
@@ -373,6 +414,12 @@ def distance(object1, object2):
 
 
 def angle(object1, object2):
+    """
+    Вычисляет угол между двумя объектами (в радианах)
+    :param object1: вектор, прямая или плоскость
+    :param object2: вектор, прямая или плоскость
+    :return: float
+    """
     flag = False
     if isinstance(object1, Vector):
         vector1 = object1
@@ -405,6 +452,16 @@ class Segment:
 
     def __str__(self):
         return 'Segment({0}, {1})'.format(self.p1, self.p2)
+
+    def projection_xy(self):
+        if self.p1.x == self.p2.x and self.p1.y == self.p2.y:
+            return Point(self.p1.x, self.p1.y)
+        return Segment(self.p1.projection_xy, self.p2.projection_xy)
+
+    def projection_xz(self):
+        if self.p1.x == self.p2.x and self.p1.z == self.p2.z:
+            return Point(self.p1.x, self.p1.y)
+        return Segment(self.p1.projection_xz, self.p2.projection_xz)
 
 
 class Circle:
