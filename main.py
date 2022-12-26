@@ -13,6 +13,53 @@ def draw_segment(screen, segment, color):
     pg.draw.line(screen, color, segment.p1.tuple(), segment.p2.tuple())
 
 
+def convert_ag_coordinate_to_screen_coordinate(x, y=None, z=None, plane='xy'):
+    if plane == 'xy':
+        return axis.p2.x - x, y + axis.p1.y
+    return axis.p2.x - x, axis.p1.y - z
+
+
+def convert_screen_x_to_ag_x(x):
+    return axis.p2.x - x
+
+
+def convert_screen_y_to_ag_y(y):
+    return y - axis.p1.y
+
+
+def convert_screen_y_to_ag_z(z):
+    return axis.p1.y - z
+
+
+def draw_projection(object, color, plane='xy'):
+    if isinstance(object, tuple):
+        for el in object:
+            draw_projection(el, color, plane)
+        return
+    if isinstance(object, ag.Point):
+        pg.draw.circle(screen, color,
+                       convert_ag_coordinate_to_screen_coordinate(object.x, object.y, object.z, plane), 2)
+    elif isinstance(object, ag.Segment):
+        pg.draw.line(screen, color, convert_ag_coordinate_to_screen_coordinate(object.p1.x, object.p1.y, object.p1.z,
+                                                                               plane),
+                     convert_ag_coordinate_to_screen_coordinate(object.p2.x, object.p2.y, object.p2.z, plane))
+    elif isinstance(object, ag.Line):
+        if plane == 'xy':
+            if object.vector.y == 0:
+                draw_projection(object.cut_by_x(convert_screen_x_to_ag_x(640), convert_screen_x_to_ag_x(0)),
+                                color, plane)
+            else:
+                draw_projection(object.cut_by_y(convert_screen_y_to_ag_y(axis.p1.y), convert_screen_y_to_ag_y(480)),
+                                color, plane)
+        else:
+            if object.vector.z == 0:
+                draw_projection(object.cut_by_x(convert_screen_x_to_ag_x(640), convert_screen_x_to_ag_x(0)),
+                                color, plane)
+            else:
+                draw_projection(object.cut_by_z(convert_screen_y_to_ag_z(axis.p1.y), convert_screen_y_to_ag_z(0)),
+                                color, plane)
+
+
 def draw_ag_line(screen, tl_corner, br_corner, axis, line, color):
     # xy projection
     p1_xy = RP.from_point(ag.Point(line.x(0), 0, None), axis, 'xy')
@@ -89,15 +136,19 @@ def command_clear():
 
 
 def draw_ag_content(*args):
+    # for arg in args:
+    #     if isinstance(arg, ag.Segment):
+    #         draw_ag_segment(screen, arg, axis, (0, 0, 0))
+    #     elif isinstance(arg, ag.Point):
+    #         draw_ag_point(screen, arg, axis, (0, 0, 0))
+    #     elif isinstance(arg, ag.Line):
+    #         draw_ag_line(screen, (0, 0), (640, 480), axis, arg, (0, 0, 0))
+    #     else:
+    #         print('Invalid argument type:', type(arg))
+
     for arg in args:
-        if isinstance(arg, ag.Segment):
-            draw_ag_segment(screen, arg, axis, (0, 0, 0))
-        elif isinstance(arg, ag.Point):
-            draw_ag_point(screen, arg, axis, (0, 0, 0))
-        elif isinstance(arg, ag.Line):
-            draw_ag_line(screen, (0, 0), (640, 480), axis, arg, (0, 0, 0))
-        else:
-            print('Invalid argument type:', type(arg))
+        draw_projection(arg.projection_xy(), (0, 0, 0), 'xy')
+        draw_projection(arg.projection_xz(), (0, 0, 0), 'xz')
 
 
 def command_help():
@@ -119,8 +170,9 @@ def command_help():
     print('print(segment(point(0, 0, 0), point(1, 1, 1)))')
 
 
-variables = {'segment': ag.Segment, 'point': ag.Point, 'line': ag.Line, 'clear': command_clear, 'draw': draw_ag_content,
-             'help': command_help}
+variables = {'segment': ag.Segment, 'point': ag.Point, 'line': ag.Line, 'plane': ag.Plane, 'vector': ag.Vector,
+             'circle': ag.Circle, 'distance': ag.distance, 'angle': ag.angle,
+             'clear': command_clear, 'draw': draw_ag_content, 'help': command_help}
 
 
 def execute_command(cmd, args=None):
@@ -190,7 +242,7 @@ def process_command(command):
 
     if '=' in command:
         i = command.index('=')
-        var, arg = command[:i - 1].strip(), command[i + 1:].strip()
+        var, arg = command[:i].strip(), command[i + 1:].strip()
         for symbol in '-+*/ ().,':
             if symbol in var:
                 arg = command.strip()

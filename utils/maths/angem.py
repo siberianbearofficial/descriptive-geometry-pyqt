@@ -446,13 +446,13 @@ class Segment:
 
     def projection_xy(self):
         if self.p1.x == self.p2.x and self.p1.y == self.p2.y:
-            return Point(self.p1.x, self.p1.y)
-        return Segment(self.p1.projection_xy, self.p2.projection_xy)
+            return Point(self.p1.x, self.p1.y, 0)
+        return Segment(self.p1.projection_xy(), self.p2.projection_xy())
 
     def projection_xz(self):
         if self.p1.x == self.p2.x and self.p1.z == self.p2.z:
-            return Point(self.p1.x, self.p1.y)
-        return Segment(self.p1.projection_xz, self.p2.projection_xz)
+            return Point(self.p1.x, 0, self.p1.y)
+        return Segment(self.p1.projection_xz(), self.p2.projection_xz())
 
 
 class Circle:
@@ -481,6 +481,13 @@ class Circle:
 
     def square(self):
         return math.pi * self.radius ** 2
+
+    def projection_xy(self):
+        if self.normal.x == 0 and self.normal.y == 0:
+            return Circle(self.center.projection_xy, self.radius, Vector(0, 0, 1))
+        if self.normal * Vector(0, 0, 1) == 0:
+            point1, point2 = self.intersection(Line(self.center, self.normal & Vector(0, 0, 1)))
+            return Segment(point1, point2)
 
 
 class Sphere:
