@@ -150,30 +150,21 @@ class Line:
         if isinstance(other, Line):
             if abs((self.vector & other.vector) * Vector(self.point, other.point)) > 1e-10 or self | other:
                 return None
-            if self.vector.y != 0 and other.vector.y != 0:
-                y = (self.vector.x / self.vector.y * self.point.y - other.vector.x / other.vector.y * other.point.y -
-                     self.point.x + other.point.x) / (self.vector.x / self.vector.y - other.vector.x / other.vector.y)
-                return Point(self.x(y=y), y, self.z(y=y))
-            if self.vector.z != 0 and other.vector.z != 0:
-                z = (self.vector.y / self.vector.z * self.point.z - other.vector.y / other.vector.z * other.point.z -
-                     self.point.y + other.point.y) / (self.vector.y / self.vector.z - other.vector.y / other.vector.z)
-                return Point(self.x(z=z), self.y(z=z), z)
-            if self.vector.x != 0 and other.vector.x != 0:
-                x = (self.vector.z / self.vector.x * self.point.x - other.vector.z / other.vector.x * other.point.x -
-                     self.point.z + other.point.z) / (self.vector.z / self.vector.x - other.vector.z / other.vector.x)
-                return Point(x, self.y(x=x), self.z(x=x))
-            if self.vector.z == 0 and other.vector.z == 0:
-                if self.vector.x:
-                    return Point(other.point.x, self.point.y, self.z(x=other.point.x))
-                return Point(self.point.x, other.point.y, self.z(x=self.point.x))
-            if self.vector.y == 0 and other.vector.y == 0:
-                if self.vector.x:
-                    return Point(other.point.x, self.z(x=other.point.x), self.point.z)
-                return Point(self.point.x, self.z(x=self.point.x), other.point.z)
-            if self.vector.x == 0 and other.vector.x == 0:
-                if self.vector.y:
-                    return Point(self.x(y=other.point.y), other.point.y, self.point.z)
-                return Point(self.x(y=self.point.y), self.point.y, other.point.z)
+            if self.vector.x == 0:
+                return Point(self.vector.x, self.y(x=self.vector.x), self.z(x=self.vector.x))
+            if self.vector.y == 0:
+                return Point(self.x(y=self.vector.y), self.vector.y, self.z(y=self.vector.y))
+            if self.vector.z == 0:
+                return Point(self.x(z=self.vector.z), self.y(z=self.vector.z), self.vector.z)
+            if other.vector.x == 0:
+                return Point(other.vector.x, other.y(x=other.vector.x), other.z(x=other.vector.x))
+            if other.vector.y == 0:
+                return Point(other.x(y=other.vector.y), other.vector.y, other.z(y=other.vector.y))
+            if other.vector.z == 0:
+                return Point(other.x(z=other.vector.z), other.y(z=other.vector.z), other.vector.z)
+            y = (self.vector.x / self.vector.y * self.point.y - other.vector.x / other.vector.y * other.point.y -
+                 self.point.x + other.point.x) / (self.vector.x / self.vector.y - other.vector.x / other.vector.y)
+            return Point(self.x(y=y), y, self.z(y=y))
         raise ValueError(f'unsupported operand type: "{other.__class__.__name__}"')
 
     def is_on(self, other):

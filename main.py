@@ -5,7 +5,6 @@ from utils.drawing.real_point import RealPoint as RP
 from utils.drawing.real_segment import RealSegment as RS
 import utils.maths.angem as ag
 
-
 screen = None
 axis = None
 
@@ -84,73 +83,12 @@ def get_text_in_higher_parentheses(text):
     return text[text.find('(') + 1:text.rfind(')')]
 
 
-def execute_command(cmd, args):
-    if cmd == 'segment':
-        return ag.Segment(args[0], args[1])
-    elif cmd == 'point':
-        return ag.Point(float(args[0]), float(args[1]), float(args[2]))
-    elif cmd == 'line':
-        return ag.Line(args[0], args[1])
-    elif cmd == 'print':
-        print(*args)
-        return args
-    elif cmd == 'clear':
-        draw_background((0, 0), (640, 480), (255, 255, 255))
-        draw_plot((0, 0), (640, 480))
-        return args
-    elif cmd == 'draw':
-        draw_ag_content(args)
-        return args
-    elif cmd == 'help':
-        print('Commands:')
-        print('segment(point, point) - creates segment')
-        print('point(x, y, z) - creates point')
-        print('line(point, point) - creates line')
-        print('print(*args) - prints args')
-        print('clear() - clears screen')
-        print('draw(*args) - draws args')
-        print('help() - prints this message')
-        print()
-        print('Some tips:')
-        print("Typing command without parentheses won't execute it.")
-        print("You can't use variables to store results of commands.")
-        print('Typical usage looks like this:')
-        print('segment(point(0, 0, 0), point(1, 1, 1))   # this creates segment but doesn\'t draw or print it')
-        print('draw(segment(point(0, 0, 0), point(1, 1, 1)))')
-        print('print(segment(point(0, 0, 0), point(1, 1, 1)))')
-        return args
-    else:
-        print('Unavailable command: {}. Use "help()" to see all available commands.'.format(cmd))
-        return args
+def command_clear():
+    draw_background((0, 0), (640, 480), (255, 255, 255))
+    draw_plot((0, 0), (640, 480))
 
 
-def process_command(command):
-    command = command.replace(' ', '').lower()
-
-    results = []
-    for splitted_by_highest_commas_el in split_by_highest_commas(command):
-        cmd, args = get_text_before_parathesis(splitted_by_highest_commas_el), get_text_in_higher_parentheses(splitted_by_highest_commas_el)
-        # print('cmd: {}, args: {}'.format(cmd, args))
-        if '(' in args:
-            # print('Args is command. Processing it recursively.')
-            res_of_processing = process_command(args)
-            # print('Res of processing:', *res_of_processing)
-            res = execute_command(cmd, res_of_processing)
-        else:
-            if isinstance(args, str):
-                args = args.split(',')
-            res = execute_command(cmd, args)
-            # print('Args is not command. Res:', res)
-        results.append(res)
-    return results
-
-
-def output(textbox):
-    process_command(textbox.getText())
-    textbox.setText('')
-
-
-def draw_ag_content(args):
+def draw_ag_content(*args):
     for arg in args:
         if isinstance(arg, ag.Segment):
             draw_ag_segment(screen, arg, axis, (0, 0, 0))
@@ -160,6 +98,117 @@ def draw_ag_content(args):
             draw_ag_line(screen, (0, 0), (640, 480), axis, arg, (0, 0, 0))
         else:
             print('Invalid argument type:', type(arg))
+
+
+def command_help():
+    print('Commands:')
+    print('segment(point, point) - creates segment')
+    print('point(x, y, z) - creates point')
+    print('line(point, point) - creates line')
+    print('print(*args) - prints args')
+    print('clear() - clears screen')
+    print('draw(*args) - draws args')
+    print('help() - prints this message')
+    print()
+    print('Some tips:')
+    print("Typing command without parentheses won't execute it.")
+    print("You can't use variables to store results of commands.")
+    print('Typical usage looks like this:')
+    print('segment(point(0, 0, 0), point(1, 1, 1))   # this creates segment but doesn\'t draw or print it')
+    print('draw(segment(point(0, 0, 0), point(1, 1, 1)))')
+    print('print(segment(point(0, 0, 0), point(1, 1, 1)))')
+
+
+variables = {'segment': ag.Segment, 'point': ag.Point, 'line': ag.Line, 'clear': command_clear, 'draw': draw_ag_content,
+             'help': command_help}
+
+
+def execute_command(cmd, args=None):
+    try:
+        return eval(cmd, variables)
+    except Exception as ex:
+        print('Error:', ex)
+    # if cmd == 'segment':
+    #     return ag.Segment(args[0], args[1])
+    # elif cmd == 'point':
+    #     return ag.Point(float(args[0]), float(args[1]), float(args[2]))
+    # elif cmd == 'line':
+    #     return ag.Line(args[0], args[1])
+    # elif cmd == 'print':
+    #     print(*args)
+    #     return args
+    # elif cmd == 'clear':
+    #     draw_background((0, 0), (640, 480), (255, 255, 255))
+    #     draw_plot((0, 0), (640, 480))
+    #     return args
+    # elif cmd == 'draw':
+    #     draw_ag_content(args)
+    #     return args
+    # elif cmd == 'help':
+    #     print('Commands:')
+    #     print('segment(point, point) - creates segment')
+    #     print('point(x, y, z) - creates point')
+    #     print('line(point, point) - creates line')
+    #     print('print(*args) - prints args')
+    #     print('clear() - clears screen')
+    #     print('draw(*args) - draws args')
+    #     print('help() - prints this message')
+    #     print()
+    #     print('Some tips:')
+    #     print("Typing command without parentheses won't execute it.")
+    #     print("You can't use variables to store results of commands.")
+    #     print('Typical usage looks like this:')
+    #     print('segment(point(0, 0, 0), point(1, 1, 1))   # this creates segment but doesn\'t draw or print it')
+    #     print('draw(segment(point(0, 0, 0), point(1, 1, 1)))')
+    #     print('print(segment(point(0, 0, 0), point(1, 1, 1)))')
+    #     return args
+    # else:
+    #     print('Unavailable command: {}. Use "help()" to see all available commands.'.format(cmd))
+    #     return args
+
+
+def process_command(command):
+    # command = command.replace(' ', '').lower()
+    #
+    # results = []
+    # for splitted_by_highest_commas_el in split_by_highest_commas(command):
+    #     cmd, args = get_text_before_parathesis(splitted_by_highest_commas_el), get_text_in_higher_parentheses(
+    #         splitted_by_highest_commas_el)
+    #     # print('cmd: {}, args: {}'.format(cmd, args))
+    #     if '(' in args:
+    #         # print('Args is command. Processing it recursively.')
+    #         res_of_processing = process_command(args)
+    #         # print('Res of processing:', *res_of_processing)
+    #         res = execute_command(cmd, res_of_processing)
+    #     else:
+    #         if isinstance(args, str):
+    #             args = args.split(',')
+    #         res = execute_command(cmd, args)
+    #         # print('Args is not command. Res:', res)
+    #     results.append(res)
+    # return results
+
+    if '=' in command:
+        i = command.index('=')
+        var, arg = command[:i - 1].strip(), command[i + 1:].strip()
+        for symbol in '-+*/ ().,':
+            if symbol in var:
+                arg = command.strip()
+                res = execute_command(arg)
+                if res:
+                    print(res)
+                break
+        variables[var] = execute_command(arg)
+    else:
+        arg = command.strip()
+        res = execute_command(arg)
+        if res:
+            print(res)
+
+
+def output(textbox):
+    process_command(textbox.getText())
+    textbox.setText('')
 
 
 def draw_plot(tl_corner, br_corner):
@@ -182,8 +231,9 @@ def draw_plot(tl_corner, br_corner):
     draw_ag_line(screen, tl_corner, br_corner, axis, ag.Line(AB.p1, AB.p2), (50, 28, 255))
     draw_ag_line(screen, tl_corner, br_corner, axis, ag.Line(BC.p1, BC.p2), (147, 25, 192))
 
-    tb = TextBox(screen, 10, 10, 500, 30, fontSize=25,
-            borderColour=(64, 64, 64), textColour=(20, 20, 20), backgroundColor=(), radius=0, borderThickness=1)
+    tb = TextBox(screen, 10, 10, 500, 20, fontSize=12,
+                 borderColour=(64, 64, 64), textColour=(20, 20, 20),
+                 font=pg.font.SysFont('Courier', 12), radius=0, borderThickness=1)
     tb.onSubmit = lambda: output(tb)
 
 
