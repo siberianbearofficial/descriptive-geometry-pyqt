@@ -10,7 +10,7 @@ class Point:
 
     @staticmethod
     def from_str(s, function=int):
-        if '(' not in s or ')' not in s or not(1 <= s.count(',') <= 2):
+        if '(' not in s or ')' not in s or not (1 <= s.count(',') <= 2):
             raise ValueError
         s = s.replace('(', '')
         s = s.replace(')', '')
@@ -101,27 +101,33 @@ class Vector:
 
     def __or__(self, other):
         if isinstance(other, Vector):
-            return abs((self.x * other.y) - (self.y * other.x)) < 1e-10 and\
-                   abs((self.x * other.z) - (self.z * other.x)) < 1e-10 and\
+            return abs((self.x * other.y) - (self.y * other.x)) < 1e-10 and \
+                   abs((self.x * other.z) - (self.z * other.x)) < 1e-10 and \
                    abs((self.y * other.z) - (self.z * other.y)) < 1e-10
         raise ValueError(f'unsupported operand type(s) for |: "Vector" and "{other.__class__.__name__}"')
 
     def is_null_vector(self):
-        return not(self.x or self.y or self.z)
+        return not (self.x or self.y or self.z)
 
 
 class Line:
-    def __init__(self, point, vector):
-        if isinstance(point, Plane) and isinstance(vector, Plane):
-            line = point.intersection(vector)
+    def __init__(self, obj1, obj2):
+        if isinstance(obj1, Plane) and isinstance(obj2, Plane):
+            line = obj1.intersection(obj2)
             self.point = line.point
             self.vector = line.vector
-        else:
-            self.point = point
-            if isinstance(vector, Point):
-                self.vector = Vector(point, vector)
+        elif isinstance(obj1, Point) and isinstance(obj2, Vector):
+            self.point = obj1
+            if isinstance(obj2, Point):
+                self.vector = Vector(obj1, obj2)
             else:
-                self.vector = vector
+                self.vector = obj2
+        elif isinstance(obj1, Point) and isinstance(obj2, Point):
+            self.point = obj1
+            self.vector = Vector(obj1, obj2)
+        else:
+            raise ValueError(
+                f'unsupported operand type(s) for Line: "{obj1.__class__.__name__}" and "{obj2.__class__.__name__}"')
 
     def __str__(self):
         return f'(x - {self.point.x}) / {self.vector.x} = (y - {self.point.y}) /' \
@@ -141,7 +147,7 @@ class Line:
             if self | other:
                 return None
             k = -(other.normal.x * self.point.x + other.normal.y * self.point.y + other.normal.z * self.point.z +
-                  other.d) /\
+                  other.d) / \
                 (other.normal.x * self.vector.x + other.normal.y * self.vector.y + other.normal.z * self.vector.z)
             x = self.point.x + self.vector.x * k
             y = self.point.y + self.vector.y * k
@@ -382,25 +388,26 @@ def distance(object1, object2):
         return abs(object2.x * object1.normal.x + object2.y * object1.normal.y + object2.z * object1.normal.z +
                    object1.d) / abs(object1.normal)
     if isinstance(object1, Point) and isinstance(object2, Line):
-        return (((object1.y - object2.point.y) * object2.vector.z - (object1.z - object2.point.z) * object2.vector.y)**2
+        return (((object1.y - object2.point.y) * object2.vector.z - (
+                    object1.z - object2.point.z) * object2.vector.y) ** 2
                 + ((object1.x - object2.point.x) * object2.vector.z - (object1.z - object2.point.z) *
-                   object2.vector.x)**2
+                   object2.vector.x) ** 2
                 + ((object1.x - object2.point.x) * object2.vector.y - (object1.y - object2.point.y) *
-                   object2.vector.x)**2)\
+                   object2.vector.x) ** 2) \
                ** 0.5 / abs(object2.vector)
     if isinstance(object1, Line) and isinstance(object2, Point):
         return (((object2.y - object1.point.y) * object1.vector.z - (object2.z - object1.point.z) * object1.vector.y) +
                 ((object2.x - object1.point.x) * object1.vector.z - (object2.z - object1.point.z) * object1.vector.x) +
-                ((object2.x - object1.point.x) * object1.vector.y - (object2.y - object1.point.y) * object1.vector.x))\
+                ((object2.x - object1.point.x) * object1.vector.y - (object2.y - object1.point.y) * object1.vector.x)) \
                ** 0.5 / abs(object1.vector)
     if isinstance(object1, Line) and isinstance(object2, Line):
         return Matrix([[object2.point.x - object1.point.x, object2.point.y - object1.point.y,
                         object2.point.z - object1.point.z],
                        [object1.vector.x, object1.vector.y, object1.vector.z],
                        [object2.vector.x, object2.vector.y, object2.vector.z]]).determinant() / (
-            (object2.vector.y * object1.vector.z - object2.vector.z * object1.vector.y) ** 2 +
-            (object2.vector.x * object1.vector.z - object2.vector.z * object1.vector.x) ** 2 +
-            (object2.vector.x * object1.vector.y - object2.vector.y * object1.vector.x) ** 2) ** 0.5
+                       (object2.vector.y * object1.vector.z - object2.vector.z * object1.vector.y) ** 2 +
+                       (object2.vector.x * object1.vector.z - object2.vector.z * object1.vector.x) ** 2 +
+                       (object2.vector.x * object1.vector.y - object2.vector.y * object1.vector.x) ** 2) ** 0.5
     raise ValueError(f'unsupported operand types:  "{object1.__class__.__name__}" and "{object2.__class__.__name__}"')
 
 

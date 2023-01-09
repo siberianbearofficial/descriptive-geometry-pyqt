@@ -26,24 +26,24 @@ class ProjectionManager:
             if plane == 'xy':
                 if obj.vector.y == 0:
                     return self.get_projection(
-                        obj.cut_by_x(self.convert_screen_x_to_ag_x(self.plot.brp.x),
-                                     self.convert_screen_x_to_ag_x(self.plot.tlp.x)),
+                        obj.cut_by_x(self.convert_screen_x_to_ag_x(self.plot.brp[0]),
+                                     self.convert_screen_x_to_ag_x(self.plot.tlp[0])),
                         plane, color)
                 else:
                     return self.get_projection(
                         obj.cut_by_y(self.convert_screen_y_to_ag_y(self.axis.lp.y),
-                                     self.convert_screen_y_to_ag_y(self.plot.brp.y)),
+                                     self.convert_screen_y_to_ag_y(self.plot.brp[1])),
                         plane, color)
             else:
                 if obj.vector.z == 0:
                     return self.get_projection(
-                        obj.cut_by_x(self.convert_screen_x_to_ag_x(self.plot.brp.x),
-                                     self.convert_screen_x_to_ag_x(self.plot.tlp.x)),
+                        obj.cut_by_x(self.convert_screen_x_to_ag_x(self.plot.brp[0]),
+                                     self.convert_screen_x_to_ag_x(self.plot.tlp[0])),
                         plane, color)
                 else:
                     return self.get_projection(
                         obj.cut_by_z(self.convert_screen_y_to_ag_z(self.axis.lp.y),
-                                     self.convert_screen_y_to_ag_z(self.plot.tlp.y)),
+                                     self.convert_screen_y_to_ag_z(self.plot.tlp[1])),
                         plane, color)
 
     def convert_ag_coordinate_to_screen_coordinate(self, x, y=None, z=None, plane='xy'):

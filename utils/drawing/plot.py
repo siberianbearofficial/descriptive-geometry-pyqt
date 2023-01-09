@@ -45,8 +45,13 @@ class Plot:
         pg.draw.circle(self.screen.screen, color, point.tuple(), 3)
 
     def draw_object(self, obj, color=(0, 0, 0)):
-        self.pm.get_projection(obj, 'xy', color).draw()
-        self.pm.get_projection(obj, 'xz', color).draw()
+        print('Drawing object: {}'.format(obj))
+        obj_xy = self.pm.get_projection(obj, 'xy', color)
+        obj_xz = self.pm.get_projection(obj, 'xz', color)
+        print('Obj_xy:', obj_xy)
+        print('Obj_xz:', obj_xz)
+        obj_xy.draw()
+        obj_xz.draw()
         self.screen.update()
 
     def stop_listening(self):
@@ -63,20 +68,19 @@ class Plot:
         self.action = Plot.SEGMENT_SELECTION
         self.start_listening()
 
-    def clicked(self):
+    def clicked(self, pos):
         if self.click_listening:
-            self.process_click()
+            self.process_click(pos)
 
-    def process_click(self):
+    def process_click(self, pos):
         # TODO: Implement it normally! (not like this...)
         if self.action == Plot.POINT_SELECTION:
             if self.point_position_x is None:
-                self.point_position_x = 640 - self.screen.click_pos[0]
+                self.point_position_x = 640 - pos[0]
             elif self.point_position_y is None:
-                self.point_position_y = self.screen.click_pos[1] - 240
+                self.point_position_y = pos[1] - 240
             elif self.point_position_z is None:
-                self.point_position_z = 240 - self.screen.click_pos[1]
-                self.stop_listening()
+                self.point_position_z = 240 - pos[1]
                 p = ag.Point(self.point_position_x, self.point_position_y, self.point_position_z)
                 self.draw_object(p)
                 self.point_position_x = None

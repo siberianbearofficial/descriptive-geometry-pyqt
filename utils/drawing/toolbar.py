@@ -11,11 +11,13 @@ class Toolbar:
             screen.screen, 10, 35, 500, 20,
             (4, 1),
             border=1,  # Distance between buttons and edge of array
-            texts=('1', '2', '3', '4'),  # Sets the texts of each button (counts left to right then top to bottom)
+            texts=('Point', 'Segment', '-', '-'),  # Sets the texts of each
+            # button (counts left to right then top to bottom)
+
             # When clicked, print number
             onClicks=(
-            lambda: self.change_activation(1), lambda: self.change_activation(2), lambda: self.change_activation(3),
-            lambda: self.change_activation(4))
+                lambda: self.change_activation(1), lambda: self.change_activation(2), lambda: self.change_activation(3),
+                lambda: self.change_activation(4))
         )
 
         self.change_activation(0)

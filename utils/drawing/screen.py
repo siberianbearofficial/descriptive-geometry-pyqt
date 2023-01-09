@@ -31,4 +31,5 @@ class Screen:
             return
         if self.command_line.clicked_on(self.click_pos):
             return
-        self.plot.clicked()
+        # TODO: if clicked on plot
+        self.plot.clicked(self.click_pos)
