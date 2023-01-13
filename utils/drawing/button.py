@@ -17,7 +17,7 @@ class Button:
             screen.screen.blit(self.image, self.p1)
 
     def click(self, screen, click_pos):
-        if self.p1[0] < click_pos[0] < self.p2[0] and self.p1[1] < click_pos[1] < self.p2[1]:
+        if self.p1[0] <= click_pos[0] <= self.p2[0] and self.p1[1] <= click_pos[1] <= self.p2[1]:
             self.pressed = True
             self.draw(screen)
             screen.update()

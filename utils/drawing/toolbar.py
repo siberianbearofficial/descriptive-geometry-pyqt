@@ -58,16 +58,26 @@ class Toolbar:
 
 
 class Toolbar2:
-    def __init__(self, screen):
+    def __init__(self, screen, tlp, brp, hidden=False):
         self.screen = screen
         self.buttons = []
+        self.tlp = tlp
+        self.brp = brp
+        self.hidden = hidden
 
     def add_button(self, image, function, pos, size=(30, 30)):
-        b = Button(image, function, pos, size)
-        b.draw(self.screen)
-        self.buttons.append(b)
+        self.buttons.append(Button(image, function, (pos[0] + self.tlp[0], pos[1] + self.tlp[1]), size))
+
+    def draw(self):
+        if not self.hidden:
+            pg.draw.rect(self.screen.screen, (255, 255, 255),
+                         (self.tlp, (self.brp[0] - self.tlp[0], self.brp[1] - self.tlp[1])))
+            for button in self.buttons:
+                button.draw(self.screen)
 
     def clicked_on(self, click_pos):
-        for button in self.buttons:
-            if button.click(self.screen, click_pos):
-                return True
+        if not self.hidden and self.tlp[0] <= click_pos[0] <= self.brp[0]\
+                and self.tlp[1] <= click_pos[1] <= self.brp[1]:
+            for button in self.buttons:
+                if button.click(self.screen, click_pos):
+                    return True
