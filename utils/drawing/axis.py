@@ -13,8 +13,8 @@ class Axis:
         self.dimensions()
 
     def dimensions(self):
-        self.lp = ScreenPoint(self.plot, self.plot.tlp[0], self.plot.brp[1] // 2, self.color)
-        self.rp = ScreenPoint(self.plot, self.plot.brp[0], self.plot.brp[1] // 2, self.color)
+        self.lp = ScreenPoint(self.plot, self.plot.tlp[0], (self.plot.brp[1] + self.plot.tlp[1]) // 2, self.color)
+        self.rp = ScreenPoint(self.plot, self.plot.brp[0], (self.plot.brp[1] + self.plot.tlp[1]) // 2, self.color)
         self.segment = ScreenSegment(self.plot, self.lp, self.rp, self.color)
 
     def update(self, plot):

@@ -10,7 +10,7 @@ class CommandLine:
     def __init__(self, screen):
         self.screen = screen
 
-        self.textbox = TextBox(self.screen.screen, 10, 10, 500, 20, inactiveColour=(255, 255, 255),
+        self.textbox = TextBox(self.screen.screen, 10, screen.brp[1] - 30, 620, 20, inactiveColour=(255, 255, 255),
                                activeColour=(200, 200, 200), textColour=(0, 0, 0), borderColour=(64, 64, 64), radius=0,
                                borderThickness=1, font=pg.font.SysFont('Courier', 12))
         self.textbox.onSubmit = self.output
@@ -88,7 +88,8 @@ class CommandLine:
         for obj in args:
             random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
             # self.screen.plot.draw_object(obj, random_color)
-            GeneralObject(self.screen.plot, obj, random_color).draw()
+            self.screen.plot.layers[0].add_object(obj, random_color)
+            self.screen.plot.layers[0].objects[-1].draw()
 
     def clicked_on(self, pos):
         left = self.textbox.getX()
