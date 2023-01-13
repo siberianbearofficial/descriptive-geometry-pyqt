@@ -313,7 +313,7 @@ class Plane:
     @staticmethod
     def from_str(s, function=int):
         lst = s.split()
-        for i in range(len(lst)):
+        for i in range(len(lst) - 1):
             lst[i] = lst[i].strip()
             if lst[i] == '-':
                 lst[i] = ''
@@ -486,15 +486,22 @@ class Circle:
         if isinstance(other, Plane):
             return self.intersection(Plane(self.normal, self.center).intersection(other))
 
-    def square(self):
+    def area(self):
         return math.pi * self.radius ** 2
 
     def projection_xy(self):
         if self.normal.x == 0 and self.normal.y == 0:
-            return Circle(self.center.projection_xy, self.radius, Vector(0, 0, 1))
+            return Circle(self.center.projection_xy(), self.radius, Vector(0, 0, 1))
         if self.normal * Vector(0, 0, 1) == 0:
             point1, point2 = self.intersection(Line(self.center, self.normal & Vector(0, 0, 1)))
-            return Segment(point1, point2)
+            return Segment(point1, point2).projection_xy()
+
+    def projection_xz(self):
+        if self.normal.x == 0 and self.normal.z == 0:
+            return Circle(self.center.projection_xz(), self.radius, Vector(0, 1, 0))
+        if self.normal * Vector(0, 1, 0) == 0:
+            point1, point2 = self.intersection(Line(self.center, self.normal & Vector(0, 1, 0)))
+            return Segment(point1, point2).projection_xz()
 
 
 class Sphere:

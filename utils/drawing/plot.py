@@ -44,6 +44,9 @@ class Plot:
     def draw_point(self, point, color=(0, 0, 0)):
         pg.draw.circle(self.screen.screen, color, point.tuple(), 3)
 
+    def draw_circle(self, circle, color=(0, 0, 0)):
+        pg.draw.circle(self.screen.screen, color, circle.center.tuple(), circle.radius, 1)
+
     def draw_object(self, obj, color=(0, 0, 0)):
         print('Drawing object: {}'.format(obj))
         obj_xy = self.pm.get_projection(obj, 'xy', color)

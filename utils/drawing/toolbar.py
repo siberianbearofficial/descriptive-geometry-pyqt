@@ -1,4 +1,5 @@
 from pygame_widgets.button import ButtonArray
+import pygame as pg
 
 
 class Toolbar:
@@ -11,8 +12,10 @@ class Toolbar:
             screen.screen, 10, 35, 500, 20,
             (4, 1),
             border=1,  # Distance between buttons and edge of array
-            texts=('Point', 'Segment', '-', '-'),  # Sets the texts of each
+            # texts=('Point', 'Segment', '-', '-'),  # Sets the texts of each
             # button (counts left to right then top to bottom)
+
+            images=(pg.image.load('test.bmp'), pg.image.load('test.bmp'), pg.image.load('test.bmp'), pg.image.load('test.bmp')),
 
             # When clicked, print number
             onClicks=(

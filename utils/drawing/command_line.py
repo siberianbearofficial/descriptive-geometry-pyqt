@@ -83,9 +83,10 @@ class CommandLine:
     def command_clear(self):
         self.screen.plot.clear()
 
-    def command_draw_object(self, obj):
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
-        self.screen.plot.draw_object(obj, random_color)
+    def command_draw_object(self, *args):
+        for obj in args:
+            random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
+            self.screen.plot.draw_object(obj, random_color)
 
     def clicked_on(self, pos):
         left = self.textbox.getX()

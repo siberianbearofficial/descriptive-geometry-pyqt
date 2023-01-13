@@ -1,6 +1,7 @@
 import utils.maths.angem as ag
 from utils.drawing.screen_point import ScreenPoint
 from utils.drawing.screen_segment import ScreenSegment
+from utils.drawing.screen_circle import ScreenCircle
 
 
 class ProjectionManager:
@@ -13,6 +14,13 @@ class ProjectionManager:
         if isinstance(obj, ag.Point):
             return ScreenPoint(self.plot, *self.convert_ag_coordinate_to_screen_coordinate(obj.x, obj.y, obj.z, plane),
                                color)
+        elif isinstance(obj, ag.Circle):
+            if obj.normal.x == 0 and (obj.normal.y if plane == 'xy' else obj.normal.z) == 0:
+                return ScreenCircle(self.plot, self.get_projection(obj.center, plane, color), obj.radius, color)
+            if obj.normal * (ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0)) == 0:
+                point1, point2 = obj.intersection(
+                    ag.Line(obj.center, obj.normal & (ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0))))
+                return self.get_projection(ag.Segment(point1, point2), plane, color)
         elif isinstance(obj, ag.Segment):
             p1 = ScreenPoint(self.plot,
                              *self.convert_ag_coordinate_to_screen_coordinate(obj.p1.x, obj.p1.y, obj.p1.z, plane),
@@ -21,6 +29,8 @@ class ProjectionManager:
                              *self.convert_ag_coordinate_to_screen_coordinate(obj.p2.x, obj.p2.y, obj.p2.z, plane),
                              color)
             return ScreenSegment(self.plot, p1, p2, color)
+        elif isinstance(obj, ag.Plane):
+            return
         elif isinstance(obj, ag.Line):
             # TODO: check for projection of a line to a point
             if plane == 'xy':
