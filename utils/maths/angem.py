@@ -371,6 +371,12 @@ class Plane:
     def projection_xz(self):
         return self.trace_xz()
 
+    def horizontal(self, point):
+        return Line(point, self.normal & Vector(0, 0, 1))
+
+    def frontal(self, point):
+        return Line(point, self.normal & Vector(0, 1, 0))
+
 
 def distance(object1, object2):
     """

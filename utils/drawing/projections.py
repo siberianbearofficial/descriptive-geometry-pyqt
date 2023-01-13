@@ -34,7 +34,6 @@ class ProjectionManager:
                 return self.get_projection(obj.trace_xy(), plane, color)
             return self.get_projection(obj.trace_xz(), plane, color)
         elif isinstance(obj, ag.Line):
-            # TODO: check for projection of a line to a point
             if plane == 'xy':
                 if obj.vector.x == 0 and obj.vector.y == 0:
                     return self.get_projection(obj.point, plane, color)

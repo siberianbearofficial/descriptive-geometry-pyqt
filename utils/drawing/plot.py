@@ -2,6 +2,8 @@ import pygame as pg
 import utils.maths.angem as ag
 from utils.drawing.axis import Axis
 from utils.drawing.projections import ProjectionManager
+from utils.drawing.general_object import GeneralObject
+import random
 
 
 class Plot:
@@ -91,3 +93,137 @@ class Plot:
                 self.point_position_z = None
         elif self.action == Plot.SEGMENT_SELECTION:
             print('Segment selection not implemented yet')
+
+    def create_point(self):
+        clock = pg.time.Clock()
+        while True:
+            self.screen.screen.fill((255, 255, 255))    # full_update
+            events = pg.event.get()
+            for event in events:
+                if event.type == pg.QUIT:
+                    pg.quit()
+                    exit(0)
+                elif event.type == pg.MOUSEBUTTONDOWN:
+                    if event.button == 3:
+                        return False
+                    elif event.button == 1:
+                        x, y = event.pos
+                        while True:
+                            self.screen.screen.fill((255, 255, 255))  # full_update
+                            events = pg.event.get()
+                            for event in events:
+                                if event.type == pg.QUIT:
+                                    pg.quit()
+                                    exit(0)
+                                elif event.type == pg.MOUSEBUTTONDOWN:
+                                    if event.button == 3:
+                                        return False
+                                    elif event.button == 1:
+                                        z = event.pos[1]
+                                        random_color = (random.randint(50, 180),
+                                                        random.randint(80, 180), random.randint(50, 180))
+                                        GeneralObject(self, ag.Point(self.pm.convert_screen_x_to_ag_x(x),
+                                                                     self.pm.convert_screen_y_to_ag_y(y),
+                                                                     self.pm.convert_screen_y_to_ag_z(z)),
+                                                      random_color).draw()
+                                        return True
+                            pg.draw.circle(self.screen.screen, (0, 162, 232), (x, y), 3)
+                            pg.draw.circle(self.screen.screen, (0, 162, 232), (x, z := pg.mouse.get_pos()[1]), 3)
+                            pg.draw.line(self.screen.screen, (180, 180, 180), (x, y), (x, z))
+                            self.screen.update()
+                            clock.tick(30)
+
+            pg.draw.circle(self.screen.screen, (0, 162, 232), pg.mouse.get_pos(), 3)
+            self.screen.update()
+            clock.tick(30)
+
+    def create_segment(self):
+        def second_point():
+            while True:
+                self.screen.screen.fill((255, 255, 255))  # full_update
+                events = pg.event.get()
+                for event in events:
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                        exit(0)
+                    elif event.type == pg.MOUSEBUTTONDOWN:
+                        if event.button == 3:
+                            return False
+                        elif event.button == 1:
+                            z1 = event.pos[1]
+                            while True:
+                                self.screen.screen.fill((255, 255, 255))  # full_update
+                                events = pg.event.get()
+                                for event in events:
+                                    if event.type == pg.QUIT:
+                                        pg.quit()
+                                        exit(0)
+                                    elif event.type == pg.MOUSEBUTTONDOWN:
+                                        if event.button == 3:
+                                            return False
+                                        elif event.button == 1:
+                                            z2 = event.pos[1]
+                                            random_color = (random.randint(50, 180),
+                                                            random.randint(80, 180), random.randint(50, 180))
+                                            GeneralObject(self, ag.Segment(
+                                                ag.Point(self.pm.convert_screen_x_to_ag_x(x1),
+                                                         self.pm.convert_screen_y_to_ag_y(y1),
+                                                         self.pm.convert_screen_y_to_ag_z(z1)),
+                                                ag.Point(self.pm.convert_screen_x_to_ag_x(x2),
+                                                         self.pm.convert_screen_y_to_ag_y(y2),
+                                                         self.pm.convert_screen_y_to_ag_z(z2))),
+                                                          random_color).draw()
+                                            return True
+                                pg.draw.circle(self.screen.screen, (0, 162, 232), (x1, y1), 3)
+                                pg.draw.circle(self.screen.screen, (0, 162, 232), (x2, y2), 3)
+                                pg.draw.circle(self.screen.screen, (0, 162, 232), (x1, z1), 3)
+                                pg.draw.circle(self.screen.screen, (0, 162, 232), (x2, z2 := pg.mouse.get_pos()[1]), 3)
+                                pg.draw.line(self.screen.screen, (0, 162, 232), (x1, y1), (x2, y2))
+                                pg.draw.line(self.screen.screen, (0, 162, 232), (x1, z1), (x2, z2))
+                                pg.draw.line(self.screen.screen, (180, 180, 180), (x1, y1), (x1, z1))
+                                pg.draw.line(self.screen.screen, (180, 180, 180), (x2, y2), (x2, z2))
+                                self.screen.update()
+                                clock.tick(30)
+                pg.draw.circle(self.screen.screen, (0, 162, 232), (x1, y1), 3)
+                pg.draw.circle(self.screen.screen, (0, 162, 232), (x2, y2), 3)
+                pg.draw.circle(self.screen.screen, (0, 162, 232), (x1, z1 := pg.mouse.get_pos()[1]), 3)
+                pg.draw.line(self.screen.screen, (0, 162, 232), (x1, y1), (x2, y2))
+                pg.draw.line(self.screen.screen, (180, 180, 180), (x1, y1), (x1, z1))
+                self.screen.update()
+                clock.tick(30)
+
+        clock = pg.time.Clock()
+        while True:
+            self.screen.screen.fill((255, 255, 255))    # full_update
+            events = pg.event.get()
+            for event in events:
+                if event.type == pg.QUIT:
+                    pg.quit()
+                    exit(0)
+                elif event.type == pg.MOUSEBUTTONDOWN:
+                    if event.button == 3:
+                        return False
+                    elif event.button == 1:
+                        x1, y1 = event.pos
+                        while True:
+                            self.screen.screen.fill((255, 255, 255))  # full_update
+                            events = pg.event.get()
+                            for event in events:
+                                if event.type == pg.QUIT:
+                                    pg.quit()
+                                    exit(0)
+                                elif event.type == pg.MOUSEBUTTONDOWN:
+                                    if event.button == 3:
+                                        return False
+                                    elif event.button == 1:
+                                        x2, y2 = event.pos
+                                        return second_point()
+                            pg.draw.circle(self.screen.screen, (0, 162, 232), (x1, y1), 3)
+                            pg.draw.circle(self.screen.screen, (0, 162, 232), pg.mouse.get_pos(), 3)
+                            pg.draw.line(self.screen.screen, (0, 162, 232), (x1, y1), pg.mouse.get_pos())
+                            self.screen.update()
+                            clock.tick(30)
+
+            pg.draw.circle(self.screen.screen, (0, 162, 232), pg.mouse.get_pos(), 3)
+            self.screen.update()
+            clock.tick(30)

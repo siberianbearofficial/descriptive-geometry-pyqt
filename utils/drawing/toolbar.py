@@ -1,5 +1,6 @@
 from pygame_widgets.button import ButtonArray
 import pygame as pg
+from utils.drawing.button import Button
 
 
 class Toolbar:
@@ -54,3 +55,19 @@ class Toolbar:
         right = left + self.buttons.getWidth()
         bottom = top + self.buttons.getHeight()
         return left <= pos[0] <= right and top <= pos[1] <= bottom
+
+
+class Toolbar2:
+    def __init__(self, screen):
+        self.screen = screen
+        self.buttons = []
+
+    def add_button(self, image, function, pos, size=(30, 30)):
+        b = Button(image, function, pos, size)
+        b.draw(self.screen)
+        self.buttons.append(b)
+
+    def clicked_on(self, click_pos):
+        for button in self.buttons:
+            if button.click(self.screen, click_pos):
+                return True

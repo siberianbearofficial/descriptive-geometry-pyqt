@@ -1,6 +1,6 @@
 from utils.drawing.command_line import CommandLine
 from utils.drawing.plot import Plot
-from utils.drawing.toolbar import Toolbar
+from utils.drawing.toolbar import Toolbar, Toolbar2
 
 import pygame as pg
 
@@ -20,7 +20,12 @@ class Screen:
 
         self.plot = Plot(self)
         self.command_line = CommandLine(self)
-        self.toolbar = Toolbar(self)
+        # self.toolbar = Toolbar(self)
+
+        self.toolbar = Toolbar2(self)
+        self.toolbar.add_button('point', lambda: self.plot.create_point(), (10, 35))
+        self.toolbar.add_button('segment', lambda: self.plot.create_segment(), (45, 35))
+        self.toolbar.add_button('line', lambda: print('line'), (80, 35))
 
     def update(self):
         pg.display.update()
