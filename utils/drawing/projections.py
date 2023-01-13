@@ -30,11 +30,15 @@ class ProjectionManager:
                              color)
             return ScreenSegment(self.plot, p1, p2, color)
         elif isinstance(obj, ag.Plane):
-            return
+            if plane == 'xy':
+                return self.get_projection(obj.trace_xy(), plane, color)
+            return self.get_projection(obj.trace_xz(), plane, color)
         elif isinstance(obj, ag.Line):
             # TODO: check for projection of a line to a point
             if plane == 'xy':
-                if obj.vector.y == 0:
+                if obj.vector.x == 0 and obj.vector.y == 0:
+                    return self.get_projection(obj.point, plane, color)
+                elif obj.vector.y == 0:
                     return self.get_projection(
                         obj.cut_by_x(self.convert_screen_x_to_ag_x(self.plot.brp[0]),
                                      self.convert_screen_x_to_ag_x(self.plot.tlp[0])),
@@ -45,7 +49,9 @@ class ProjectionManager:
                                      self.convert_screen_y_to_ag_y(self.plot.brp[1])),
                         plane, color)
             else:
-                if obj.vector.z == 0:
+                if obj.vector.x == 0 and obj.vector.z == 0:
+                    return self.get_projection(obj.point, plane, color)
+                elif obj.vector.z == 0:
                     return self.get_projection(
                         obj.cut_by_x(self.convert_screen_x_to_ag_x(self.plot.brp[0]),
                                      self.convert_screen_x_to_ag_x(self.plot.tlp[0])),

@@ -2,6 +2,7 @@ import random
 import pygame as pg
 from pygame_widgets.textbox import TextBox
 import utils.maths.angem as ag
+from utils.drawing.general_object import GeneralObject
 
 
 class CommandLine:
@@ -86,7 +87,8 @@ class CommandLine:
     def command_draw_object(self, *args):
         for obj in args:
             random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
-            self.screen.plot.draw_object(obj, random_color)
+            # self.screen.plot.draw_object(obj, random_color)
+            GeneralObject(self.screen.plot, obj, random_color).draw()
 
     def clicked_on(self, pos):
         left = self.textbox.getX()
