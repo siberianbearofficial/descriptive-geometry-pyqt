@@ -18,3 +18,6 @@ class Layer:
     def update_projections(self):
         for obj in self.objects:
             obj.update_projections()
+
+    def clear(self):
+        self.objects = []

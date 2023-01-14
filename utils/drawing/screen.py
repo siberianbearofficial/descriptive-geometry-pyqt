@@ -26,7 +26,7 @@ class Screen:
 
         self.toolbars = []
 
-        self.toolbars.append(Toolbar2(self, (10, 5), (200, 25)))
+        self.toolbars.append(Toolbar2(self, (10, 5), (500, 25)))
         self.toolbars[0].add_button('file', lambda: self.select_toolbar(1), (0, 0), size=(39, 20))
         self.toolbars[0].add_button('drawing', lambda: self.select_toolbar(2), (44, 0), size=(76, 20))
         self.toolbars[0].add_button('layer', lambda: self.select_toolbar(3), (125, 0), size=(39, 20))

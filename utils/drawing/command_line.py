@@ -81,8 +81,8 @@ class CommandLine:
             '''
         )
 
-    def command_clear(self):
-        self.screen.plot.clear()
+    def command_clear(self, index=-1):
+        self.screen.plot.clear(index)
 
     def command_draw_object(self, *args):
         for obj in args:
