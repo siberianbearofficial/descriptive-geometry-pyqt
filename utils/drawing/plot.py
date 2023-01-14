@@ -3,6 +3,9 @@ import utils.maths.angem as ag
 from utils.drawing.axis import Axis
 from utils.drawing.projections import ProjectionManager
 from utils.drawing.layer import Layer
+from utils.drawing.screen_point import ScreenPoint
+from utils.drawing.screen_segment import ScreenSegment
+from utils.drawing.screen_circle import ScreenCircle
 import random
 
 
@@ -18,6 +21,7 @@ class Plot:
 
         self.tlp = tlp
         self.brp = brp
+        self.zoom = 1
 
         self.bg_color = (255, 255, 255)
 
@@ -35,10 +39,13 @@ class Plot:
         self.point_position_y = None
         self.point_position_z = None
 
-    def clear(self):
-        pg.draw.rect(self.screen.screen, self.bg_color,
-                     (self.tlp[0], self.tlp[1], self.brp[0], self.brp[1]))
-        self.axis.draw()
+    def clear(self, index=-1):
+        if index == -1:
+            for layer in self.layers:
+                layer.clear()
+        else:
+            self.layers[index].clear()
+        self.full_update()
         self.screen.update()
 
     def draw_segment(self, segment, color=(0, 0, 0)):
@@ -95,6 +102,22 @@ class Plot:
         elif self.action == Plot.SEGMENT_SELECTION:
             print('Segment selection not implemented yet')
 
+    def zoom_in(self):
+        self.zoom *= 2
+        self.pm.zoom *= 2
+        for layer in self.layers:
+            layer.update_projections()
+        self.full_update()
+        self.screen.full_update_toolbars()
+
+    def zoom_out(self):
+        self.zoom /= 2
+        self.pm.zoom /= 2
+        for layer in self.layers:
+            layer.update_projections()
+        self.full_update()
+        self.screen.full_update_toolbars()
+
     def full_update(self):
         pg.draw.rect(self.screen.screen, self.bg_color,
                      (self.tlp[0], self.tlp[1] - 2, self.brp[0] - self.tlp[0], self.brp[1] - self.tlp[1] + 4))
@@ -105,145 +128,119 @@ class Plot:
     def point_is_on_plot(self, point):
         return self.tlp[0] < point[0] < self.brp[0] and self.tlp[1] < point[1] < self.brp[1]
 
-    def create_point(self):
+    @staticmethod
+    def check_exit_event(event):
+        if event.type == pg.QUIT:
+            pg.quit()
+            exit(0)
+        elif event.type == pg.MOUSEBUTTONDOWN and event.button == 3:
+            return True
+        return False
+
+    def select_screen_point(self, x_y=None, segment=None, objects=tuple(), last_point=None):
         clock = pg.time.Clock()
         while True:
             self.full_update()
+            pos = self.layers[0].snap_get_pos(self.screen, pg.mouse.get_pos(), x_y, last_point)
             events = pg.event.get()
             for event in events:
-                if event.type == pg.QUIT:
-                    pg.quit()
-                    exit(0)
-                elif event.type == pg.MOUSEBUTTONDOWN:
-                    if event.button == 3:
-                        return False
-                    elif event.button == 1 and self.point_is_on_plot(event.pos):
-                        x, y = event.pos
-                        while True:
-                            self.full_update()
-                            events = pg.event.get()
-                            for event in events:
-                                if event.type == pg.QUIT:
-                                    pg.quit()
-                                    exit(0)
-                                elif event.type == pg.MOUSEBUTTONDOWN:
-                                    if event.button == 3:
-                                        return False
-                                    elif event.button == 1 and self.point_is_on_plot(event.pos):
-                                        z = event.pos[1]
-                                        random_color = (random.randint(50, 180),
-                                                        random.randint(80, 180), random.randint(50, 180))
-                                        self.layers[0].add_object(ag.Point(self.pm.convert_screen_x_to_ag_x(x),
-                                                                  self.pm.convert_screen_y_to_ag_y(y),
-                                                                  self.pm.convert_screen_y_to_ag_z(z)), random_color)
-                                        self.full_update()
-                                        return True
-                            if self.point_is_on_plot(pg.mouse.get_pos()):
-                                pg.draw.circle(self.screen.screen, (0, 162, 232), (x, y), 3)
-                                pg.draw.circle(self.screen.screen, (0, 162, 232), (x, z := pg.mouse.get_pos()[1]), 3)
-                                pg.draw.line(self.screen.screen, (180, 180, 180), (x, y), (x, z))
-                                self.screen.update()
-                                clock.tick(30)
-
-            if self.point_is_on_plot(pg.mouse.get_pos()):
-                pg.draw.circle(self.screen.screen, (0, 162, 232), pg.mouse.get_pos(), 3)
+                if Plot.check_exit_event(event):
+                    return None
+                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1 and self.point_is_on_plot(event.pos):
+                    res = self.layers[0].snap_get_pos(self.screen, pg.mouse.get_pos(), x_y, last_point)
+                    if x_y is None:
+                        return res
+                    else:
+                        return res[1]
+            if self.point_is_on_plot(pos):
+                if x_y is None:
+                    pg.draw.circle(self.screen.screen, (0, 162, 232), pos, 3)
+                    if segment is not None:
+                        pg.draw.line(self.screen.screen, (0, 162, 232), segment, pos, 2)
+                else:
+                    pg.draw.circle(self.screen.screen, (0, 162, 232), pos, 3)
+                    pg.draw.line(self.screen.screen, (180, 180, 180), x_y, pos, 2)
+                    if segment is not None:
+                        pg.draw.line(self.screen.screen, (0, 162, 232), segment, pos, 2)
+                for obj in objects:
+                    obj.draw()
                 self.screen.update()
                 clock.tick(30)
+
+    def create_point(self):
+        if (r := self.select_screen_point()) is not None:
+            x, y = r
+        else:
+            return
+        a = ScreenPoint(self, x, y, (0, 162, 232))
+        if (r := self.select_screen_point((x, y), objects=(a,))) is not None:
+            z = r
+        else:
+            return
+        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
+        self.layers[0].add_object(ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
+                                           self.pm.convert_screen_y_to_ag_z(z)), random_color)
+        self.full_update()
+        return True
 
     def create_segment(self):
-        def second_point():
-            while True:
-                self.full_update()
-                events = pg.event.get()
-                for event in events:
-                    if event.type == pg.QUIT:
-                        pg.quit()
-                        exit(0)
-                    elif event.type == pg.MOUSEBUTTONDOWN:
-                        if event.button == 3:
-                            return False
-                        elif event.button == 1 and self.point_is_on_plot(event.pos):
-                            z1 = event.pos[1]
-                            while True:
-                                self.full_update()
-                                events = pg.event.get()
-                                for event in events:
-                                    if event.type == pg.QUIT:
-                                        pg.quit()
-                                        exit(0)
-                                    elif event.type == pg.MOUSEBUTTONDOWN:
-                                        if event.button == 3:
-                                            return False
-                                        elif event.button == 1 and self.point_is_on_plot(event.pos):
-                                            z2 = event.pos[1]
-                                            random_color = (random.randint(50, 180),
-                                                            random.randint(80, 180), random.randint(50, 180))
-                                            self.layers[0].add_object(ag.Segment(
-                                                ag.Point(self.pm.convert_screen_x_to_ag_x(x1),
-                                                         self.pm.convert_screen_y_to_ag_y(y1),
-                                                         self.pm.convert_screen_y_to_ag_z(z1)),
-                                                ag.Point(self.pm.convert_screen_x_to_ag_x(x2),
-                                                         self.pm.convert_screen_y_to_ag_y(y2),
-                                                         self.pm.convert_screen_y_to_ag_z(z2))),
-                                                          random_color)
-                                            self.full_update()
-                                            return True
-                                if self.point_is_on_plot(pg.mouse.get_pos()):
-                                    pg.draw.circle(self.screen.screen, (0, 162, 232), (x1, y1), 3)
-                                    pg.draw.circle(self.screen.screen, (0, 162, 232), (x2, y2), 3)
-                                    pg.draw.circle(self.screen.screen, (0, 162, 232), (x1, z1), 3)
-                                    pg.draw.circle(self.screen.screen, (0, 162, 232), (x2, z2 := pg.mouse.get_pos()[1]),
-                                                   3)
-                                    pg.draw.line(self.screen.screen, (0, 162, 232), (x1, y1), (x2, y2))
-                                    pg.draw.line(self.screen.screen, (0, 162, 232), (x1, z1), (x2, z2))
-                                    pg.draw.line(self.screen.screen, (180, 180, 180), (x1, y1), (x1, z1))
-                                    pg.draw.line(self.screen.screen, (180, 180, 180), (x2, y2), (x2, z2))
-                                    self.screen.update()
-                                    clock.tick(30)
-                if self.point_is_on_plot(pg.mouse.get_pos()):
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), (x1, y1), 3)
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), (x2, y2), 3)
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), (x1, z1 := pg.mouse.get_pos()[1]), 3)
-                    pg.draw.line(self.screen.screen, (0, 162, 232), (x1, y1), (x2, y2))
-                    pg.draw.line(self.screen.screen, (180, 180, 180), (x1, y1), (x1, z1))
-                    self.screen.update()
-                    clock.tick(30)
+        if (r := self.select_screen_point()) is not None:
+            x1, y1 = r
+        else:
+            return
+        a1 = ScreenPoint(self, x1, y1, (0, 162, 232))
+        if (r := self.select_screen_point(segment=(x1, y1), objects=(a1,), last_point=(x1, y1))) is not None:
+            x2, y2 = r
+        else:
+            return
+        a2 = ScreenPoint(self, x2, y2, (0, 162, 232))
+        s1 = ScreenSegment(self, a1, a2, (0, 162, 232))
+        if (r := self.select_screen_point((x1, y1), objects=(a1, a2, s1))) is not None:
+            z1 = r
+        else:
+            return
+        b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
+        s2 = ScreenSegment(self, a1, b1, (180, 180, 180))
+        if (r := self.select_screen_point((x2, y2), segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
+            z2 = r
+        else:
+            return
+        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
+        self.layers[0].add_object(ag.Segment(
+            ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
+                     self.pm.convert_screen_y_to_ag_z(z1)),
+            ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
+                     self.pm.convert_screen_y_to_ag_z(z2))), random_color)
+        self.full_update()
+        return True
 
-        clock = pg.time.Clock()
-        while True:
-            self.full_update()
-            events = pg.event.get()
-            for event in events:
-                if event.type == pg.QUIT:
-                    pg.quit()
-                    exit(0)
-                elif event.type == pg.MOUSEBUTTONDOWN:
-                    if event.button == 3:
-                        return False
-                    elif event.button == 1 and self.point_is_on_plot(event.pos):
-                        x1, y1 = event.pos
-                        while True:
-                            self.full_update()
-                            events = pg.event.get()
-                            for event in events:
-                                if event.type == pg.QUIT:
-                                    pg.quit()
-                                    exit(0)
-                                elif event.type == pg.MOUSEBUTTONDOWN:
-                                    if event.button == 3:
-                                        return False
-                                    elif event.button == 1 and self.point_is_on_plot(event.pos):
-                                        x2, y2 = event.pos
-                                        second_point()
-                                        return
-                            if self.point_is_on_plot(pg.mouse.get_pos()):
-                                pg.draw.circle(self.screen.screen, (0, 162, 232), (x1, y1), 3)
-                                pg.draw.circle(self.screen.screen, (0, 162, 232), pg.mouse.get_pos(), 3)
-                                pg.draw.line(self.screen.screen, (0, 162, 232), (x1, y1), pg.mouse.get_pos())
-                                self.screen.update()
-                                clock.tick(30)
-
-            if self.point_is_on_plot(pg.mouse.get_pos()):
-                pg.draw.circle(self.screen.screen, (0, 162, 232), pg.mouse.get_pos(), 3)
-                self.screen.update()
-                clock.tick(30)
+    def create_line(self):
+        if (r := self.select_screen_point()) is not None:
+            x1, y1 = r
+        else:
+            return
+        a1 = ScreenPoint(self, x1, y1, (0, 162, 232))
+        if (r := self.select_screen_point(segment=(x1, y1), objects=(a1,))) is not None:
+            x2, y2 = r
+        else:
+            return
+        a2 = ScreenPoint(self, x2, y2, (0, 162, 232))
+        s1 = ScreenSegment(self, a1, a2, (0, 162, 232))
+        if (r := self.select_screen_point((x1, y1), objects=(a1, a2, s1))) is not None:
+            z1 = r
+        else:
+            return
+        b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
+        s2 = ScreenSegment(self, a1, b1, (180, 180, 180))
+        if (r := self.select_screen_point((x2, y2), segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
+            z2 = r
+        else:
+            return
+        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
+        self.layers[0].add_object(ag.Line(
+            ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
+                     self.pm.convert_screen_y_to_ag_z(z1)),
+            ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
+                     self.pm.convert_screen_y_to_ag_z(z2))), random_color)
+        self.full_update()
+        return True
