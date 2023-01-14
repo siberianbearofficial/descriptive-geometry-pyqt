@@ -137,31 +137,31 @@ class Plot:
             return True
         return False
 
-    def select_screen_point(self, x_y=None, segment=None, objects=tuple()):
+    def select_screen_point(self, x_y=None, segment=None, objects=tuple(), last_point=None):
         clock = pg.time.Clock()
         while True:
             self.full_update()
+            pos = self.layers[0].snap_get_pos(self.screen, pg.mouse.get_pos(), x_y, last_point)
             events = pg.event.get()
             for event in events:
                 if Plot.check_exit_event(event):
                     return None
                 if event.type == pg.MOUSEBUTTONDOWN and event.button == 1 and self.point_is_on_plot(event.pos):
-                    x, y = event.pos
+                    res = self.layers[0].snap_get_pos(self.screen, pg.mouse.get_pos(), x_y, last_point)
                     if x_y is None:
-                        return x, y
+                        return res
                     else:
-                        return y
-            if self.point_is_on_plot(pg.mouse.get_pos()):
+                        return res[1]
+            if self.point_is_on_plot(pos):
                 if x_y is None:
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), pg.mouse.get_pos(), 3)
+                    pg.draw.circle(self.screen.screen, (0, 162, 232), pos, 3)
                     if segment is not None:
-                        pg.draw.line(self.screen.screen, (0, 162, 232), segment, pg.mouse.get_pos(), 2)
+                        pg.draw.line(self.screen.screen, (0, 162, 232), segment, pos, 2)
                 else:
-                    p = (x_y[0], pg.mouse.get_pos()[1])
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), p, 3)
-                    pg.draw.line(self.screen.screen, (180, 180, 180), x_y, p, 2)
+                    pg.draw.circle(self.screen.screen, (0, 162, 232), pos, 3)
+                    pg.draw.line(self.screen.screen, (180, 180, 180), x_y, pos, 2)
                     if segment is not None:
-                        pg.draw.line(self.screen.screen, (0, 162, 232), segment, p, 2)
+                        pg.draw.line(self.screen.screen, (0, 162, 232), segment, pos, 2)
                 for obj in objects:
                     obj.draw()
                 self.screen.update()
@@ -189,7 +189,7 @@ class Plot:
         else:
             return
         a1 = ScreenPoint(self, x1, y1, (0, 162, 232))
-        if (r := self.select_screen_point(segment=(x1, y1), objects=(a1,))) is not None:
+        if (r := self.select_screen_point(segment=(x1, y1), objects=(a1,), last_point=(x1, y1))) is not None:
             x2, y2 = r
         else:
             return
