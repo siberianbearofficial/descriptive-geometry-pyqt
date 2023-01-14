@@ -10,7 +10,7 @@ class CommandLine:
     def __init__(self, screen):
         self.screen = screen
 
-        self.textbox = TextBox(self.screen.screen, 10, screen.brp[1] - 30, screen.width - 20, 20, inactiveColour=(255, 255, 255),
+        self.textbox = TextBox(self.screen.screen, 10, screen.brp[1] - 30, 620, 20, inactiveColour=(255, 255, 255),
                                activeColour=(200, 200, 200), textColour=(0, 0, 0), borderColour=(64, 64, 64), radius=0,
                                borderThickness=1, font=pg.font.SysFont('Courier', 12))
         self.textbox.onSubmit = self.output
