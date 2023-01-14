@@ -2,6 +2,7 @@ import pygame as pg
 import utils.maths.angem as ag
 from utils.drawing.axis import Axis
 from utils.drawing.projections import ProjectionManager
+from utils.drawing.snap import SnapManager
 from utils.drawing.layer import Layer
 from utils.drawing.screen_point import ScreenPoint
 from utils.drawing.screen_segment import ScreenSegment
@@ -29,6 +30,7 @@ class Plot:
 
         self.axis = Axis(self)
         self.pm = ProjectionManager(self)
+        self.sm = SnapManager(self)
 
         self.clear()
         self.axis.draw()
@@ -141,13 +143,13 @@ class Plot:
         clock = pg.time.Clock()
         while True:
             self.full_update()
-            pos = self.layers[0].snap_get_pos(self.screen, pg.mouse.get_pos(), x_y, last_point)
+            pos = self.sm.get_snap(self.screen, pg.mouse.get_pos(), x_y, last_point)
             events = pg.event.get()
             for event in events:
                 if Plot.check_exit_event(event):
                     return None
                 if event.type == pg.MOUSEBUTTONDOWN and event.button == 1 and self.point_is_on_plot(event.pos):
-                    res = self.layers[0].snap_get_pos(self.screen, pg.mouse.get_pos(), x_y, last_point)
+                    res = self.sm.get_snap(self.screen, pg.mouse.get_pos(), x_y, last_point)
                     if x_y is None:
                         return res
                     else:
