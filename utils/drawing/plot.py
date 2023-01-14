@@ -18,6 +18,7 @@ class Plot:
 
         self.tlp = tlp
         self.brp = brp
+        self.zoom = 1
 
         self.bg_color = (255, 255, 255)
 
@@ -94,6 +95,22 @@ class Plot:
                 self.point_position_z = None
         elif self.action == Plot.SEGMENT_SELECTION:
             print('Segment selection not implemented yet')
+
+    def zoom_in(self):
+        self.zoom *= 2
+        self.pm.zoom *= 2
+        for layer in self.layers:
+            layer.update_projections()
+        self.full_update()
+        self.screen.full_update_toolbars()
+
+    def zoom_out(self):
+        self.zoom /= 2
+        self.pm.zoom /= 2
+        for layer in self.layers:
+            layer.update_projections()
+        self.full_update()
+        self.screen.full_update_toolbars()
 
     def full_update(self):
         pg.draw.rect(self.screen.screen, self.bg_color,

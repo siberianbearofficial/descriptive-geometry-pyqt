@@ -14,3 +14,7 @@ class Layer:
         if not self.hidden:
             for obj in self.objects:
                 obj.draw()
+
+    def update_projections(self):
+        for obj in self.objects:
+            obj.update_projections()

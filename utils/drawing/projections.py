@@ -9,6 +9,7 @@ class ProjectionManager:
     def __init__(self, plot):
         self.plot = plot
         self.axis = plot.axis
+        self.zoom = 1
 
     def get_projection(self, obj, plane, color):
         if isinstance(obj, ag.Point):
@@ -63,14 +64,14 @@ class ProjectionManager:
 
     def convert_ag_coordinate_to_screen_coordinate(self, x, y=None, z=None, plane='xy'):
         if plane == 'xy':
-            return self.axis.rp.x - x, y + self.axis.lp.y
-        return self.axis.rp.x - x, self.axis.lp.y - z
+            return self.axis.rp.x - x * self.zoom, self.axis.lp.y + y * self.zoom
+        return self.axis.rp.x - x * self.zoom, self.axis.lp.y - z * self.zoom
 
     def convert_screen_x_to_ag_x(self, x):
-        return self.axis.rp.x - x
+        return (self.axis.rp.x - x) / self.zoom
 
     def convert_screen_y_to_ag_y(self, y):
-        return y - self.axis.lp.y
+        return (y - self.axis.lp.y) / self.zoom
 
     def convert_screen_y_to_ag_z(self, z):
-        return self.axis.lp.y - z
+        return (self.axis.lp.y - z) / self.zoom

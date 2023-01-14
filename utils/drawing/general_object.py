@@ -15,3 +15,11 @@ class GeneralObject:
             el.draw()
         for el in self.xz_projection:
             el.draw()
+
+    def update_projections(self):
+        self.xy_projection = self.plot.pm.get_projection(self.ag_object, 'xy', self.color)
+        if not isinstance(self.xy_projection, tuple):
+            self.xy_projection = self.xy_projection,
+        self.xz_projection = self.plot.pm.get_projection(self.ag_object, 'xz', self.color)
+        if not isinstance(self.xz_projection, tuple):
+            self.xz_projection = self.xz_projection,
