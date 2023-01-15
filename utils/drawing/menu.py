@@ -33,16 +33,20 @@ class Menu:
         self.main_toolbars[3].add_button('plus', lambda: self.screen.plot.zoom_in(), (45, 0))
 
         self.other_toolbars.append(Toolbar2(self.screen, (40, 60), (250, 130)))
-        self.other_toolbars[-1].add_button('perpendicular', lambda: self.screen.plot.create_segment(), (5, 0), (200, 30),
-                                           self.font.render('Перпендикуляр', False, (0, 0, 0)), (30, 9))
-        self.other_toolbars[-1].add_button('parallel', lambda: print('Параллельно'), (5, 27), (200, 30),
-                                           self.font.render('Параллельно', False, (0, 0, 0)), (30, 9))
+        self.other_toolbars[-1].add_button('perpendicular',
+                                           lambda: self.screen.plot.create_perpendicular(False), (5, 0),
+                                           (200, 30), self.font.render('Перпендикуляр', False, (0, 0, 0)), (30, 9))
+        self.other_toolbars[-1].add_button('parallel',
+                                           lambda: self.screen.plot.create_parallel(False), (5, 30),
+                                           (200, 30), self.font.render('Параллельно', False, (0, 0, 0)), (30, 9))
 
         self.other_toolbars.append(Toolbar2(self.screen, (85, 60), (295, 130)))
-        self.other_toolbars[-1].add_button('perpendicular', lambda: print('Перпендикуляр'), (5, 0), (200, 30),
-                                           self.font.render('Перпендикуляр', False, (0, 0, 0)), (30, 9))
-        self.other_toolbars[-1].add_button('parallel', lambda: print('Параллельно'), (5, 27), (200, 30),
-                                           self.font.render('Параллельно', False, (0, 0, 0)), (30, 9))
+        self.other_toolbars[-1].add_button('perpendicular',
+                                           lambda: self.screen.plot.create_perpendicular(True), (5, 0),
+                                           (200, 30), self.font.render('Перпендикуляр', False, (0, 0, 0)), (30, 9))
+        self.other_toolbars[-1].add_button('parallel',
+                                           lambda: self.screen.plot.create_parallel(True), (5, 27),
+                                           (200, 30), self.font.render('Параллельно', False, (0, 0, 0)), (30, 9))
 
     def full_update_toolbars(self):
         pg.draw.rect(self.screen.screen, (255, 255, 255),

@@ -2,7 +2,7 @@ import pygame as pg
 import utils.maths.angem as ag
 from utils.drawing.axis import Axis
 from utils.drawing.projections import ProjectionManager
-from utils.drawing.snap import SnapManager
+import utils.drawing.snap as snap
 from utils.drawing.layer import Layer
 from utils.drawing.screen_point import ScreenPoint
 from utils.drawing.screen_segment import ScreenSegment
@@ -30,7 +30,7 @@ class Plot:
 
         self.axis = Axis(self)
         self.pm = ProjectionManager(self)
-        self.sm = SnapManager(self)
+        self.sm = snap.SnapManager(self)
 
         self.clear()
         self.axis.draw()
@@ -138,6 +138,39 @@ class Plot:
         elif event.type == pg.MOUSEBUTTONDOWN and event.button == 3:
             return True
         return False
+
+    def select_object(self, types):
+        def check_object_type(obj):
+            if isinstance(types, tuple):
+                for el in types:
+                    if isinstance(obj.ag_object, el):
+                        return True
+                return False
+            return isinstance(obj.ag_object, types)
+
+        clock = pg.time.Clock()
+        while True:
+            events = pg.event.get()
+            for event in events:
+                if Plot.check_exit_event(event):
+                    return None
+                elif event.type == pg.MOUSEBUTTONDOWN:
+                    for layer in self.layers:
+                        for obj in layer.objects:
+                            if check_object_type(obj):
+                                for el in obj.xy_projection:
+                                    if isinstance(el, ScreenPoint) and snap.distance(event.pos, el.tuple()) <= 2:
+                                        return obj.ag_object
+                                    if isinstance(el, ScreenSegment) and snap.distance(
+                                            pg.mouse.get_pos(), snap.nearest_point(event.pos, el)) <= 2:
+                                        return obj.ag_object
+                                for el in obj.xz_projection:
+                                    if isinstance(el, ScreenPoint) and snap.distance(event.pos, el.tuple()) <= 2:
+                                        return obj.ag_object
+                                    if isinstance(el, ScreenSegment) and snap.distance(
+                                            pg.mouse.get_pos(), snap.nearest_point(event.pos, el)) <= 2:
+                                        return obj.ag_object
+            clock.tick(30)
 
     def select_screen_point(self, plane, x=None, y=None, z=None, segment=None, objects=tuple()):
         clock = pg.time.Clock()
@@ -268,5 +301,71 @@ class Plot:
             ag.Point(self.pm.convert_screen_x_to_ag_x(x0), 0, 0),
             ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1), 0),
             ag.Point(self.pm.convert_screen_x_to_ag_x(x2), 0, self.pm.convert_screen_y_to_ag_z(z2))), random_color)
+        self.full_update()
+        return True
+
+    def create_perpendicular(self, line=False):
+        # TODO: сделать так, чтобы при попытке провести перпендикуляр к горизонтали/фронтали не происходило деление на 0
+        self.full_update()
+        self.screen.update()
+        obj = self.select_object((ag.Segment, ag.Line))
+        if isinstance(obj, ag.Segment):
+            v = ag.Vector(obj.p1, obj.p2)
+            obj = ag.Line(obj.p1, obj.p2)
+        elif isinstance(obj, ag.Line):
+            v = obj.vector
+        else:
+            return
+        if (r := self.select_screen_point('xy')) is not None:
+            x, y = r
+        else:
+            return
+        a = ScreenPoint(self, x, y, (0, 162, 232))
+        if (r := self.select_screen_point('xz', x=x, y=y, objects=(a,))) is not None:
+            z = r
+        else:
+            return
+        p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
+                      self.pm.convert_screen_y_to_ag_z(z))
+        p2 = ag.Line(p1, v & ag.Plane(p1, obj).normal).intersection(obj)
+        if p2 is None:
+            print('error: can\'t create perpendicular')
+            return
+        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
+        if line:
+            self.layers[0].add_object(ag.Line(p1, p2), random_color)
+        else:
+            self.layers[0].add_object(ag.Segment(p1, p2), random_color)
+        self.full_update()
+        return True
+
+    def create_parallel(self, line=False):
+        # TODO: для отрезков сделать возможность указазывать вторую точку
+        self.full_update()
+        self.screen.update()
+        obj = self.select_object((ag.Segment, ag.Line))
+        if isinstance(obj, ag.Segment):
+            v = ag.Vector(obj.p1, obj.p2)
+            obj = ag.Line(obj.p1, obj.p2)
+        elif isinstance(obj, ag.Line):
+            v = obj.vector
+        else:
+            return
+        if (r := self.select_screen_point('xy')) is not None:
+            x, y = r
+        else:
+            return
+        a = ScreenPoint(self, x, y, (0, 162, 232))
+        if (r := self.select_screen_point('xz', x=x, y=y, objects=(a,))) is not None:
+            z = r
+        else:
+            return
+        p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
+                      self.pm.convert_screen_y_to_ag_z(z))
+        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
+        if line:
+            self.layers[0].add_object(ag.Line(p1, v), random_color)
+        else:
+            self.layers[0].add_object(ag.Segment(p1, p1 + v), random_color)
         self.full_update()
         return True
