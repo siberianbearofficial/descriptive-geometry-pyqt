@@ -110,7 +110,7 @@ class Plot:
         for layer in self.layers:
             layer.update_projections()
         self.full_update()
-        self.screen.full_update_toolbars()
+        self.screen.menu.full_update_toolbars()
 
     def zoom_out(self):
         self.zoom /= 2
@@ -118,7 +118,7 @@ class Plot:
         for layer in self.layers:
             layer.update_projections()
         self.full_update()
-        self.screen.full_update_toolbars()
+        self.screen.menu.full_update_toolbars()
 
     def full_update(self):
         pg.draw.rect(self.screen.screen, self.bg_color,
