@@ -2,10 +2,11 @@ from utils.drawing.general_object import GeneralObject
 
 
 class Layer:
-    def __init__(self, plot, hidden=False):
+    def __init__(self, plot, name='', hidden=False):
         self.plot = plot
         self.hidden = hidden
         self.objects = []
+        self.name = name
 
     def add_object(self, ag_object, color):
         self.objects.append(GeneralObject(self.plot, ag_object, color))
