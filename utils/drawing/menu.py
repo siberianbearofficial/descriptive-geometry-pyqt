@@ -25,7 +25,7 @@ class Menu:
         self.main_toolbars[2].add_button('line', lambda: self.screen.plot.create_line(), (90, 0))
         self.main_toolbars[2].add_button('more_options', lambda: self.open_toolbar(1), (120, 0), size=(12, 30))
         self.main_toolbars[2].add_button('plane', lambda: self.screen.plot.create_plane(), (135, 0))
-        self.main_toolbars[2].add_button('more_options', lambda: print('more options'), (165, 0), size=(12, 30))
+        self.main_toolbars[2].add_button('more_options', lambda: self.open_toolbar(2), (165, 0), size=(12, 30))
         self.main_toolbars[2].add_button('circle', lambda: print('circle'), (180, 0))
 
         self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (1000, 60), hidden=True))
@@ -37,15 +37,29 @@ class Menu:
                                            lambda: self.screen.plot.create_perpendicular(False), (5, 0),
                                            (200, 30), self.font.render('Перпендикуляр', False, (0, 0, 0)), (30, 9))
         self.other_toolbars[-1].add_button('parallel',
-                                           lambda: self.screen.plot.create_parallel(False), (5, 30),
+                                           lambda: self.screen.plot.create_parallel(False), (5, 27),
                                            (200, 30), self.font.render('Параллельно', False, (0, 0, 0)), (30, 9))
 
-        self.other_toolbars.append(Toolbar2(self.screen, (85, 60), (295, 130)))
+        self.other_toolbars.append(Toolbar2(self.screen, (85, 60), (295, 201)))
         self.other_toolbars[-1].add_button('perpendicular',
                                            lambda: self.screen.plot.create_perpendicular(True), (5, 0),
                                            (200, 30), self.font.render('Перпендикуляр', False, (0, 0, 0)), (30, 9))
         self.other_toolbars[-1].add_button('parallel',
                                            lambda: self.screen.plot.create_parallel(True), (5, 27),
+                                           (200, 30), self.font.render('Параллельно', False, (0, 0, 0)), (30, 9))
+        self.other_toolbars[-1].add_button('horizontal',
+                                           lambda: self.screen.plot.create_h_f(f=False), (5, 54),
+                                           (200, 30), self.font.render('Горизонталь', False, (0, 0, 0)), (30, 9))
+        self.other_toolbars[-1].add_button('frontal',
+                                           lambda: self.screen.plot.create_h_f(f=True), (5, 81),
+                                           (200, 30), self.font.render('Фронталь', False, (0, 0, 0)), (30, 9))
+
+        self.other_toolbars.append(Toolbar2(self.screen, (130, 60), (340, 130)))
+        self.other_toolbars[-1].add_button('3points',
+                                           lambda: self.screen.plot.create_plot_from_3_points(), (5, 0),
+                                           (200, 30), self.font.render('3 точки', False, (0, 0, 0)), (30, 9))
+        self.other_toolbars[-1].add_button('parallel',
+                                           lambda: self.screen.plot.create_parallel_plane(), (5, 27),
                                            (200, 30), self.font.render('Параллельно', False, (0, 0, 0)), (30, 9))
 
     def full_update_toolbars(self):

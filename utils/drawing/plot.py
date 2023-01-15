@@ -308,12 +308,14 @@ class Plot:
         # TODO: сделать так, чтобы при попытке провести перпендикуляр к горизонтали/фронтали не происходило деление на 0
         self.full_update()
         self.screen.update()
-        obj = self.select_object((ag.Segment, ag.Line))
+        obj = self.select_object((ag.Segment, ag.Line, ag.Plane))
         if isinstance(obj, ag.Segment):
             v = ag.Vector(obj.p1, obj.p2)
             obj = ag.Line(obj.p1, obj.p2)
         elif isinstance(obj, ag.Line):
             v = obj.vector
+        elif isinstance(obj, ag.Plane):
+            v = obj.normal
         else:
             return
         if (r := self.select_screen_point('xy')) is not None:
@@ -327,14 +329,20 @@ class Plot:
             return
         p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
                       self.pm.convert_screen_y_to_ag_z(z))
-        p2 = ag.Line(p1, v & ag.Plane(p1, obj).normal).intersection(obj)
-        if p2 is None:
-            print('error: can\'t create perpendicular')
-            return
         random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
         if line:
-            self.layers[0].add_object(ag.Line(p1, p2), random_color)
+            if isinstance(obj, ag.Plane):
+                self.layers[0].add_object(ag.Line(p1, v), random_color)
+            else:
+                self.layers[0].add_object(ag.Line(p1, v & ag.Plane(p1, obj).normal), random_color)
         else:
+            if isinstance(obj, ag.Plane):
+                p2 = ag.Line(p1, v).intersection(obj)
+            else:
+                p2 = ag.Line(p1, v & ag.Plane(p1, obj).normal).intersection(obj)
+            if p2 is None:
+                print('error: can\'t create perpendicular')
+                return
             self.layers[0].add_object(ag.Segment(p1, p2), random_color)
         self.full_update()
         return True
@@ -367,5 +375,99 @@ class Plot:
             self.layers[0].add_object(ag.Line(p1, v), random_color)
         else:
             self.layers[0].add_object(ag.Segment(p1, p1 + v), random_color)
+        self.full_update()
+        return True
+
+    def create_plot_from_3_points(self):
+        if (r := self.select_screen_point('xy')) is not None:
+            x1, y1 = r
+        else:
+            return
+        a1 = ScreenPoint(self, x1, y1, (0, 162, 232))
+        if (r := self.select_screen_point('xy', segment=(x1, y1), objects=(a1,))) is not None:
+            x2, y2 = r
+        else:
+            return
+        a2 = ScreenPoint(self, x2, y2, (0, 162, 232))
+        s1 = ScreenSegment(self, a1, a2, (0, 162, 232))
+        if (r := self.select_screen_point('xy', segment=(x2, y2), objects=(a1, a2, s1))) is not None:
+            x3, y3 = r
+        else:
+            return
+        a3 = ScreenPoint(self, x3, y3, (0, 162, 232))
+        s2 = ScreenSegment(self, a2, a3, (0, 162, 232))
+        s3 = ScreenSegment(self, a1, a3, (0, 162, 232))
+        if (r := self.select_screen_point('xz', x=x1, y=y1, objects=(a1, a2, a3, s1, s2, s3))) is not None:
+            z1 = r
+        else:
+            return
+        b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
+        l1 = ScreenSegment(self, a1, b1, (180, 180, 180))
+        if (r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1),
+                                          objects=(a1, a2, a3, s1, s2, s3, b1, l1))) is not None:
+            z2 = r
+        else:
+            return
+        b2 = ScreenPoint(self, x2, z2, (0, 162, 232))
+        l2 = ScreenSegment(self, a2, b2, (180, 180, 180))
+        c = ScreenSegment(self, b1, b2, (0, 162, 232))
+        if (r := self.select_screen_point('xz', x=x3, y=y3, segment=(x2, z2),
+                                          objects=(a1, a2, a3, s1, s2, s3, b1, b2, l1, l2, c))) is not None:
+            z3 = r
+        else:
+            return
+        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
+        self.layers[0].add_object(ag.Plane(
+            ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
+                     self.pm.convert_screen_y_to_ag_z(z1)),
+            ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
+                     self.pm.convert_screen_y_to_ag_z(z2)),
+            ag.Point(self.pm.convert_screen_x_to_ag_x(x3), self.pm.convert_screen_y_to_ag_y(y3),
+                     self.pm.convert_screen_y_to_ag_z(z3))), random_color)
+        self.full_update()
+        return True
+
+    def create_parallel_plane(self):
+        self.full_update()
+        self.screen.update()
+        obj = self.select_object(ag.Plane)
+        if obj is None:
+            return
+        if (r := self.select_screen_point('xy')) is not None:
+            x, y = r
+        else:
+            return
+        a = ScreenPoint(self, x, y, (0, 162, 232))
+        if (r := self.select_screen_point('xz', x=x, y=y, objects=(a,))) is not None:
+            z = r
+        else:
+            return
+        p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
+                      self.pm.convert_screen_y_to_ag_z(z))
+        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
+        self.layers[0].add_object(ag.Plane(obj.normal, p1), random_color)
+        self.full_update()
+        return True
+
+    def create_h_f(self, f=False):
+        self.full_update()
+        self.screen.update()
+        obj = self.select_object(ag.Plane)
+        if obj is None:
+            return
+        if (r := self.select_screen_point('xy')) is not None:
+            x, y = r
+        else:
+            return
+        a = ScreenPoint(self, x, y, (0, 162, 232))
+        if (r := self.select_screen_point('xz', x=x, y=y, objects=(a,))) is not None:
+            z = r
+        else:
+            return
+        p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
+                      self.pm.convert_screen_y_to_ag_z(z))
+        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
+        self.layers[0].add_object(ag.Line(p1, obj.normal & (ag.Vector(0, 1, 0) if f else ag.Vector(0, 0, 1))),
+                                  random_color)
         self.full_update()
         return True
