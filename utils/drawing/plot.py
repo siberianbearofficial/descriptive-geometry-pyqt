@@ -139,43 +139,42 @@ class Plot:
             return True
         return False
 
-    def select_screen_point(self, x_y=None, segment=None, objects=tuple(), last_point=None):
+    def select_screen_point(self, plane, x=None, y=None, z=None, segment=None, objects=tuple()):
         clock = pg.time.Clock()
+        c = z if plane == 'xy' else y
         while True:
             self.full_update()
-            pos = self.sm.get_snap(self.screen, pg.mouse.get_pos(), x_y, last_point)
+            pos = self.sm.get_snap(self.screen, pg.mouse.get_pos(), plane, x=x, y=y, z=z, last_point=segment)
             events = pg.event.get()
             for event in events:
                 if Plot.check_exit_event(event):
                     return None
                 if event.type == pg.MOUSEBUTTONDOWN and event.button == 1 and self.point_is_on_plot(event.pos):
-                    res = self.sm.get_snap(self.screen, pg.mouse.get_pos(), x_y, last_point)
-                    if x_y is None:
+                    res = self.sm.get_snap(self.screen, event.pos, plane, x=x, y=y, z=z, last_point=segment)
+                    if x is None and c is None:
                         return res
-                    else:
+                    elif x is not None:
                         return res[1]
+                    else:
+                        return res[0]
             if self.point_is_on_plot(pos):
-                if x_y is None:
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), pos, 3)
-                    if segment is not None:
-                        pg.draw.line(self.screen.screen, (0, 162, 232), segment, pos, 2)
-                else:
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), pos, 3)
-                    pg.draw.line(self.screen.screen, (180, 180, 180), x_y, pos, 2)
-                    if segment is not None:
-                        pg.draw.line(self.screen.screen, (0, 162, 232), segment, pos, 2)
+                pg.draw.circle(self.screen.screen, (0, 162, 232), pos, 3)
+                if segment is not None:
+                    pg.draw.line(self.screen.screen, (0, 162, 232), segment, pos, 2)
+                if x is not None and c is not None:
+                    pg.draw.line(self.screen.screen, (180, 180, 180), (x, c), pos, 2)
                 for obj in objects:
                     obj.draw()
                 self.screen.update()
                 clock.tick(30)
 
     def create_point(self):
-        if (r := self.select_screen_point()) is not None:
+        if (r := self.select_screen_point('xy')) is not None:
             x, y = r
         else:
             return
         a = ScreenPoint(self, x, y, (0, 162, 232))
-        if (r := self.select_screen_point((x, y), objects=(a,))) is not None:
+        if (r := self.select_screen_point('xz', x=x, y=y, objects=(a,))) is not None:
             z = r
         else:
             return
@@ -186,24 +185,24 @@ class Plot:
         return True
 
     def create_segment(self):
-        if (r := self.select_screen_point()) is not None:
+        if (r := self.select_screen_point('xy')) is not None:
             x1, y1 = r
         else:
             return
         a1 = ScreenPoint(self, x1, y1, (0, 162, 232))
-        if (r := self.select_screen_point(segment=(x1, y1), objects=(a1,), last_point=(x1, y1))) is not None:
+        if (r := self.select_screen_point('xy', segment=(x1, y1), objects=(a1,))) is not None:
             x2, y2 = r
         else:
             return
         a2 = ScreenPoint(self, x2, y2, (0, 162, 232))
         s1 = ScreenSegment(self, a1, a2, (0, 162, 232))
-        if (r := self.select_screen_point((x1, y1), objects=(a1, a2, s1))) is not None:
+        if (r := self.select_screen_point('xz', x=x1, y=y1, objects=(a1, a2, s1))) is not None:
             z1 = r
         else:
             return
         b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
         s2 = ScreenSegment(self, a1, b1, (180, 180, 180))
-        if (r := self.select_screen_point((x2, y2), segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
+        if (r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
             z2 = r
         else:
             return
@@ -217,24 +216,25 @@ class Plot:
         return True
 
     def create_line(self):
-        if (r := self.select_screen_point()) is not None:
+        if (r := self.select_screen_point('xy')) is not None:
             x1, y1 = r
         else:
             return
         a1 = ScreenPoint(self, x1, y1, (0, 162, 232))
-        if (r := self.select_screen_point(segment=(x1, y1), objects=(a1,))) is not None:
+        if (r := self.select_screen_point('xy', segment=(x1, y1), objects=(a1,))) is not None:
             x2, y2 = r
         else:
             return
         a2 = ScreenPoint(self, x2, y2, (0, 162, 232))
         s1 = ScreenSegment(self, a1, a2, (0, 162, 232))
-        if (r := self.select_screen_point((x1, y1), objects=(a1, a2, s1))) is not None:
+        if (r := self.select_screen_point('xz', x=x1, y=y1, objects=(a1, a2, s1))) is not None:
             z1 = r
         else:
             return
         b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
         s2 = ScreenSegment(self, a1, b1, (180, 180, 180))
-        if (r := self.select_screen_point((x2, y2), segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
+        if (
+        r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
             z2 = r
         else:
             return
@@ -244,5 +244,29 @@ class Plot:
                      self.pm.convert_screen_y_to_ag_z(z1)),
             ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
                      self.pm.convert_screen_y_to_ag_z(z2))), random_color)
+        self.full_update()
+        return True
+
+    def create_plane(self):
+        if (r := self.select_screen_point('xy', y=self.axis.lp.y, z=self.axis.lp.y)) is not None:
+            x0 = r
+        else:
+            return
+        a = ScreenPoint(self, x0, self.axis.lp.y, (0, 162, 232))
+        if (r := self.select_screen_point('xy', segment=a.tuple(), objects=(a,))) is not None:
+            x1, y1 = r
+        else:
+            return
+        b = ScreenPoint(self, x1, y1)
+        h0 = ScreenSegment(self, a, b, (0, 162, 232))
+        if (r := self.select_screen_point('xz', segment=a.tuple(), objects=(a, b, h0))) is not None:
+            x2, z2 = r
+        else:
+            return
+        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
+        self.layers[0].add_object(ag.Plane(
+            ag.Point(self.pm.convert_screen_x_to_ag_x(x0), 0, 0),
+            ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1), 0),
+            ag.Point(self.pm.convert_screen_x_to_ag_x(x2), 0, self.pm.convert_screen_y_to_ag_z(z2))), random_color)
         self.full_update()
         return True

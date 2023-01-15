@@ -1,8 +1,4 @@
 from utils.drawing.general_object import GeneralObject
-import pygame as pg
-
-from utils.drawing.screen_point import ScreenPoint
-from utils.drawing.screen_segment import ScreenSegment
 
 
 class Layer:
