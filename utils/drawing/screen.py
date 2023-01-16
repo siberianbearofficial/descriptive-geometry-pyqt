@@ -40,5 +40,4 @@ class Screen:
 
     def key_down(self, event):
         if event.key == 127 and self.plot.selected_object is not None:
-            self.plot.layers[self.plot.selected_object_index[0]].objects.pop(self.plot.selected_object_index[1])
-            self.plot.full_update()
+            self.plot.layers[self.plot.selected_object_index[0]].delete_object(self.plot.selected_object_index[1])

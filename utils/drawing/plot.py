@@ -50,6 +50,7 @@ class Plot:
                 layer.clear()
         else:
             self.layers[index].clear()
+            self.sm.update_intersections()
         self.full_update()
         self.screen.update()
 

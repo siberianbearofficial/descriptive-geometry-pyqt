@@ -9,8 +9,12 @@ class SnapManager:
         self.plot = plot
         self.snaps = [Snap(SnapManager.snap_point, 'point'),
                       Snap(SnapManager.snap_segment_points, 'point'),
+                      Snap(SnapManager.snap_intersection, 'intersection'),
                       Snap(SnapManager.snap_perpendicular, 'perpendicular'),
                       Snap(SnapManager.snap_nearest_point, 'nearest')]
+
+        self.intersections_xy = []
+        self.intersections_xz = []
 
     def get_snap(self, screen, pos, plane, x=None, y=None, z=None, last_point=None):
         self.x, self.y, self.z = x, y, z
@@ -65,6 +69,14 @@ class SnapManager:
                 yield obj.p1.tuple()
                 yield obj.p2.tuple()
 
+    def snap_intersection(self, pos):
+        if self.plane == 'xy':
+            for el in self.intersections_xy:
+                yield el
+        elif self.plane == 'xz':
+            for el in self.intersections_xz:
+                yield el
+
     def snap_nearest_point(self, pos):
         if self.plane == 'xy':
             for obj in self.get_screen_objects(self.plane):
@@ -83,6 +95,44 @@ class SnapManager:
             for obj in self.get_screen_objects(self.plane):
                 if isinstance(obj, ScreenSegment):
                     yield nearest_point(self.last_point, obj)
+
+    def update_intersections(self):
+        lst = []
+        self.intersections_xy .clear()
+        for obj1 in self.get_screen_objects('xy'):
+            if isinstance(obj1, ScreenSegment):
+                if obj1.p1.x - obj1.p2.x == 0:
+                    k = 100000000000
+                else:
+                    k = (obj1.p1.y - obj1.p2.y) / (obj1.p1.x - obj1.p2.x)
+                b = obj1.p1.y - obj1.p1.x * k
+                for obj2 in lst:
+                    if k == obj2[1]:
+                        continue
+                    x = (obj2[2] - b) / (k - obj2[1])
+                    y = k*x + b
+                    if min(obj1.p1.x, obj1.p2.x) <= x <= max(obj1.p1.x, obj1.p2.x) and \
+                            min(obj2[0].p1.x, obj2[0].p2.x) <= x <= max(obj2[0].p1.x, obj2[0].p2.x):
+                        self.intersections_xy.append((x, y))
+                lst.append((obj1, k, b))
+        lst.clear()
+        self.intersections_xz.clear()
+        for obj1 in self.get_screen_objects('xz'):
+            if isinstance(obj1, ScreenSegment):
+                if obj1.p1.x - obj1.p2.x == 0:
+                    k = 100000000000
+                else:
+                    k = (obj1.p1.y - obj1.p2.y) / (obj1.p1.x - obj1.p2.x)
+                b = obj1.p1.y - obj1.p1.x * k
+                for obj2 in lst:
+                    if k == obj2[1]:
+                        continue
+                    x = (obj2[2] - b) / (k - obj2[1])
+                    y = k * x + b
+                    if min(obj1.p1.x, obj1.p2.x) <= x <= max(obj1.p1.x, obj1.p2.x) and \
+                            min(obj2[0].p1.x, obj2[0].p2.x) <= x <= max(obj2[0].p1.x, obj2[0].p2.x):
+                        self.intersections_xz.append((x, y))
+                lst.append((obj1, k, b))
 
 
 class Snap:
