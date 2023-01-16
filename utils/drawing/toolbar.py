@@ -65,8 +65,9 @@ class Toolbar2:
         self.hidden = hidden
         self.buttons = []
 
-    def add_button(self, image, function, pos, size=(30, 30), text=None, text_pos=(0, 0)):
-        self.buttons.append(Button(image, function, (pos[0] + self.tlp[0], pos[1] + self.tlp[1]), size, text, text_pos))
+    def add_button(self, image, function, pos, size=(30, 30), text=None, text_pos=(0, 0), hide_tb=False):
+        self.buttons.append(Button(image, function, (pos[0] + self.tlp[0], pos[1] + self.tlp[1]), size, text, text_pos,
+                            hide_tb))
 
     def draw(self):
         if self.hidden:
@@ -84,4 +85,7 @@ class Toolbar2:
             return
         for button in self.buttons:
             if button.click(self.screen, click_pos):
+                if button.hide_toolbar_after_use:
+                    self.hidden = True
+                    self.screen.menu.current_toolbar = -1
                 return True

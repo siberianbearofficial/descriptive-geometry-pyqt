@@ -157,6 +157,8 @@ class Plot:
 
     def select_object(self, types):
         def check_object_type(obj):
+            if types is None:
+                return True
             if isinstance(types, tuple):
                 for el in types:
                     if isinstance(obj.ag_object, el):
@@ -484,7 +486,35 @@ class Plot:
         p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
                       self.pm.convert_screen_y_to_ag_z(z))
         random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
-        self.layers[self.current_layer].add_object(ag.Line(p1, obj.normal & (ag.Vector(0, 1, 0) if f else ag.Vector(0, 0, 1))),
-                                  random_color)
+        self.layers[self.current_layer].add_object(ag.Line(
+            p1, obj.normal & (ag.Vector(0, 1, 0) if f else ag.Vector(0, 0, 1))), random_color)
         self.full_update()
         return True
+
+    def get_distance(self):
+        if (r := self.select_object(None)) is None:
+            return
+        else:
+            obj1 = r
+        if (r := self.select_object(None)) is None:
+            return
+        else:
+            obj2 = r
+        try:
+            print(ag.distance(obj1, obj2))
+        except Exception:
+            print('Ошибка')
+
+    def get_angle(self):
+        if (r := self.select_object(None)) is None:
+            return
+        else:
+            obj1 = r
+        if (r := self.select_object(None)) is None:
+            return
+        else:
+            obj2 = r
+        try:
+            print(ag.angle(obj1, obj2))
+        except Exception:
+            print('Ошибка')

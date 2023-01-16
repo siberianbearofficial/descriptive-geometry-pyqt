@@ -48,6 +48,8 @@ class SnapManager:
 
     def get_screen_objects(self, plane):
         for layer in self.plot.layers:
+            if layer.hidden:
+                continue
             for obj in layer.objects:
                 for el in obj.xy_projection if plane == 'xy' else obj.xz_projection:
                     yield el

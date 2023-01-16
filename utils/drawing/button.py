@@ -2,7 +2,7 @@ import pygame as pg
 
 
 class Button:
-    def __init__(self, image, function, pos, size=(30, 30), text=None, text_pos=(0, 0)):
+    def __init__(self, image, function, pos, size=(30, 30), text=None, text_pos=(0, 0), hide_tb=False):
         self.image = pg.image.load('images\\button_' + image + '.bmp')
         self.image_pressed = pg.image.load('images\\button_' + image + '_pressed.bmp')
         self.p1 = pos
@@ -11,6 +11,7 @@ class Button:
         self.pressed = False
         self.text = text
         self.text_pos = text_pos
+        self.hide_toolbar_after_use = hide_tb
 
     def draw(self, screen):
         if self.pressed:
