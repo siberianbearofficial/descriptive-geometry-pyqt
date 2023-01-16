@@ -28,6 +28,8 @@ class Plot:
 
         self.layers = [Layer(self, 'Слой 1')]
         self.current_layer = 0
+        self.selected_object = None
+        self.selected_object_index = None
 
         self.axis = Axis(self)
         self.pm = ProjectionManager(self)
@@ -70,23 +72,50 @@ class Plot:
         obj_xz.draw()
         self.screen.update()
 
-    def stop_listening(self):
-        self.click_listening = False
-
-    def start_listening(self):
-        self.click_listening = True
-
-    def point_selection(self):
-        self.action = Plot.POINT_SELECTION
-        self.start_listening()
-
-    def segment_selection(self):
-        self.action = Plot.SEGMENT_SELECTION
-        self.start_listening()
-
     def clicked(self, pos):
-        if self.click_listening:
-            self.process_click(pos)
+        old_obj = self.selected_object
+        self.selected_object, self.selected_object_index = None, None
+        for i in range(len(self.layers)):
+            if self.layers[i].hidden:
+                continue
+            for j in range(len(self.layers[i].objects)):
+                obj = self.layers[i].objects[j]
+                for el in obj.xy_projection:
+                    if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 2:
+                        if obj != old_obj:
+                            self.selected_object, self.selected_object_index = obj, (i, j)
+                        break
+                    if isinstance(el, ScreenSegment) and snap.distance(
+                            pg.mouse.get_pos(), snap.nearest_point(pos, el)) <= 2:
+                        if obj != old_obj:
+                            self.selected_object, self.selected_object_index = obj, (i, j)
+                        break
+                for el in obj.xz_projection:
+                    if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 2:
+                        if obj != old_obj:
+                            self.selected_object, self.selected_object_index = obj, (i, j)
+                        break
+                    if isinstance(el, ScreenSegment) and snap.distance(
+                            pg.mouse.get_pos(), snap.nearest_point(pos, el)) <= 2:
+                        if obj != old_obj:
+                            self.selected_object, self.selected_object_index = obj, (i, j)
+                        break
+        if self.selected_object is not None:
+            for el in self.selected_object.xy_projection:
+                if isinstance(el, ScreenPoint):
+                    pg.draw.circle(self.screen.screen, (0, 162, 232), el.tuple(), 6)
+                if isinstance(el, ScreenSegment):
+                    pg.draw.line(self.screen.screen, (0, 162, 232), el.p1.tuple(), el.p2.tuple(), 4)
+                    pg.draw.circle(self.screen.screen, (0, 162, 232), el.p1.tuple(), 4)
+                    pg.draw.circle(self.screen.screen, (0, 162, 232), el.p2.tuple(), 4)
+            for el in self.selected_object.xz_projection:
+                if isinstance(el, ScreenPoint):
+                    pg.draw.circle(self.screen.screen, (0, 162, 232), el.tuple(), 6)
+                if isinstance(el, ScreenSegment):
+                    pg.draw.line(self.screen.screen, (0, 162, 232), el.p1.tuple(), el.p2.tuple(), 4)
+                    pg.draw.circle(self.screen.screen, (0, 162, 232), el.p1.tuple(), 4)
+                    pg.draw.circle(self.screen.screen, (0, 162, 232), el.p2.tuple(), 4)
+            self.selected_object.draw()
 
     def change_current_layer(self, new_layer):
         self.current_layer = new_layer
@@ -102,23 +131,6 @@ class Plot:
         else:
             self.layers[index].hidden = hidden
         self.screen.menu.update_layer_list()
-
-    def process_click(self, pos):
-        # TODO: Implement it normally! (not like this...)
-        if self.action == Plot.POINT_SELECTION:
-            if self.point_position_x is None:
-                self.point_position_x = 640 - pos[0]
-            elif self.point_position_y is None:
-                self.point_position_y = pos[1] - 240
-            elif self.point_position_z is None:
-                self.point_position_z = 240 - pos[1]
-                p = ag.Point(self.point_position_x, self.point_position_y, self.point_position_z)
-                self.draw_object(p)
-                self.point_position_x = None
-                self.point_position_y = None
-                self.point_position_z = None
-        elif self.action == Plot.SEGMENT_SELECTION:
-            print('Segment selection not implemented yet')
 
     def zoom_in(self):
         self.zoom *= 2
@@ -174,6 +186,8 @@ class Plot:
                     return None
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     for layer in self.layers:
+                        if layer.hidden:
+                            continue
                         for obj in layer.objects:
                             if check_object_type(obj):
                                 for el in obj.xy_projection:
@@ -505,16 +519,59 @@ class Plot:
         except Exception:
             print('Ошибка')
 
-    def get_angle(self):
+    def get_angle(self, plane=''):
+        self.full_update()
+        self.screen.update()
         if (r := self.select_object(None)) is None:
             return
         else:
             obj1 = r
-        if (r := self.select_object(None)) is None:
-            return
+        if plane == '':
+            if (r := self.select_object(None)) is None:
+                return
+            else:
+                obj2 = r
+            try:
+                print(ag.angle(obj1, obj2))
+            except Exception:
+                print('Ошибка')
+        elif plane == 'xy':
+            try:
+                print(ag.angle(obj1, ag.Plane(ag.Vector(0, 0, 1), ag.Point(0, 0, 0))))
+            except Exception:
+                print('Ошибка')
+        elif plane == 'xz':
+            try:
+                print(ag.angle(obj1, ag.Plane(ag.Vector(0, 1, 0), ag.Point(0, 0, 0))))
+            except Exception:
+                print('Ошибка')
+
+    def get_distance_between_points(self):
+        if (r := self.select_screen_point('xy')) is not None:
+            x1, y1 = r
         else:
-            obj2 = r
-        try:
-            print(ag.angle(obj1, obj2))
-        except Exception:
-            print('Ошибка')
+            return
+        a1 = ScreenPoint(self, x1, y1, (0, 162, 232))
+        if (r := self.select_screen_point('xy', segment=(x1, y1), objects=(a1,))) is not None:
+            x2, y2 = r
+        else:
+            return
+        a2 = ScreenPoint(self, x2, y2, (0, 162, 232))
+        s1 = ScreenSegment(self, a1, a2, (0, 162, 232))
+        if (r := self.select_screen_point('xz', x=x1, y=y1, objects=(a1, a2, s1))) is not None:
+            z1 = r
+        else:
+            return
+        b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
+        s2 = ScreenSegment(self, a1, b1, (180, 180, 180))
+        if (r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
+            z2 = r
+        else:
+            return
+        print(ag.distance(
+            ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
+                     self.pm.convert_screen_y_to_ag_z(z1)),
+            ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
+                     self.pm.convert_screen_y_to_ag_z(z2))))
+        self.full_update()
+        return True

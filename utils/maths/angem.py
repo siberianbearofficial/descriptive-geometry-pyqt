@@ -407,10 +407,10 @@ def distance(object1, object2):
                 ((object2.x - object1.point.x) * object1.vector.y - (object2.y - object1.point.y) * object1.vector.x)) \
                ** 0.5 / abs(object1.vector)
     if isinstance(object1, Line) and isinstance(object2, Line):
-        return Matrix([[object2.point.x - object1.point.x, object2.point.y - object1.point.y,
-                        object2.point.z - object1.point.z],
-                       [object1.vector.x, object1.vector.y, object1.vector.z],
-                       [object2.vector.x, object2.vector.y, object2.vector.z]]).determinant() / (
+        return abs(Matrix([[object2.point.x - object1.point.x, object2.point.y - object1.point.y,
+                            object2.point.z - object1.point.z],
+                          [object1.vector.x, object1.vector.y, object1.vector.z],
+                          [object2.vector.x, object2.vector.y, object2.vector.z]]).determinant()) / (
                        (object2.vector.y * object1.vector.z - object2.vector.z * object1.vector.y) ** 2 +
                        (object2.vector.x * object1.vector.z - object2.vector.z * object1.vector.x) ** 2 +
                        (object2.vector.x * object1.vector.y - object2.vector.y * object1.vector.x) ** 2) ** 0.5

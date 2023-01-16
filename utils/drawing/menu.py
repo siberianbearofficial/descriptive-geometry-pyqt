@@ -42,10 +42,14 @@ class Menu:
         self.main_toolbars[4].add_button('plus', lambda: self.screen.plot.add_layer(
             'Слой ' + str(len(self.screen.plot.layers) + 1)), (215, 0))
         self.main_toolbars[4].add_button('hide', lambda: self.screen.plot.show_hide_layer(True), (250, 0))
+        self.main_toolbars[4].add_button('clear', lambda: self.screen.plot.clear(self.screen.plot.current_layer),
+                                         (285, 0))
 
         self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (1000, 60), hidden=True))
         self.main_toolbars[5].add_button('distance', lambda: self.screen.plot.get_distance(), (10, 0))
-        self.main_toolbars[5].add_button('angle', lambda: self.screen.plot.get_angle(), (45, 0))
+        self.main_toolbars[5].add_button('distance2', lambda: self.screen.plot.get_distance_between_points(), (45, 0))
+        self.main_toolbars[5].add_button('angle', lambda: self.screen.plot.get_angle(), (80, 0))
+        self.main_toolbars[5].add_button('more_options', lambda: self.open_toolbar(4), (110, 0), size=(12, 30))
 
         self.other_toolbars.append(Toolbar2(self.screen, (40, 60), (250, 130)))
         self.other_toolbars[-1].add_button('perpendicular',
@@ -79,6 +83,14 @@ class Menu:
 
         self.other_toolbars.append(Toolbar2(self.screen, (5, 60), (250, 70)))
         self.update_layer_list()
+
+        self.other_toolbars.append(Toolbar2(self.screen, (40, 60), (250, 130)))
+        self.other_toolbars[-1].add_button('xy',
+                                           lambda: self.screen.plot.get_angle('xy'), (5, 0), (200, 30),
+                                           self.font.render('К плоскости xy', False, (0, 0, 0)), (30, 7), hide_tb=True)
+        self.other_toolbars[-1].add_button('xz',
+                                           lambda: self.screen.plot.get_angle('xz'), (5, 27), (200, 30),
+                                           self.font.render('К плоскости xz', False, (0, 0, 0)), (30, 7), hide_tb=True)
 
     def full_update_toolbars(self):
         pg.draw.rect(self.screen.screen, (255, 255, 255),
