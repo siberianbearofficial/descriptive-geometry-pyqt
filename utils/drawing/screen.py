@@ -29,15 +29,26 @@ class Screen:
     def update(self):
         pg.display.update()
 
-    def clicked(self):
-        self.click_pos = pg.mouse.get_pos()
-        if self.menu.clicked_on(self.click_pos):
-            return
-        if self.command_line.clicked_on(self.click_pos):
-            return
-        # TODO: if clicked on plot
-        self.plot.clicked(self.click_pos)
+    def clicked(self, event):
+        self.click_pos = event.pos
+        if event.button == 1:
+            if self.menu.clicked_on(self.click_pos):
+                return
+            if self.command_line.clicked_on(self.click_pos):
+                return
+            # TODO: if clicked on plot
+            self.plot.clicked(self.click_pos)
+        elif event.button == 3:
+            self.plot.moving_camera()
+        elif event.button == 4:
+            self.plot.zoom_in()
+        elif event.button == 5:
+            self.plot.zoom_out()
 
     def key_down(self, event):
         if event.key == 127 and self.plot.selected_object is not None:
             self.plot.layers[self.plot.selected_object_index[0]].delete_object(self.plot.selected_object_index[1])
+        elif event.key == 1073741906:
+            self.plot.move_camera(0, 5)
+        elif event.key == 1073741904:
+            self.plot.move_camera(5, 0)

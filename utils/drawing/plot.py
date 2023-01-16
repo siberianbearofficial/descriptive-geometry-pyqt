@@ -23,6 +23,8 @@ class Plot:
         self.tlp = tlp
         self.brp = brp
         self.zoom = 1
+        self.camera_pos = (0, 0)
+        self.clock = pg.time.Clock()
 
         self.bg_color = (255, 255, 255)
 
@@ -72,6 +74,37 @@ class Plot:
         obj_xy.draw()
         obj_xz.draw()
         self.screen.update()
+
+    def move_camera(self, x, y):
+        self.axis.lp.y += y
+        self.axis.rp.y += y
+        self.camera_pos = self.camera_pos[0] + x, self.camera_pos[1] + y
+        self.pm.camera_pos = self.camera_pos
+        for layer in self.layers:
+            layer.update_projections()
+        self.full_update()
+        self.screen.menu.full_update_toolbars()
+        self.screen.update()
+
+    def moving_camera(self):
+        pos = pg.mouse.get_pos()
+        while True:
+            events = pg.event.get()
+            for event in events:
+                if Plot.check_exit_event(event):
+                    return
+                if event.type == pg.MOUSEBUTTONUP:
+                    if event.button == 3:
+                        return
+                    if event.button == 4:
+                        self.zoom_in()
+                    elif event.button == 5:
+                        self.zoom_out()
+            p = pg.mouse.get_pos()
+            self.move_camera(p[0] - pos[0], p[1] - pos[1])
+            pos = p
+            self.clock.tick(30)
+
 
     def clicked(self, pos):
         old_obj = self.selected_object
@@ -134,16 +167,16 @@ class Plot:
         self.screen.menu.update_layer_list()
 
     def zoom_in(self):
-        self.zoom *= 2
-        self.pm.zoom *= 2
+        self.zoom *= 1.5
+        self.pm.zoom *= 1.5
         for layer in self.layers:
             layer.update_projections()
         self.full_update()
         self.screen.menu.full_update_toolbars()
 
     def zoom_out(self):
-        self.zoom /= 2
-        self.pm.zoom /= 2
+        self.zoom /= 1.5
+        self.pm.zoom /= 1.5
         for layer in self.layers:
             layer.update_projections()
         self.full_update()
@@ -179,7 +212,6 @@ class Plot:
                 return False
             return isinstance(obj.ag_object, types)
 
-        clock = pg.time.Clock()
         while True:
             events = pg.event.get()
             for event in events:
@@ -203,10 +235,9 @@ class Plot:
                                     if isinstance(el, ScreenSegment) and snap.distance(
                                             pg.mouse.get_pos(), snap.nearest_point(event.pos, el)) <= 2:
                                         return obj.ag_object
-            clock.tick(30)
+            self.clock.tick(30)
 
     def select_screen_point(self, plane, x=None, y=None, z=None, segment=None, objects=tuple()):
-        clock = pg.time.Clock()
         c = z if plane == 'xy' else y
         while True:
             self.full_update()
@@ -232,7 +263,7 @@ class Plot:
                 for obj in objects:
                     obj.draw()
                 self.screen.update()
-                clock.tick(30)
+                self.clock.tick(30)
 
     def create_point(self):
         if (r := self.select_screen_point('xy')) is not None:

@@ -46,8 +46,8 @@ class Menu:
                                          (285, 0))
 
         self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (1000, 60), hidden=True))
-        self.main_toolbars[5].add_button('distance', lambda: self.screen.plot.get_distance(), (10, 0))
-        self.main_toolbars[5].add_button('distance2', lambda: self.screen.plot.get_distance_between_points(), (45, 0))
+        self.main_toolbars[5].add_button('distance', lambda: self.screen.plot.get_distance_between_points(), (10, 0))
+        self.main_toolbars[5].add_button('distance2', lambda: self.screen.plot.get_distance(), (45, 0))
         self.main_toolbars[5].add_button('angle', lambda: self.screen.plot.get_angle(), (80, 0))
         self.main_toolbars[5].add_button('more_options', lambda: self.open_toolbar(4), (110, 0), size=(12, 30))
 

@@ -21,7 +21,7 @@ def main():
                 pg.quit()
                 return
             elif event.type == pg.MOUSEBUTTONDOWN:
-                screen.clicked()
+                screen.clicked(event)
             elif event.type == pg.KEYDOWN:
                 screen.key_down(event)
 
