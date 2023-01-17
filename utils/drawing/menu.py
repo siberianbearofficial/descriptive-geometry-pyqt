@@ -11,16 +11,18 @@ class Menu:
         self.font = pg.font.SysFont('Arial', 16)
         self.current_toolbar = -1
 
-        self.main_toolbars.append(Toolbar2(self.screen, (0, 0), (1000, 25)))
+        self.main_toolbars.append(Toolbar2(self.screen, (0, 0), (350, 25)))
         self.main_toolbars[0].add_button('file', lambda: self.select_toolbar(1), (10, 0), (42, 20))
         self.main_toolbars[0].add_button('drawing', lambda: self.select_toolbar(2), (57, 0), (76, 20))
         self.main_toolbars[0].add_button('view', lambda: self.select_toolbar(3), (138, 0), (33, 20))
         self.main_toolbars[0].add_button('layers', lambda: self.select_toolbar(4), (176, 0), (40, 20))
         self.main_toolbars[0].add_button('tools', lambda: self.select_toolbar(5), (221, 0), (99, 20))
 
-        self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (1000, 60), hidden=True))
+        self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (350, 60), hidden=True))
+        self.main_toolbars[1].add_button('plus', lambda: self.screen.save(), (10, 0), (30, 30))
+        self.main_toolbars[1].add_button('minus', lambda: self.screen.load(), (57, 0), (30, 30))
 
-        self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (1000, 60)))
+        self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (350, 60)))
         self.main_toolbars[2].add_button('point', lambda: self.screen.plot.create_point(), (10, 0))
         self.main_toolbars[2].add_button('segment', lambda: self.screen.plot.create_segment(), (45, 0))
         self.main_toolbars[2].add_button('more_options', lambda: self.open_toolbar(0), (75, 0), size=(12, 30))
@@ -30,11 +32,11 @@ class Menu:
         self.main_toolbars[2].add_button('more_options', lambda: self.open_toolbar(2), (165, 0), size=(12, 30))
         self.main_toolbars[2].add_button('circle', lambda: print('circle'), (180, 0))
 
-        self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (1000, 60), hidden=True))
+        self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (350, 60), hidden=True))
         self.main_toolbars[3].add_button('minus', lambda: self.screen.plot.zoom_out(), (10, 0))
         self.main_toolbars[3].add_button('plus', lambda: self.screen.plot.zoom_in(), (45, 0))
 
-        self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (1000, 60), hidden=True))
+        self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (350, 60), hidden=True))
         self.main_toolbars[4].add_button('empty', lambda: self.open_toolbar(3), (10, 0), size=(200, 30),
                                          text=self.font.render(self.screen.plot.layers[
                                                                    self.screen.plot.current_layer].name,
@@ -45,7 +47,7 @@ class Menu:
         self.main_toolbars[4].add_button('clear', lambda: self.screen.plot.clear(self.screen.plot.current_layer),
                                          (285, 0))
 
-        self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (1000, 60), hidden=True))
+        self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (350, 60), hidden=True))
         self.main_toolbars[5].add_button('distance', lambda: self.screen.plot.get_distance_between_points(), (10, 0))
         self.main_toolbars[5].add_button('distance2', lambda: self.screen.plot.get_distance(), (45, 0))
         self.main_toolbars[5].add_button('angle', lambda: self.screen.plot.get_angle(), (80, 0))

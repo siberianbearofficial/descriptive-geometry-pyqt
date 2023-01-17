@@ -10,15 +10,17 @@ class CommandLine:
     def __init__(self, screen):
         self.screen = screen
 
-        self.textbox = TextBox(self.screen.screen, 10, screen.brp[1] - 30, screen.brp[0] - 20, 20, inactiveColour=(255, 255, 255),
-                               activeColour=(200, 200, 200), textColour=(0, 0, 0), borderColour=(64, 64, 64), radius=0,
-                               borderThickness=1, font=pg.font.SysFont('Courier', 12))
+        self.textbox = TextBox(self.screen.screen, screen.tlp[0] + 10, screen.brp[1] - 30, screen.brp[0] - 20, 20,
+                               inactiveColour=(255, 255, 255), activeColour=(200, 200, 200), textColour=(0, 0, 0),
+                               borderColour=(64, 64, 64), radius=0, borderThickness=1,
+                               font=pg.font.SysFont('Courier', 12))
         self.textbox.onSubmit = self.output
 
         self.commands = {'segment': ag.Segment, 'point': ag.Point, 'line': ag.Line, 'plane': ag.Plane,
                          'vector': ag.Vector,
                          'circle': ag.Circle, 'distance': ag.distance, 'angle': ag.angle, 'clear': self.command_clear,
-                         'draw': self.command_draw_object, 'help': CommandLine.command_help}  # , 'pp': place_point}
+                         'draw': self.command_draw_object, 'help': CommandLine.command_help,
+                         'save': self.command_serialize, 'load': self.command_deserialize}
 
     def output(self):
         self.process_command(self.textbox.getText())
@@ -29,6 +31,12 @@ class CommandLine:
             return eval(cmd, self.commands)
         except Exception as ex:
             print('Error:', ex)
+
+    def update(self):
+        self.textbox.setWidth(self.screen.brp[0] - 20)
+        self.textbox.setHeight(20)
+        self.textbox.setY(self.screen.brp[1] - 30)
+        self.textbox.setX(self.screen.tlp[0] + 10)
 
     def process_command(self, command):
         if '=' in command:
@@ -83,6 +91,12 @@ class CommandLine:
 
     def command_clear(self, index=-1):
         self.screen.plot.clear(index)
+
+    def command_serialize(self):
+        self.screen.save()
+
+    def command_deserialize(self):
+        self.screen.load()
 
     def command_draw_object(self, *args):
         for obj in args:

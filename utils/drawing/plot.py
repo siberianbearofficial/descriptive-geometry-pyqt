@@ -11,7 +11,6 @@ import random
 
 
 class Plot:
-
     POINT_SELECTION = 0
     SEGMENT_SELECTION = 1
 
@@ -46,6 +45,8 @@ class Plot:
         self.point_position_y = None
         self.point_position_z = None
 
+        self.serializable = ['bg_color', 'layers']
+
     def clear(self, index=-1):
         if index == -1:
             for layer in self.layers:
@@ -56,14 +57,36 @@ class Plot:
         self.full_update()
         self.screen.update()
 
+    def update(self, bg_color, layers):
+        self.bg_color = bg_color
+        self.layers = layers
+        self.full_update()
+
+    def resize(self, tlp, brp):
+        self.tlp = tlp
+        self.brp = brp
+        pg.draw.rect(self.screen.screen, self.bg_color,
+                     (self.tlp[0], self.tlp[1] - 2, self.brp[0] - self.tlp[0], self.brp[1] - self.tlp[1] + 4))
+        self.axis.update(self)
+        self.axis.draw()
+        for layer in self.layers:
+            layer.update_projections()
+            layer.draw()
+        self.screen.update()
+
     def draw_segment(self, segment, color=(0, 0, 0)):
-        pg.draw.line(self.screen.screen, color, segment.p1.tuple(), segment.p2.tuple(), 2)
+        if self.tlp[0] <= segment.p1.x <= self.brp[0] and self.tlp[1] <= segment.p1.y <= self.brp[1] \
+                and self.tlp[0] <= segment.p2.x <= self.brp[0] and self.tlp[1] <= segment.p2.y <= self.brp[1]:
+            pg.draw.line(self.screen.screen, color, segment.p1.tuple(), segment.p2.tuple(), 2)
 
     def draw_point(self, point, color=(0, 0, 0)):
-        pg.draw.circle(self.screen.screen, color, point.tuple(), 3)
+        if self.tlp[0] + 2 <= point.x <= self.brp[0] - 2 and self.tlp[1] + 2 <= point.y <= self.brp[1] - 2:
+            pg.draw.circle(self.screen.screen, color, point.tuple(), 3)
 
     def draw_circle(self, circle, color=(0, 0, 0)):
-        pg.draw.circle(self.screen.screen, color, circle.center.tuple(), circle.radius, 1)
+        if self.tlp[0] + circle.radius + 1 <= circle.center.x <= self.brp[0] - circle.radius - 1 \
+                and self.tlp[1] + circle.radius + 1 <= circle.center.y <= self.brp[1] - circle.radius - 1:
+            pg.draw.circle(self.screen.screen, color, circle.center.tuple(), circle.radius, 1)
 
     def draw_object(self, obj, color=(0, 0, 0)):
         print('Drawing object: {}'.format(obj))
@@ -104,7 +127,6 @@ class Plot:
             self.move_camera(p[0] - pos[0], p[1] - pos[1])
             pos = p
             self.clock.tick(30)
-
 
     def clicked(self, pos):
         old_obj = self.selected_object
@@ -185,7 +207,8 @@ class Plot:
     def full_update(self):
         pg.draw.rect(self.screen.screen, self.bg_color,
                      (self.tlp[0], self.tlp[1] - 2, self.brp[0] - self.tlp[0], self.brp[1] - self.tlp[1] + 4))
-        self.axis.draw()
+        if self.tlp[0] <= self.axis.lp.x <= self.brp[0] and self.tlp[1] <= self.axis.lp.y <= self.brp[1]:
+            self.axis.draw()
         for layer in self.layers:
             layer.draw()
 
@@ -278,7 +301,7 @@ class Plot:
         random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
         self.layers[self.current_layer].add_object(ag.Point(self.pm.convert_screen_x_to_ag_x(x),
                                                             self.pm.convert_screen_y_to_ag_y(y),
-                                           self.pm.convert_screen_y_to_ag_z(z)), random_color)
+                                                            self.pm.convert_screen_y_to_ag_z(z)), random_color)
         self.full_update()
         return True
 
@@ -300,7 +323,8 @@ class Plot:
             return
         b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
         s2 = ScreenSegment(self, a1, b1, (180, 180, 180))
-        if (r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
+        if (
+        r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
             z2 = r
         else:
             return
@@ -332,7 +356,8 @@ class Plot:
         b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
         s2 = ScreenSegment(self, a1, b1, (180, 180, 180))
         if (
-        r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
+                r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1),
+                                              objects=(a1, a2, s1, b1, s2))) is not None:
             z2 = r
         else:
             return
@@ -596,7 +621,8 @@ class Plot:
             return
         b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
         s2 = ScreenSegment(self, a1, b1, (180, 180, 180))
-        if (r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
+        if (
+        r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
             z2 = r
         else:
             return

@@ -1,4 +1,5 @@
 from utils.drawing.general_object import GeneralObject
+import utils.maths.angem as ag
 
 
 class Layer:
@@ -7,6 +8,8 @@ class Layer:
         self.hidden = hidden
         self.objects = []
         self.name = name
+
+        self.serializable = ['hidden', 'objects']
 
     def add_object(self, ag_object, color):
         self.objects.append(GeneralObject(self.plot, ag_object, color))
