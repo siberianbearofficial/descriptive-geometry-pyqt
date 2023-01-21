@@ -61,10 +61,6 @@ class Screen:
     def key_down(self, event):
         if event.key == 127 and self.plot.selected_object is not None:
             self.plot.layers[self.plot.selected_object_index[0]].delete_object(self.plot.selected_object_index[1])
-        elif event.key == 1073741906:
-            self.plot.move_camera(0, 5)
-        elif event.key == 1073741904:
-            self.plot.move_camera(5, 0)
 
     def resize(self, width, height):
         self.screen = pg.display.set_mode((width, height), pg.RESIZABLE)

@@ -1,7 +1,4 @@
 import utils.maths.angem as ag
-from utils.drawing.screen_point import ScreenPoint
-from utils.drawing.screen_segment import ScreenSegment
-from utils.drawing.screen_circle import ScreenCircle
 
 
 class GeneralObject:
@@ -32,3 +29,13 @@ class GeneralObject:
 
     def update_projections(self):
         self.xy_projection, self.xz_projection = self.projections()
+
+    def move(self, x, y):
+        if isinstance(self.ag_object, ag.Line):
+            self.xy_projection, self.xz_projection = self.projections()
+            return
+        self.xy_projection, self.xz_projection = self.projections()
+        for el in self.xy_projection:
+            el.move(x, y)
+        for el in self.xz_projection:
+            el.move(x, y)

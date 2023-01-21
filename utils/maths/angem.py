@@ -142,7 +142,7 @@ class Line:
             return self.vector | other
         raise ValueError(f'unsupported operand type(s) for |: "Line" and "{other.__class__.__name__}"')
 
-    def intersection(self, other):
+    def intersection(self, other, eps=1e-10):
         if isinstance(other, Plane):
             if self | other:
                 return None
@@ -154,20 +154,54 @@ class Line:
             z = self.point.z + self.vector.z * k
             return Point(x, y, z)
         if isinstance(other, Line):
-            if abs((self.vector & other.vector) * Vector(self.point, other.point)) > 1e-10 or self | other:
+            if abs((self.vector & other.vector) * Vector(self.point, other.point)) > eps or self | other:
+                print((self.vector & other.vector) * Vector(self.point, other.point))
                 return None
+            if self.vector.x == 0 and other.vector.x == 0:
+                if self.vector.y != 0 and other.vector.y != 0:
+                    y = (self.vector.z / self.vector.y * self.point.y - other.vector.z / other.vector.y * other.point.y
+                         - self.point.z + other.point.z) / (
+                                self.vector.z / self.vector.y - other.vector.z / other.vector.y)
+                    return Point(self.point.x, y, self.z(y=y))
+                else:
+                    z = (self.vector.y / self.vector.z * self.point.z - other.vector.y / other.vector.z * other.point.z
+                         - self.point.y + other.point.y) / (
+                                    self.vector.y / self.vector.z - other.vector.y / other.vector.z)
+                    return Point(self.point.x, self.y(z=z), z)
+            if self.vector.y == 0 and other.vector.y == 0:
+                if self.vector.x != 0 and other.vector.x != 0:
+                    x = (self.vector.z / self.vector.x * self.point.x - other.vector.z / other.vector.x * other.point.x
+                         - self.point.z + other.point.z) / (
+                                self.vector.z / self.vector.x - other.vector.z / other.vector.x)
+                    return Point(x, self.point.y, self.z(x=x))
+                else:
+                    z = (self.vector.x / self.vector.z * self.point.z - other.vector.x / other.vector.z * other.point.z
+                         - self.point.x + other.point.x) / (
+                                    self.vector.x / self.vector.z - other.vector.x / other.vector.z)
+                    return Point(self.x(z=z), self.point.y, z)
+            if self.vector.z == 0 and other.vector.z == 0:
+                if self.vector.x != 0 and other.vector.x != 0:
+                    x = (self.vector.y / self.vector.x * self.point.x - other.vector.y / other.vector.x * other.point.x
+                         - self.point.y + other.point.y) / (
+                                self.vector.y / self.vector.x - other.vector.y / other.vector.x)
+                    return Point(x, self.y(x=x), self.point.z)
+                else:
+                    y = (self.vector.x / self.vector.y * self.point.y - other.vector.x / other.vector.y * other.point.y
+                         - self.point.x + other.point.x) / (
+                                self.vector.x / self.vector.y - other.vector.x / other.vector.y)
+                    return Point(self.x(y=y), y, self.point.z)
             if self.vector.x == 0:
-                return Point(self.vector.x, self.y(x=self.vector.x), self.z(x=self.vector.x))
+                return Point(self.point.x, other.y(x=self.point.x), other.z(x=self.point.x))
             if self.vector.y == 0:
-                return Point(self.x(y=self.vector.y), self.vector.y, self.z(y=self.vector.y))
+                return Point(other.x(y=self.point.y), self.point.y, other.z(y=self.point.y))
             if self.vector.z == 0:
-                return Point(self.x(z=self.vector.z), self.y(z=self.vector.z), self.vector.z)
+                return Point(other.x(z=self.point.z), other.y(z=self.point.z), self.point.z)
             if other.vector.x == 0:
-                return Point(other.vector.x, other.y(x=other.vector.x), other.z(x=other.vector.x))
+                return Point(other.point.x, self.y(x=other.point.x), self.z(x=other.point.x))
             if other.vector.y == 0:
-                return Point(other.x(y=other.vector.y), other.vector.y, other.z(y=other.vector.y))
+                return Point(self.x(y=other.point.y), other.point.y, self.z(y=other.point.y))
             if other.vector.z == 0:
-                return Point(other.x(z=other.vector.z), other.y(z=other.vector.z), other.vector.z)
+                return Point(self.x(z=other.point.z), self.y(z=other.point.z), other.point.z)
             y = (self.vector.x / self.vector.y * self.point.y - other.vector.x / other.vector.y * other.point.y -
                  self.point.x + other.point.x) / (self.vector.x / self.vector.y - other.vector.x / other.vector.y)
             return Point(self.x(y=y), y, self.z(y=y))
@@ -473,6 +507,7 @@ class Circle:
         self.center = center
         self.radius = radius
         self.normal = normal
+        self.plane = Plane(self.normal, self.center)
 
     def __str__(self):
         if self.normal | Vector(0, 0, 1):
@@ -482,13 +517,14 @@ class Circle:
     def intersection(self, other):
         if isinstance(other, Line):
             if other.is_on(Plane(self.normal, self.center)):
-                if abs(distance(self.center, other) - self.radius) < 1e-12:
+                if abs((d := distance(self.center, other)) - self.radius) < 1e-12:
                     return Line(self.center, self.normal & other.vector).intersection(other)
-                if distance(self.center, other) > self.radius:
+                if d > self.radius:
                     return None
-                s = math.sqrt(self.radius ** 2 - distance(self.center, other) ** 2)
-                v = other.vector * (s / abs(other.vector))
-                return other.point + v, other.point + -v
+                s = math.sqrt(self.radius ** 2 - d ** 2)
+                v1 = other.vector * (s / abs(other.vector))
+                v2 = self.normal & other.vector * (d / abs(self.normal & other.vector))
+                return self.center + v1 + v2, self.center + -v1 + v2
         if isinstance(other, Plane):
             return self.intersection(Plane(self.normal, self.center).intersection(other))
 
@@ -508,6 +544,36 @@ class Circle:
         if self.normal * Vector(0, 1, 0) == 0:
             point1, point2 = self.intersection(Line(self.center, self.normal & Vector(0, 1, 0)))
             return Segment(point1, point2).projection_xz()
+
+
+class Arc:
+    def __init__(self, p1, p2, center, big_arc=False):
+        if abs((r := distance(p1, center)) - distance(p2, center)) > 1e-10:
+            raise ValueError
+        self.center = center
+        self.radius = r
+        self.plane = Plane(p1, p2, center)
+        self.normal = self.plane.normal
+        self.vector_cos = Vector(center, p1)
+        self.vector_sin = (self.vector_cos & self.normal) * (self.radius / abs(self.vector_cos & self.normal))
+        self.angle = -angle(self.vector_cos, Vector(center, p2))
+        if big_arc:
+            self.angle = 2 * math.pi + self.angle
+
+
+class Ellipse:
+    def __init__(self, obj1, obj2, obj3):
+        self.center = obj1
+        self.point_a1 = obj2 if abs(Vector(obj1, obj2)) > abs(Vector(obj1, obj3)) else obj3
+        self.point_a2 = self.center + -Vector(self.center, self.point_a1)
+        self.point_b1 = obj3 if abs(Vector(obj1, obj2)) > abs(Vector(obj1, obj3)) else obj2
+        self.point_b2 = self.center + -Vector(self.center, self.point_b1)
+        self.a = abs(Vector(self.center, self.point_a1))
+        self.b = abs(Vector(self.center, self.point_b1))
+        self.c = (self.a ** 2 - self.b**2) ** 0.5
+        self.f1 = self.center + Vector(self.center, self.point_a1) * (self.c / abs(Vector(self.center, self.point_a1)))
+        self.f2 = self.center + Vector(self.center, self.point_a1) * -(self.c / abs(Vector(self.center, self.point_a1)))
+        self.plane = Plane(self.center, self.point_a1, self.point_b1)
 
 
 class Sphere:
@@ -537,10 +603,21 @@ class Sphere:
                 return Line(self.center, other.normal).intersection(other)
             return Circle(Line(self.center, other.normal).intersection(other),
                           math.sqrt(self.radius ** 2 - distance(self.center, other)), other.normal)
+        if isinstance(other, Sphere):
+            dist = abs(Vector(self.center, other.center))
+            if self.radius + other.radius < dist or \
+                    min(self.radius, other.radius) + dist < max(self.radius, other.radius):
+                return
+            x = (self.radius ** 2 - other.radius ** 2 + dist ** 2) / 2 / dist
+            if x > self.radius:
+                return None
+            r = (self.radius ** 2 - x ** 2) ** 0.5
+            return Circle(self.center + Vector(self.center, other.center) * (x / dist), r,
+                          Vector(self.center, other.center))
 
 
 class Cylinder:
-    def __init__(self, point, radius, point2_or_height, vector=Vector(0, 0, 1)):
+    def __init__(self, point, point2_or_height, radius, vector=Vector(0, 0, 1)):
         self.center1 = point
         self.radius = radius
         if isinstance(point2_or_height, Point):
@@ -551,3 +628,91 @@ class Cylinder:
             self.height = point2_or_height
             self.vector = vector
             self.center2 = self.center1 + vector * self.height / abs(vector)
+
+    def intersection(self, other):
+        if isinstance(other, Plane) and other.normal | self.vector:
+            return Circle(Line(self.center1, self.center2).intersection(other), self.radius, self.vector)
+
+
+class Cone:
+    def __init__(self, point, point2_or_height, radius1, radius2=0, vector=Vector(0, 0, 1)):
+        self.center1 = point
+        self.radius1 = radius1
+        self.radius2 = radius2
+        if isinstance(point2_or_height, Point):
+            self.center2 = point2_or_height
+            self.vector = Vector(self.center1, self.center2)
+            self.height = abs(self.vector)
+        else:
+            self.height = point2_or_height
+            self.vector = vector
+            self.center2 = self.center1 + vector * self.height / abs(vector)
+
+    def intersection(self, other):
+        if isinstance(other, Plane) and other.normal | self.vector:
+            p = Line(self.center1, self.center2).intersection(other)
+            return Circle(p, self.radius1 - (self.radius1 - self.radius2) * distance(self.center1, p) / distance(
+                self.center1, self.center2), self.vector)
+
+
+class Spline2:
+    def __init__(self, plane, *points):
+        self.plane = plane
+        self.points = list(points)
+        self.horizontal = Line(Point(plane.x(0, 0), 0, 0), plane.normal & Vector(0, 0, 1))
+        self.vector_2d = self.horizontal.vector & Vector(0, 0, 1)
+        self.vector_3d = self.horizontal.vector & plane.normal
+        self.vector_2d *= 1 / abs(self.vector_2d)
+        self.vector_3d *= 1 / abs(self.vector_3d)
+        points = []
+        for point in self.points:
+            points.append(self.convert_3d_point_to_2d(point))
+
+        print(*points)
+
+        self.array = [(points[0],)]
+        i = 1
+        mtrx = Matrix([[points[i - 1].x ** 2, points[i - 1].x, 1],
+                       [points[i].x ** 2, points[i].x, 1],
+                       [points[i + 1].x ** 2, points[i + 1].x, 1]]) ** -1 * \
+               Matrix([[points[i - 1].y], [points[i].y], [points[i + 1].y]])
+        a, b, c, d = 0, mtrx.mtrx[0][0], mtrx.mtrx[1][0], mtrx.mtrx[2][0]
+        der = 3 * a * points[i].x ** 2 + 2 * b * points[i].x + c
+        self.array.append((points[i], a, b, c, d))
+
+        for i in range(2, len(points) - 1):
+            mtrx = Matrix([[points[i - 1].x**3, points[i - 1].x**2, points[i - 1].x, 1],
+                           [points[i].x**3, points[i].x**2, points[i].x, 1],
+                           [points[i + 1].x ** 3, points[i + 1].x ** 2, points[i + 1].x, 1],
+                           [3 * points[i - 1].x ** 2, 2 * points[i - 1].x, 1, 0]]) ** -1 * \
+                   Matrix([[points[i - 1].y], [points[i].y], [points[i + 1].y], [der]])
+            a, b, c, d = mtrx.mtrx[0][0], mtrx.mtrx[1][0], mtrx.mtrx[2][0], mtrx.mtrx[3][0]
+            der = 3 * a * points[i].x ** 2 + 2 * b * points[i].x + c
+
+            self.array.append((self.points[i], a, b, c, d))
+        self.array.append((self.points[-1], a, b, c, d))
+
+    def convert_3d_point_to_2d(self, point):
+        d = distance(point, self.horizontal)
+        return (point + self.vector_3d * -d) + self.vector_2d * d
+
+    def convert_2d_point_to_3d(self, point):
+        d = distance(point, self.horizontal)
+        return (point + self.vector_2d * -d) + self.vector_3d * d
+
+
+class Spline:
+    def __init__(self, plane, *points):
+        self.plane = plane
+        p1, p2, p3 = points[0], points[1], points[2]
+        l1 = Line(p1 + Vector(p1, p2) * 0.5, Vector(p1, p2) & self.plane.normal)
+        l2 = Line(p2 + Vector(p2, p3) * 0.5, Vector(p2, p3) & self.plane.normal)
+        c = l1.intersection(l2, 1e20)
+        self.array = [(points[0],), (points[1], Arc(p1, p2, c)), (points[2], Arc(p2, p3, c))]
+        for i in range(1, len(points) - 1):
+            p1, p2 = points[i], points[i + 1]
+            l1 = Line(p1 + Vector(p1, p2) * 0.5, Vector(p1, p2) & self.plane.normal)
+            l2 = Line(c, p1)
+            c = l1.intersection(l2, 1e20)
+
+            self.array.append((p2, Arc(p1, p2, c)))

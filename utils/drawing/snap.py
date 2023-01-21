@@ -1,6 +1,6 @@
 import pygame as pg
 
-from utils.drawing.screen_point import ScreenPoint
+from utils.drawing.screen_point import ScreenPoint, ScreenPoint2
 from utils.drawing.screen_segment import ScreenSegment
 
 
@@ -11,7 +11,8 @@ class SnapManager:
                       Snap(SnapManager.snap_segment_points, 'point'),
                       Snap(SnapManager.snap_intersection, 'intersection'),
                       Snap(SnapManager.snap_perpendicular, 'perpendicular'),
-                      Snap(SnapManager.snap_nearest_point, 'nearest')]
+                      Snap(SnapManager.snap_nearest_point, 'nearest'),
+                      Snap(SnapManager.snap_nearest_point_2, 'nearest')]
 
         self.intersections_xy = []
         self.intersections_xz = []
@@ -89,6 +90,11 @@ class SnapManager:
                         k = ((obj.p1.y - obj.p2.y) / (obj.p1.x - obj.p2.x)) if obj.p1.x - obj.p2.x != 0 else 10000000000
                         b = obj.p1.y - obj.p1.x * k
                         yield pos[0], k * pos[0] + b
+
+    def snap_nearest_point_2(self, pos):
+        for obj in self.get_screen_objects(self.plane):
+            if isinstance(obj, ScreenPoint2):
+                yield obj.tuple()
 
     def snap_perpendicular(self, pos):
         if self.last_point is not None and self.plane == 'xy':

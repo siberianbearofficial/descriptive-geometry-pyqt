@@ -19,8 +19,8 @@ class Menu:
         self.main_toolbars[0].add_button('tools', lambda: self.select_toolbar(5), (221, 0), (99, 20))
 
         self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (350, 60), hidden=True))
-        self.main_toolbars[1].add_button('plus', lambda: self.screen.save(), (10, 0), (30, 30))
-        self.main_toolbars[1].add_button('minus', lambda: self.screen.load(), (57, 0), (30, 30))
+        self.main_toolbars[1].add_button('save', lambda: self.screen.save(), (10, 0), (30, 30))
+        self.main_toolbars[1].add_button('open', lambda: self.screen.load(), (57, 0), (30, 30))
 
         self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (350, 60)))
         self.main_toolbars[2].add_button('point', lambda: self.screen.plot.create_point(), (10, 0))
@@ -30,7 +30,10 @@ class Menu:
         self.main_toolbars[2].add_button('more_options', lambda: self.open_toolbar(1), (120, 0), size=(12, 30))
         self.main_toolbars[2].add_button('plane', lambda: self.screen.plot.create_plane(), (135, 0))
         self.main_toolbars[2].add_button('more_options', lambda: self.open_toolbar(2), (165, 0), size=(12, 30))
-        self.main_toolbars[2].add_button('circle', lambda: print('circle'), (180, 0))
+        self.main_toolbars[2].add_button('circle', lambda: self.screen.plot.create_circle(), (180, 0))
+        self.main_toolbars[2].add_button('cylinder', lambda: self.screen.plot.create_cone(True), (215, 0))
+        self.main_toolbars[2].add_button('cone', lambda: self.screen.plot.create_cone(), (250, 0))
+        self.main_toolbars[2].add_button('spline', lambda: self.screen.plot.create_spline(), (285, 0))
 
         self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (350, 60), hidden=True))
         self.main_toolbars[3].add_button('minus', lambda: self.screen.plot.zoom_out(), (10, 0))

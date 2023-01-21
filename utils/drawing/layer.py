@@ -1,5 +1,4 @@
 from utils.drawing.general_object import GeneralObject
-import utils.maths.angem as ag
 
 
 class Layer:
@@ -31,3 +30,7 @@ class Layer:
 
     def clear(self):
         self.objects = []
+
+    def move_objects(self, x, y):
+        for obj in self.objects:
+            obj.move(x, y)

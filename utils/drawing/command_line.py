@@ -17,7 +17,7 @@ class CommandLine:
         self.textbox.onSubmit = self.output
 
         self.commands = {'segment': ag.Segment, 'point': ag.Point, 'line': ag.Line, 'plane': ag.Plane,
-                         'vector': ag.Vector,
+                         'vector': ag.Vector, 'ellipse': ag.Ellipse, 'sphere': ag.Sphere,
                          'circle': ag.Circle, 'distance': ag.distance, 'angle': ag.angle, 'clear': self.command_clear,
                          'draw': self.command_draw_object, 'help': CommandLine.command_help,
                          'save': self.command_serialize, 'load': self.command_deserialize}
@@ -101,9 +101,8 @@ class CommandLine:
     def command_draw_object(self, *args):
         for obj in args:
             random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
-            # self.screen.plot.draw_object(obj, random_color)
-            self.screen.plot.layers[0].add_object(obj, random_color)
-            self.screen.plot.layers[0].objects[-1].draw()
+            self.screen.plot.layers[self.screen.plot.current_layer].add_object(obj, random_color)
+            self.screen.plot.layers[self.screen.plot.current_layer].objects[-1].draw()
 
     def clicked_on(self, pos):
         left = self.textbox.getX()
