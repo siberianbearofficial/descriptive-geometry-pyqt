@@ -188,7 +188,7 @@ class ProjectionManager:
                     d = 3 * obj.array[i][1] * x ** 2 + 2 * obj.array[i][2] * x + obj.array[i][3]
                     x += min(1, max(0.1, 1 / abs(d))) / self.zoom
             return tuple(lst)
-        elif isinstance(obj, ag.Spline):
+        elif isinstance(obj, ag.Spline) or isinstance(obj, ag.Spline3D):
             lst = []
             for i in range(1, len(obj.array)):
                 pr = self.get_projection(obj.array[i][1], plane, color)

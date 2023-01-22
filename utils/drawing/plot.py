@@ -185,8 +185,8 @@ class Plot:
                 elif isinstance(el, ScreenPoint2) and \
                         self.tlp[0] + 1 <= el.x <= self.brp[0] - 1 and self.tlp[1] + 1 <= el.y <= self.brp[1] - 1:
                     pg.draw.circle(self.screen.screen, (0, 162, 232), el.tuple(), 2)
-                elif isinstance(el, ScreenSegment):
-                    pg.draw.line(self.screen.screen, (0, 162, 232), el.p1.tuple(), el.p2.tuple(), 4)
+                elif isinstance(el, ScreenSegment) and el.drawing:
+                    pg.draw.line(self.screen.screen, (0, 162, 232), el.point1.tuple(), el.point2.tuple(), 4)
                     # pg.draw.circle(self.screen.screen, (0, 162, 232), el.p1.tuple(), 4)
                     # pg.draw.circle(self.screen.screen, (0, 162, 232), el.p2.tuple(), 4)
                 elif isinstance(el, ScreenCircle) and self.tlp[0] + el.radius + 1 <= el.center.x <= self.brp[0] - \
@@ -199,8 +199,8 @@ class Plot:
                 elif isinstance(el, ScreenPoint2) and \
                         self.tlp[0] + 1 <= el.x <= self.brp[0] - 1 and self.tlp[1] + 1 <= el.y <= self.brp[1] - 1:
                     pg.draw.circle(self.screen.screen, (0, 162, 232), el.tuple(), 2)
-                elif isinstance(el, ScreenSegment):
-                    pg.draw.line(self.screen.screen, (0, 162, 232), el.p1.tuple(), el.p2.tuple(), 4)
+                elif isinstance(el, ScreenSegment) and el.drawing:
+                    pg.draw.line(self.screen.screen, (0, 162, 232), el.point1.tuple(), el.point2.tuple(), 4)
                     # pg.draw.circle(self.screen.screen, (0, 162, 232), el.p1.tuple(), 4)
                     # pg.draw.circle(self.screen.screen, (0, 162, 232), el.p2.tuple(), 4)
                 elif isinstance(el, ScreenCircle) and self.tlp[0] + el.radius + 1 <= el.center.x <= self.brp[0] - \
@@ -284,14 +284,24 @@ class Plot:
                                 for el in obj.xy_projection:
                                     if isinstance(el, ScreenPoint) and snap.distance(event.pos, el.tuple()) <= 2:
                                         return obj.ag_object
+                                    if isinstance(el, ScreenPoint2) and snap.distance(event.pos, el.tuple()) <= 2:
+                                        return obj.ag_object
                                     if isinstance(el, ScreenSegment) and snap.distance(
                                             pg.mouse.get_pos(), snap.nearest_point(event.pos, el)) <= 2:
+                                        return obj.ag_object
+                                    if isinstance(el, ScreenCircle) and el.radius - 2 <= \
+                                            snap.distance(event.pos, el.center.tuple()) <= el.radius + 2:
                                         return obj.ag_object
                                 for el in obj.xz_projection:
                                     if isinstance(el, ScreenPoint) and snap.distance(event.pos, el.tuple()) <= 2:
                                         return obj.ag_object
+                                    if isinstance(el, ScreenPoint2) and snap.distance(event.pos, el.tuple()) <= 2:
+                                        return obj.ag_object
                                     if isinstance(el, ScreenSegment) and snap.distance(
                                             pg.mouse.get_pos(), snap.nearest_point(event.pos, el)) <= 2:
+                                        return obj.ag_object
+                                    if isinstance(el, ScreenCircle) and el.radius - 2 <= \
+                                            snap.distance(event.pos, el.center.tuple()) <= el.radius + 2:
                                         return obj.ag_object
             self.clock.tick(30)
 
@@ -582,13 +592,14 @@ class Plot:
         obj = self.select_object(ag.Plane)
         if obj is None:
             return
-        if (r := self.select_screen_point('xy')) is not None:
+        if (r := self.select_screen_point('xy', func=lambda pos: pg.draw.circle(
+                self.screen.screen, (0, 162, 232), self.pm.convert_ag_coordinate_to_screen_coordinate(
+                    self.pm.convert_screen_x_to_ag_x(pos[0]), 0, obj.z(
+                        x=self.pm.convert_screen_x_to_ag_x(pos[0]), y=self.pm.convert_screen_y_to_ag_y(pos[1])),
+                    'xz'), 3))) is not None:
             x, y = r
-        else:
-            return
-        a = ScreenPoint(self, x, y, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x, y=y, objects=(a,))) is not None:
-            z = r
+            z = self.pm.convert_ag_coordinate_to_screen_coordinate(
+                x, y, obj.z(x=self.pm.convert_screen_x_to_ag_x(x), y=self.pm.convert_screen_y_to_ag_y(y)), 'xz')[1]
         else:
             return
         p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
@@ -741,14 +752,16 @@ class Plot:
         if (r := self.select_screen_point('xy', objects=(a1, a2), func=lambda pos: GeneralObject(
                 self, obj_type(p1, p2, ag.distance(ag.Point(
                     self.pm.convert_screen_x_to_ag_x(pos[0]), self.pm.convert_screen_y_to_ag_y(pos[1]),
-                    plane.z(x=self.pm.convert_screen_x_to_ag_x(pos[0]), y=self.pm.convert_screen_y_to_ag_y(pos[1]))),
+                    plane.z(x=self.pm.convert_screen_x_to_ag_x(pos[0]), y=self.pm.convert_screen_y_to_ag_y(pos[1]))
+                    if p1.z != p2.z else p1.z),
                     p1)), (0, 162, 232)).draw())) is not None:
             x0, y0 = r
         else:
             return
         radius = ag.distance(ag.Point(
                     self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0),
-                    plane.z(self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0))), p1)
+                    plane.z(self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0))
+                    if p1.z != p2.z else p1.z), p1)
         random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
         self.layers[self.current_layer].add_object(obj_type(p1, p2, radius), random_color)
         self.full_update()
@@ -795,3 +808,32 @@ class Plot:
                             pass
                     self.screen.update()
                     self.clock.tick(30)
+
+    def get_intersection(self):
+        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
+        if (r := self.select_object(None)) is None:
+            return
+        else:
+            obj1 = r
+        print('Выберите 2-ой объект')
+        if (r := self.select_object(None)) is None:
+            return
+        else:
+            obj2 = r
+        try:
+            res = obj1.intersection(obj2)
+        except Exception:
+            try:
+                res = obj1.intersection(obj2)
+            except Exception:
+                res = None
+                print('Ошибка')
+        if res is not None:
+            if isinstance(res, tuple):
+                for el in res:
+                    self.layers[self.current_layer].add_object(el, random_color)
+            else:
+                self.layers[self.current_layer].add_object(res, random_color)
+            print('Готово')
+        self.full_update()
+        return True
