@@ -21,11 +21,11 @@ class ProjectionManager:
             if obj.radius == 0:
                 return self.get_projection(obj.center, plane, color)
             if obj.normal.x == 0 and (obj.normal.y if plane == 'xy' else obj.normal.z) == 0:
-                return ScreenCircle(self.plot, self.get_projection(obj.center, plane, color), obj.radius * self.zoom, color)
+                return ScreenCircle(self.plot, self.get_projection(obj.center, plane, color), obj.radius * self.zoom, color),
             if obj.normal * (ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0)) == 0:
                 point1, point2 = obj.intersection(
                     ag.Line(obj.center, obj.normal & (ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0))))
-                return self.get_projection(ag.Segment(point1, point2), plane, color)
+                return self.get_projection(ag.Segment(point1, point2), plane, color),
             vector_sin = obj.normal & (obj.normal + ag.Vector(2, 1, 1))
             vector_sin = vector_sin * (obj.radius / abs(vector_sin))
             vector_cos = obj.normal & vector_sin
@@ -116,17 +116,6 @@ class ProjectionManager:
             v = ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0)
             if obj.vector | v:
                 return self.get_projection(ag.Circle(obj.center1, obj.radius, obj.vector), plane, color)
-            if obj.vector * v == 0:
-                return self.get_projection(ag.Circle(obj.center1, obj.radius, obj.vector), plane, color), \
-                       self.get_projection(ag.Circle(obj.center2, obj.radius, obj.vector), plane, color), \
-                       self.get_projection(
-                           ag.Segment(obj.center1 + (obj.vector & v * (obj.radius / abs(obj.vector & v))),
-                                      obj.center2 + (obj.vector & v * (obj.radius / abs(obj.vector & v)))),
-                           plane, color), \
-                       self.get_projection(
-                           ag.Segment(obj.center1 + -(obj.vector & v * (obj.radius / abs(obj.vector & v))),
-                                      obj.center2 + -(obj.vector & v * (obj.radius / abs(obj.vector & v)))),
-                           plane, color)
             return *self.get_projection(ag.Circle(obj.center1, obj.radius, obj.vector), plane, color), \
                 *self.get_projection(ag.Circle(obj.center2, obj.radius, obj.vector), plane, color), \
                 self.get_projection(ag.Segment(obj.center1 + (obj.vector & v * (obj.radius / abs(obj.vector & v))),
@@ -140,14 +129,6 @@ class ProjectionManager:
             if obj.radius2 == 0:
                 if obj.vector | v:
                     return self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color)
-                if obj.vector * v == 0:
-                    return self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color), \
-                           self.get_projection(
-                               ag.Segment(obj.center1 + (obj.vector & v * (obj.radius1 / abs(obj.vector & v))),
-                                          obj.center2), plane, color), \
-                           self.get_projection(
-                               ag.Segment(obj.center1 + -(obj.vector & v * (obj.radius1 / abs(obj.vector & v))),
-                                          obj.center2), plane, color)
                 return *self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color), \
                        self.get_projection(
                            ag.Segment(obj.center1 + (obj.vector & v * (obj.radius1 / abs(obj.vector & v))),
@@ -157,17 +138,6 @@ class ProjectionManager:
                                       obj.center2), plane, color)
             if obj.vector | v:
                 return self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color)
-            if obj.vector * v == 0:
-                return self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color), \
-                       self.get_projection(ag.Circle(obj.center2, obj.radius2, obj.vector), plane, color), \
-                       self.get_projection(
-                           ag.Segment(obj.center1 + (obj.vector & v * (obj.radius1 / abs(obj.vector & v))),
-                                      obj.center2 + (obj.vector & v * (obj.radius2 / abs(obj.vector & v)))),
-                           plane, color), \
-                       self.get_projection(
-                           ag.Segment(obj.center1 + -(obj.vector & v * (obj.radius1 / abs(obj.vector & v))),
-                                      obj.center2 + -(obj.vector & v * (obj.radius2 / abs(obj.vector & v)))),
-                           plane, color)
             return *self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color), \
                 *self.get_projection(ag.Circle(obj.center2, obj.radius2, obj.vector), plane, color), \
                 self.get_projection(ag.Segment(obj.center1 + (obj.vector & v * (obj.radius1 / abs(obj.vector & v))),
@@ -176,6 +146,41 @@ class ProjectionManager:
                 self.get_projection(ag.Segment(obj.center1 + -(obj.vector & v * (obj.radius1 / abs(obj.vector & v))),
                                                obj.center2 + -(obj.vector & v * (obj.radius2 / abs(obj.vector & v)))),
                                     plane, color)
+        elif isinstance(obj, ag.RotationSurface):
+            v = ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0)
+            if obj.vector | v:
+                return *self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color), \
+                       *self.get_projection(ag.Circle(obj.center2, obj.radius2, obj.vector), plane, color)
+            return *self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color), \
+                *self.get_projection(ag.Circle(obj.center2, obj.radius2, obj.vector), plane, color), \
+                *self.get_projection(obj.spline1, plane, color), *self.get_projection(obj.spline2, plane, color)
+        elif isinstance(obj, ag.Tor):
+            if obj.tube_radius > obj.radius:
+                circles = *self.get_projection(ag.Circle(obj.center, obj.radius + obj.tube_radius, obj.vector), plane,
+                                               color), \
+                          *self.get_projection(ag.Circle(obj.center + obj.vector * (obj.tube_radius / abs(obj.vector)),
+                                                         obj.radius, obj.vector), plane, color), \
+                          *self.get_projection(ag.Circle(obj.center + obj.vector * (-obj.tube_radius / abs(obj.vector)),
+                                                         obj.radius, obj.vector), plane, color)
+            else:
+                circles = *self.get_projection(ag.Circle(obj.center, obj.radius + obj.tube_radius, obj.vector), plane,
+                                               color), \
+                          *self.get_projection(ag.Circle(obj.center, obj.radius - obj.tube_radius, obj.vector), plane,
+                                               color), \
+                          *self.get_projection(ag.Circle(obj.center + obj.vector * (obj.tube_radius / abs(obj.vector)),
+                                                         obj.radius, obj.vector), plane, color), \
+                          *self.get_projection(ag.Circle(obj.center + obj.vector * (-obj.tube_radius / abs(obj.vector)),
+                                                         obj.radius, obj.vector), plane, color)
+            if (obj.vector * ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0)) == 0:
+                c1, c2 = obj.intersection(ag.Plane(ag.Vector(0, 1, 0) if plane == 'xy' else ag.Vector(0, 0, 1),
+                                                   obj.center))
+                return *circles, *self.get_projection(c1, plane, color), *self.get_projection(c2, plane, color)
+            c1, c2 = obj.intersection(
+                ag.Plane(obj.center, obj.vector, ag.Vector(0, 1, 0) if plane == 'xy' else ag.Vector(0, 0, 1)))
+            c3, c4 = obj.intersection(
+                ag.Plane(obj.center, obj.vector, ag.Vector(1, 0, 0) if plane == 'xy' else ag.Vector(1, 0, 0)))
+            return *circles, *self.get_projection(c1, plane, color), *self.get_projection(c2, plane, color), \
+                   *self.get_projection(c3, plane, color), *self.get_projection(c4, plane, color)
         elif isinstance(obj, ag.Spline2):
             lst = []
             for i in range(1, len(obj.array)):

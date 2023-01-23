@@ -208,7 +208,7 @@ class Line:
 
     def is_on(self, other):
         if isinstance(other, Plane):
-            return self.point.is_on(other) and abs(angle(self, other)) < 1e-10
+            return self.point.is_on(other) and abs(self.vector * other.normal) < 1e-12
         raise ValueError(f'unsupported operand type: "{other.__class__.__name__}"')
 
     def x(self, y=None, z=None):
@@ -324,12 +324,9 @@ class Plane:
 
     def intersection(self, other):
         if isinstance(other, Plane):
-            # self.normal.x * x + self.normal.y * y + self.d = 0
-            # other.normal.x * x + other.normal.y * y + other.d = 0
-            # x = -(self.normal.y * y + self.d) / self.normal.x
-            # other.normal.x * -(self.normal.y * y + self.d) / self.normal.x + other.normal.y * y + other.d = 0
             if self | other:
                 return None
+
             try:
                 y = (-other.d + other.normal.x * self.d / self.normal.x) / (other.normal.y - other.normal.x *
                                                                             self.normal.y / self.normal.x)
@@ -517,6 +514,8 @@ class Segment:
 class Circle:
     def __init__(self, center, radius, normal=Vector(0, 0, 1)):
         self.center = center
+        if radius < 0:
+            raise ValueError
         self.radius = radius
         self.normal = normal
         self.plane = Plane(self.normal, self.center)
@@ -536,6 +535,8 @@ class Circle:
                 s = math.sqrt(self.radius ** 2 - d ** 2)
                 v1 = other.vector * (s / abs(other.vector))
                 v2 = self.normal & other.vector * (d / abs(self.normal & other.vector))
+                if v2 * Vector(self.center, other.point) < 0:
+                    v2 *= -1
                 return self.center + v1 + v2, self.center + -v1 + v2
         if isinstance(other, Plane):
             return self.intersection(self.plane.intersection(other))
@@ -580,11 +581,42 @@ class Arc:
         self.radius = r
         self.plane = Plane(p1, p2, center)
         self.normal = self.plane.normal
+        self.big_arc = big_arc
         self.vector_cos = Vector(center, p1)
-        self.vector_sin = (self.vector_cos & self.normal) * (self.radius / abs(self.vector_cos & self.normal))
-        self.angle = -angle(self.vector_cos, Vector(center, p2))
-        if big_arc:
-            self.angle = 2 * math.pi + self.angle
+        self.vector_sin = -(self.vector_cos & self.normal) * (self.radius / abs(self.vector_cos & self.normal))
+        # self.angle = -angle(self.vector_cos, Vector(center, p2))
+        self.angle = self.get_angle(p2)
+
+    def get_angle(self, point):
+        vector = Vector(self.center, point)
+        a = angle(self.vector_cos, vector)
+        if self.big_arc and vector * self.vector_sin > 0:
+            return a - 2 * math.pi
+        if not self.big_arc and vector * self.vector_sin <= 0:
+            return a - 2 * math.pi
+        return a
+
+    def intersection(self, other, check_plane=True):
+        if isinstance(other, Line):
+            if not check_plane or other.is_on(self.plane):
+                if abs((d := distance(self.center, other)) - self.radius) < 1e-12:
+                    return Line(self.center, self.normal & other.vector).intersection(other)
+                if d > self.radius:
+                    return None
+                s = math.sqrt(self.radius ** 2 - d ** 2)
+                v1 = other.vector * (s / abs(other.vector))
+                v2 = self.normal & other.vector * (d / abs(self.normal & other.vector))
+                if v2 * Vector(self.center, other.point) < 0:
+                    v2 *= -1
+                p1, p2 = self.center + v1 + v2, self.center + -v1 + v2
+                lst = []
+                if abs(self.get_angle(p1)) < abs(self.angle):
+                    lst.append(p1)
+                if abs(self.get_angle(p2)) < abs(self.angle):
+                    lst.append(p2)
+                return tuple(lst)
+        if isinstance(other, Plane):
+            return self.intersection(self.plane.intersection(other))
 
 
 class Ellipse:
@@ -658,7 +690,7 @@ class Cylinder:
     def intersection(self, other):
         if isinstance(other, Plane) and other.normal | self.vector:
             return Circle(Line(self.center1, self.center2).intersection(other), self.radius, self.vector)
-        if isinstance(other, Cone) or isinstance(other, Cylinder):
+        if isinstance(other, Cone) or isinstance(other, Cylinder) or isinstance(other, RotationSurface):
             if self.vector | other.vector:
                 p1, p2 = self.center1, self.center2
                 if self.vector * other.vector > 0:
@@ -696,7 +728,7 @@ class Cylinder:
                         lst2.append(p[1])
                     elif p is not None:
                         lst1.append(p)
-                return Spline3D(*lst1, *reversed(lst2))
+                return Spline3D(*lst1), Spline3D(*lst2)
 
 
 class Cone:
@@ -718,7 +750,7 @@ class Cone:
             p = Line(self.center1, self.center2).intersection(other)
             return Circle(p, self.radius1 - (self.radius1 - self.radius2) * distance(self.center1, p) / distance(
                 self.center1, self.center2), self.vector)
-        if isinstance(other, Cylinder) or isinstance(other, Cone):
+        if isinstance(other, Cylinder) or isinstance(other, Cone) or isinstance(other, RotationSurface):
             if self.vector | other.vector:
                 p1, p2 = self.center1, self.center2
                 if self.vector * other.vector > 0:
@@ -744,7 +776,63 @@ class Cone:
                         lst2.append(p[1])
                     elif p is not None:
                         lst1.append(p)
-                return Spline3D(*lst1, *reversed(lst2))
+                return Spline3D(*lst1), Spline3D(*lst2)
+
+
+class Tor:
+    def __init__(self, center, radius, tube_radius, vector=Vector(0, 0, 1)):
+        self.center = center
+        self.radius = radius
+        self.tube_radius = tube_radius
+        self.vector = vector
+
+    def intersection(self, other):
+        if isinstance(other, Plane):
+            if other.normal | self.vector:
+                p = Line(self.center, self.vector).intersection(other)
+                if d := distance(p, self.center) > self.tube_radius:
+                    return
+                return Circle(p, self.radius + (self.tube_radius ** 2 - d ** 2) ** 0.5, self.vector), \
+                       Circle(p, self.radius - (self.tube_radius ** 2 - d ** 2) ** 0.5, self.vector)
+            if self.center.is_on(other):
+                c1, c2 = Circle(self.center, self.radius, self.vector).intersection(other)
+                return Circle(c1, self.tube_radius, other.normal), Circle(c2, self.tube_radius, other.normal)
+        if isinstance(other, Cylinder) or isinstance(other, Cone):
+            if self.vector | other.vector:
+                c1 = self.center + self.vector * (self.tube_radius / abs(self.vector))
+                c2 = self.center + -self.vector * (self.tube_radius / abs(self.vector))
+                p1, p2 = c1, c2
+                if self.vector * other.vector > 0:
+                    if distance(c1, other.center2) < distance(p1, p2):
+                        p1, p2 = c1, other.center2
+                    if distance(other.center1, c2) < distance(p1, p2):
+                        p1, p2 = other.center1, c2
+                    if distance(other.center1, other.center2) < distance(p1, p2):
+                        p1, p2 = other.center1, other.center2
+                else:
+                    if distance(c1, other.center1) < distance(p1, p2):
+                        p1, p2 = c1, other.center1
+                    if distance(other.center2, c2) < distance(p1, p2):
+                        p1, p2 = other.center2, c2
+                    if distance(other.center2, other.center1) < distance(p1, p2):
+                        p1, p2 = other.center2, other.center1
+                v = Vector(p1, p2) * 0.01
+                lst1, lst2, lst3, lst4 = [], [], [], []
+                for i in range(101):
+                    c1, c2 = self.intersection(Plane(v, p1 + v * i))
+                    p = c1.intersection(other.intersection(Plane(v, p1 + v * i)))
+                    if isinstance(p, tuple):
+                        lst1.append(p[0])
+                        lst2.append(p[1])
+                    elif p is not None:
+                        lst1.append(p)
+                    p = c2.intersection(other.intersection(Plane(v, p1 + v * i)))
+                    if isinstance(p, tuple):
+                        lst3.append(p[0])
+                        lst4.append(p[1])
+                    elif p is not None:
+                        lst2.append(p)
+                return Spline3D(*lst1, *reversed(lst2)), Spline3D(*lst3, *reversed(lst4))
 
 
 class Spline2:
@@ -799,13 +887,28 @@ class Spline:
         l2 = Line(p2 + Vector(p2, p3) * 0.5, Vector(p2, p3) & self.plane.normal)
         c = l1.intersection(l2, 1e20)
         self.array = [(points[0],), (points[1], Arc(p1, p2, c)), (points[2], Arc(p2, p3, c))]
-        for i in range(1, len(points) - 1):
+        for i in range(2, len(points) - 1):
             p1, p2 = points[i], points[i + 1]
             l1 = Line(p1 + Vector(p1, p2) * 0.5, Vector(p1, p2) & self.plane.normal)
             l2 = Line(c, p1)
             c = l1.intersection(l2, 1e20)
 
             self.array.append((p2, Arc(p1, p2, c)))
+
+    def intersection(self, other):
+        if isinstance(other, Line):
+            lst = []
+            for i in range(1, len(self.array)):
+                res = self.array[i][1].intersection(other, False)
+                if res is None:
+                    continue
+                if isinstance(res, tuple):
+                    lst.extend(list(res))
+                else:
+                    lst.append(res)
+            return tuple(lst)
+        if isinstance(other, Plane):
+            return self.intersection(self.plane.intersection(other))
 
 
 class Spline3D:
@@ -829,3 +932,51 @@ class Spline3D:
             v = pl.normal & Vector(c, p2)
 
             self.array.append((p2, Arc(p1, p2, c)))
+
+
+class RotationSurface:
+    def __init__(self, point1, point2, spline):
+        self.center1 = point1
+        self.center2 = point2
+        self.vector = Vector(point1, point2)
+        self.spline1 = spline
+        vector = (spline.plane.normal & self.vector) * (1 / abs(spline.plane.normal & self.vector))
+        if vector * Vector(point1, spline.array[0][0]) < 0:
+            vector *= -1
+        self.spline2 = Spline(
+            spline.plane, *[spline.array[i][0] + (vector * (-2 * distance(spline.array[i][0], Line(point1, point2))))
+                            for i in range(len(spline.array))])
+        self.radius1 = distance(point1, spline.intersection(Line(point1, self.vector & spline.plane.normal))[0])
+        self.radius2 = distance(point2, spline.intersection(Line(point2, self.vector & spline.plane.normal))[0])
+
+    def intersection(self, other):
+        if isinstance(other, Plane) and other.normal | self.vector:
+            p = Line(self.center1, self.center2).intersection(other)
+            return Circle(p, distance(p, self.spline1.intersection(Line(p, self.vector & self.spline1.plane.normal))[0]), self.vector)
+        if isinstance(other, Cylinder) or isinstance(other, Cone) or isinstance(other, RotationSurface):
+            if self.vector | other.vector:
+                p1, p2 = self.center1, self.center2
+                if self.vector * other.vector > 0:
+                    if distance(self.center1, other.center2) < distance(p1, p2):
+                        p1, p2 = self.center1, other.center2
+                    if distance(other.center1, self.center2) < distance(p1, p2):
+                        p1, p2 = other.center1, self.center2
+                    if distance(other.center1, other.center2) < distance(p1, p2):
+                        p1, p2 = other.center1, other.center2
+                else:
+                    if distance(self.center1, other.center1) < distance(p1, p2):
+                        p1, p2 = self.center1, other.center1
+                    if distance(other.center2, self.center2) < distance(p1, p2):
+                        p1, p2 = other.center2, self.center2
+                    if distance(other.center2, other.center1) < distance(p1, p2):
+                        p1, p2 = other.center2, other.center1
+                v = Vector(p1, p2) * 0.01
+                lst1, lst2 = [], []
+                for i in range(101):
+                    p = self.intersection(Plane(v, p1 + v * i)).intersection(other.intersection(Plane(v, p1 + v * i)))
+                    if isinstance(p, tuple):
+                        lst1.append(p[0])
+                        lst2.append(p[1])
+                    elif p is not None:
+                        lst1.append(p)
+                return Spline3D(*lst1), Spline3D(*lst2)

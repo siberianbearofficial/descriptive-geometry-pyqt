@@ -155,7 +155,7 @@ def distance(p1, p2):
     return ((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) ** 0.5
 
 
-def nearest_point(point, segment):
+def nearest_point(point, segment, as_line=False):
     if segment.p1.x - segment.p2.x == 0:
         k1 = 100000000000
     else:
@@ -168,6 +168,8 @@ def nearest_point(point, segment):
     b2 = point[1] - point[0] * k2
     intersection_point = (b2 - b1) / (k1 - k2)
     intersection_point = intersection_point, k1 * intersection_point + b1
+    if as_line:
+        return intersection_point
     if min(segment.p1.x, segment.p2.x) < intersection_point[0] < max(segment.p1.x, segment.p2.x):
         return intersection_point
     elif distance(point, segment.p1.tuple()) < distance(point, segment.p2.tuple()):
