@@ -8,7 +8,7 @@ class Menu:
 
         self.main_toolbars = []
         self.other_toolbars = []
-        self.font = pg.font.SysFont('Arial', 16)
+        self.font = pg.font.SysFont('Courier', 16)
         self.current_toolbar = -1
 
         self.main_toolbars.append(Toolbar2(self.screen, (0, 0), (550, 25)))
@@ -36,6 +36,7 @@ class Menu:
         self.main_toolbars[2].add_button('spline', lambda: self.screen.plot.create_spline(), (285, 0))
         self.main_toolbars[2].add_button('tor', lambda: self.screen.plot.create_tor(), (320, 0))
         self.main_toolbars[2].add_button('rotation_surface', lambda: self.screen.plot.create_rotation_surface(), (355, 0))
+        self.main_toolbars[2].add_button('sphere', lambda: self.screen.plot.create_sphere(), (390, 0))
 
         self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (550, 60), hidden=True))
         self.main_toolbars[3].add_button('minus', lambda: self.screen.plot.zoom_out(), (10, 0))
@@ -101,8 +102,6 @@ class Menu:
                                            self.font.render('К плоскости xz', False, (0, 0, 0)), (30, 7), hide_tb=True)
 
     def full_update_toolbars(self):
-        pg.draw.rect(self.screen.screen, (255, 255, 255),
-                     (0, self.screen.brp[1] - 40, self.screen.brp[0], self.screen.brp[1]))
         if self.current_toolbar != -1:
             self.other_toolbars[self.current_toolbar].draw()
         for toolbar in self.main_toolbars:

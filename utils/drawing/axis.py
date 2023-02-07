@@ -25,8 +25,4 @@ class Axis:
         self.segment.draw()
 
     def move(self, x, y):
-        self.lp.x += x
-        self.rp.x += x
-        self.lp.y += y
-        self.rp.y += y
         self.segment.move(x, y)

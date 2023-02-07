@@ -34,7 +34,6 @@ class GeneralObject:
         if isinstance(self.ag_object, ag.Line):
             self.xy_projection, self.xz_projection = self.projections()
             return
-        self.xy_projection, self.xz_projection = self.projections()
         for el in self.xy_projection:
             el.move(x, y)
         for el in self.xz_projection:

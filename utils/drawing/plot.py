@@ -46,7 +46,7 @@ class Plot:
         self.point_position_y = None
         self.point_position_z = None
 
-        self.serializable = ['bg_color', 'layers']
+        self.serializable = ['bg_color', 'layers', 'current_layer']
 
     def clear(self, index=-1):
         if index == -1:
@@ -108,8 +108,8 @@ class Plot:
         self.camera_pos = self.camera_pos[0] + x, self.camera_pos[1] + y
         self.pm.camera_pos = self.camera_pos
         for layer in self.layers:
-            # layer.move_objects(x, y)
-            layer.update_projections()
+            layer.move_objects(x, y)
+            # layer.update_projections()
         self.sm.update_intersections()
         self.full_update()
         self.screen.update()
@@ -131,7 +131,7 @@ class Plot:
             p = pg.mouse.get_pos()
             self.move_camera(p[0] - pos[0], p[1] - pos[1])
             pos = p
-            self.clock.tick(30)
+            self.clock.tick(60)
 
     def clicked(self, pos):
         old_obj = self.selected_object
@@ -241,7 +241,7 @@ class Plot:
 
     def full_update(self):
         pg.draw.rect(self.screen.screen, self.bg_color,
-                     (self.tlp[0], self.tlp[1] - 2, self.brp[0] - self.tlp[0], self.brp[1] - self.tlp[1] + 4))
+                     (self.tlp[0], self.tlp[1], self.brp[0] - self.tlp[0], self.brp[1] - self.tlp[1]))
         # if self.tlp[0] <= self.axis.lp.x <= self.brp[0] and self.tlp[1] <= self.axis.lp.y <= self.brp[1]:
         self.axis.draw()
         for layer in self.layers:
@@ -249,6 +249,19 @@ class Plot:
 
     def point_is_on_plot(self, point):
         return self.tlp[0] < point[0] < self.brp[0] and self.tlp[1] < point[1] < self.brp[1]
+
+    @staticmethod
+    def random_color():
+        red = random.randint(20, 240)
+        green = random.randint(20, 240)
+        blue = random.randint(20, min(570 - red - green, 240))
+        return red, green, blue
+        while True:
+            red = random.randint(20, 240)
+            green = random.randint(20, 240)
+            blue = random.randint(20, 570 - red - green)
+            if 300 < red + green + blue < 570:
+                return red, green, blue
 
     @staticmethod
     def check_exit_event(event):
@@ -351,10 +364,9 @@ class Plot:
             z = r
         else:
             return
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
         self.layers[self.current_layer].add_object(ag.Point(self.pm.convert_screen_x_to_ag_x(x),
                                                             self.pm.convert_screen_y_to_ag_y(y),
-                                                            self.pm.convert_screen_y_to_ag_z(z)), random_color)
+                                                            self.pm.convert_screen_y_to_ag_z(z)), Plot.random_color())
         self.full_update()
         return True
 
@@ -381,12 +393,11 @@ class Plot:
             z2 = r
         else:
             return
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
         self.layers[self.current_layer].add_object(ag.Segment(
             ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
                      self.pm.convert_screen_y_to_ag_z(z1)),
             ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
-                     self.pm.convert_screen_y_to_ag_z(z2))), random_color)
+                     self.pm.convert_screen_y_to_ag_z(z2))), Plot.random_color())
         self.full_update()
         return True
 
@@ -414,12 +425,11 @@ class Plot:
             z2 = r
         else:
             return
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
         self.layers[self.current_layer].add_object(ag.Line(
             ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
                      self.pm.convert_screen_y_to_ag_z(z1)),
             ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
-                     self.pm.convert_screen_y_to_ag_z(z2))), random_color)
+                     self.pm.convert_screen_y_to_ag_z(z2))), Plot.random_color())
         self.full_update()
         return True
 
@@ -439,16 +449,14 @@ class Plot:
             x2, z2 = r
         else:
             return
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
         self.layers[self.current_layer].add_object(ag.Plane(
             ag.Point(self.pm.convert_screen_x_to_ag_x(x0), 0, 0),
             ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1), 0),
-            ag.Point(self.pm.convert_screen_x_to_ag_x(x2), 0, self.pm.convert_screen_y_to_ag_z(z2))), random_color)
+            ag.Point(self.pm.convert_screen_x_to_ag_x(x2), 0, self.pm.convert_screen_y_to_ag_z(z2))), Plot.random_color())
         self.full_update()
         return True
 
     def create_perpendicular(self, line=False):
-        # TODO: сделать так, чтобы при попытке провести перпендикуляр к горизонтали/фронтали не происходило деление на 0
         self.full_update()
         self.screen.update()
         obj = self.select_object((ag.Segment, ag.Line, ag.Plane))
@@ -472,12 +480,11 @@ class Plot:
             return
         p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
                       self.pm.convert_screen_y_to_ag_z(z))
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
         if line:
             if isinstance(obj, ag.Plane):
-                self.layers[self.current_layer].add_object(ag.Line(p1, v), random_color)
+                self.layers[self.current_layer].add_object(ag.Line(p1, v), Plot.random_color())
             else:
-                self.layers[self.current_layer].add_object(ag.Line(p1, v & ag.Plane(p1, obj).normal), random_color)
+                self.layers[self.current_layer].add_object(ag.Line(p1, v & ag.Plane(p1, obj).normal), Plot.random_color())
         else:
             if isinstance(obj, ag.Plane):
                 p2 = ag.Line(p1, v).intersection(obj)
@@ -486,7 +493,7 @@ class Plot:
             if p2 is None:
                 print('error: can\'t create perpendicular')
                 return
-            self.layers[self.current_layer].add_object(ag.Segment(p1, p2), random_color)
+            self.layers[self.current_layer].add_object(ag.Segment(p1, p2), Plot.random_color())
         self.full_update()
         return True
 
@@ -512,9 +519,8 @@ class Plot:
             return
         p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
                       self.pm.convert_screen_y_to_ag_z(z))
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
         if line:
-            self.layers[self.current_layer].add_object(ag.Line(p1, v), random_color)
+            self.layers[self.current_layer].add_object(ag.Line(p1, v), Plot.random_color())
         else:
             line = self.pm.get_projection(ag.Line(p1, v), 'xy', (255, 255, 255))
             if (r := self.select_screen_point('xy', line=line, segment=(x, y))) is not None:
@@ -523,7 +529,7 @@ class Plot:
                 return
             p2 = ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
                           ag.Line(p1, v).z((self.pm.convert_screen_x_to_ag_x(x2))))
-            self.layers[self.current_layer].add_object(ag.Segment(p1, p2), random_color)
+            self.layers[self.current_layer].add_object(ag.Segment(p1, p2), Plot.random_color())
         self.full_update()
         return True
 
@@ -565,14 +571,13 @@ class Plot:
             z3 = r
         else:
             return
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
         self.layers[self.current_layer].add_object(ag.Plane(
             ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
                      self.pm.convert_screen_y_to_ag_z(z1)),
             ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
                      self.pm.convert_screen_y_to_ag_z(z2)),
             ag.Point(self.pm.convert_screen_x_to_ag_x(x3), self.pm.convert_screen_y_to_ag_y(y3),
-                     self.pm.convert_screen_y_to_ag_z(z3))), random_color)
+                     self.pm.convert_screen_y_to_ag_z(z3))), Plot.random_color())
         self.full_update()
         return True
 
@@ -593,8 +598,7 @@ class Plot:
             return
         p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
                       self.pm.convert_screen_y_to_ag_z(z))
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
-        self.layers[self.current_layer].add_object(ag.Plane(obj.normal, p1), random_color)
+        self.layers[self.current_layer].add_object(ag.Plane(obj.normal, p1), Plot.random_color())
         self.full_update()
         return True
 
@@ -616,9 +620,8 @@ class Plot:
             return
         p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
                       self.pm.convert_screen_y_to_ag_z(z))
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
         self.layers[self.current_layer].add_object(ag.Line(
-            p1, obj.normal & (ag.Vector(0, 1, 0) if f else ag.Vector(0, 0, 1))), random_color)
+            p1, obj.normal & (ag.Vector(0, 1, 0) if f else ag.Vector(0, 0, 1))), Plot.random_color())
         self.full_update()
         return True
 
@@ -720,12 +723,11 @@ class Plot:
             x0, y0 = r
         else:
             return
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
         self.layers[self.current_layer].add_object(ag.Circle(
             center, ag.distance(ag.Point(
                     self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0),
                     plane.z(self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0))),
-                    center), plane.normal), random_color)
+                    center), plane.normal), Plot.random_color())
         self.full_update()
         return True
 
@@ -774,8 +776,7 @@ class Plot:
                     self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0),
                     plane.z(self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0))
                     if p1.z != p2.z else p1.z), p1)
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
-        self.layers[self.current_layer].add_object(obj_type(p1, p2, radius), random_color)
+        self.layers[self.current_layer].add_object(obj_type(p1, p2, radius), Plot.random_color())
         self.full_update()
         return True
 
@@ -799,8 +800,7 @@ class Plot:
                                                plane.z(self.pm.convert_screen_x_to_ag_x(res[0]),
                                                        self.pm.convert_screen_y_to_ag_y(res[1]))))
                     elif event.type == pg.KEYDOWN and event.key == 13:
-                        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
-                        self.layers[self.current_layer].add_object(ag.Spline(plane, *points), random_color)
+                        self.layers[self.current_layer].add_object(ag.Spline(plane, *points), Plot.random_color())
                         self.full_update()
                         return True
                 if self.point_is_on_plot(pos):
@@ -832,6 +832,7 @@ class Plot:
             return
         else:
             obj2 = r
+        res = obj1.intersection(obj2)
         try:
             res = obj1.intersection(obj2)
         except Exception:
@@ -906,8 +907,7 @@ class Plot:
             return
         tube_radius = abs(radius - ag.distance(ag.Point(
             self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0), center.z), center))
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
-        self.layers[self.current_layer].add_object(ag.Tor(center, radius, tube_radius, vector), random_color)
+        self.layers[self.current_layer].add_object(ag.Tor(center, radius, tube_radius, vector), Plot.random_color())
         self.full_update()
         return True
 
@@ -968,10 +968,8 @@ class Plot:
                                                                self.pm.convert_screen_y_to_ag_z(res[1])),
                                                        self.pm.convert_screen_y_to_ag_z(res[1])) +
                                               ag.Vector(p1, p2) * (1 / abs(ag.Vector(p1, p2))))
-                                random_color = (
-                                    random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
                                 self.layers[self.current_layer].add_object(
-                                    ag.RotationSurface(p1, p2, ag.Spline(plane, *points)), random_color)
+                                    ag.RotationSurface(p1, p2, ag.Spline(plane, *points)), Plot.random_color())
                                 self.full_update()
                                 return True
                             points.append(ag.Point(self.pm.convert_screen_x_to_ag_x(res[0]),
@@ -1059,3 +1057,31 @@ class Plot:
                     l2.draw()
                     self.screen.update()
                     self.clock.tick(30)
+
+    def create_sphere(self):
+        if (r := self.select_screen_point('xy')) is not None:
+            x, y = r
+        else:
+            return
+        a1 = ScreenPoint(self, x, y, (0, 162, 232))
+        if (r := self.select_screen_point('xz', x=x, y=y, objects=(a1,))) is not None:
+            z = r
+        else:
+            return
+        a2 = ScreenPoint(self, x, z, (0, 162, 232))
+        center = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
+                          self.pm.convert_screen_y_to_ag_z(z))
+        if (r := self.select_screen_point('xy', objects=(a1, a2), func=lambda pos: GeneralObject(
+                self, ag.Sphere(center, ag.distance(ag.Point(
+                    self.pm.convert_screen_x_to_ag_x(pos[0]), self.pm.convert_screen_y_to_ag_y(pos[1]),
+                    center.z),
+                    center)), (0, 162, 232)).draw())) is not None:
+            x0, y0 = r
+        else:
+            return
+        self.layers[self.current_layer].add_object(ag.Sphere(center, ag.distance(ag.Point(
+                    self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0),
+                    center.z),
+                    center)), Plot.random_color())
+        self.full_update()
+        return True

@@ -31,7 +31,7 @@ def serialize(screen):
             except AttributeError:
                 return str(obj)
 
-    hist = json.dumps(screen, cls=Serializer)
+    hist = json.dumps(screen, cls=Serializer, indent=2)
     print(hist, file=open('history.txt', 'w', encoding='utf-8'), end='')
 
 
@@ -44,7 +44,7 @@ def deserialize(screen):
     def deserialize_layers(layers_hist):
         layers = list()
         for layer_hist in layers_hist:
-            layer = Layer(screen.plot, layer_hist['hidden'])
+            layer = Layer(screen.plot, layer_hist['name'], layer_hist['hidden'])
             for obj_hist in layer_hist['objects']:
                 obj = deserialize_ag_object(obj_hist['ag_object'])
                 layer.add_object(obj, obj_hist['color'])

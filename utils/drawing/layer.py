@@ -8,7 +8,7 @@ class Layer:
         self.objects = []
         self.name = name
 
-        self.serializable = ['hidden', 'objects']
+        self.serializable = ['hidden', 'objects', 'name']
 
     def add_object(self, ag_object, color):
         self.objects.append(GeneralObject(self.plot, ag_object, color))
