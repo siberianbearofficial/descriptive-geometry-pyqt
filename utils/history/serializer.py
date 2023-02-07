@@ -62,6 +62,44 @@ def deserialize(screen):
         elif '__Circle__' in hist:
             ag_hist = hist['__Circle__']
             return ag.Circle(deserialize_ag_object(ag_hist['center']), ag_hist['radius'])
+        elif '__Line__' in hist:
+            ag_hist = hist['__Line__']
+            return ag.Line(deserialize_ag_object(ag_hist['point']),
+                           deserialize_ag_object(ag_hist['vector']))
+        elif '__Vector__' in hist:
+            ag_hist = hist['__Vector__']
+            return ag.Vector(ag_hist['x'], ag_hist['y'], ag_hist['z'])
+        elif '__Cylinder__' in hist:
+            ag_hist = hist['__Cylinder__']
+            return ag.Cylinder(deserialize_ag_object(ag_hist['center1']),
+                               deserialize_ag_object(ag_hist['center2']),
+                               ag_hist['radius'], deserialize_ag_object(ag_hist['vector']))
+        elif '__Cone__' in hist:
+            ag_hist = hist['__Cone__']
+            return ag.Cone(deserialize_ag_object(ag_hist['center1']),
+                           deserialize_ag_object(ag_hist['center2']),
+                           ag_hist['radius1'],
+                           ag_hist['radius2'],
+                           deserialize_ag_object(ag_hist['vector']))
+        elif '__Tor__' in hist:
+            ag_hist = hist['__Tor__']
+            return ag.Tor(deserialize_ag_object(ag_hist['center']),
+                          ag_hist['radius'],
+                          ag_hist['tube_radius'],
+                          deserialize_ag_object(ag_hist['vector']))
+        elif '__RotationSurface__' in hist:
+            ag_hist = hist['__RotationSurface__']
+            return ag.RotationSurface(deserialize_ag_object(ag_hist['center1']),
+                                      deserialize_ag_object(ag_hist['center2']),
+                                      deserialize_ag_object(ag_hist['spline1']))
+        elif '__Spline__' in hist:
+            ag_hist = hist['__Spline__']
+            return ag.Spline(deserialize_ag_object(ag_hist['plane']),
+                             )
+        elif '__Plane__' in hist:
+            ag_hist = hist['__Plane__']
+            return ag.Plane(deserialize_ag_object(ag_hist['normal']),
+                            deserialize_ag_object(ag_hist['point']))
         else:
             raise ValueError('Unknown ag_object type: ' + str(hist))
 

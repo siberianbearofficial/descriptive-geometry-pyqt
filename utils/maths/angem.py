@@ -580,6 +580,8 @@ class Arc:
         self.center = center
         self.radius = r
         self.plane = Plane(p1, p2, center)
+        self.p1 = p1
+        self.p2 = p2
         self.normal = self.plane.normal
         self.big_arc = big_arc
         self.vector_cos = Vector(center, p1)
@@ -966,6 +968,7 @@ class Spline:
         l2 = Line(p2 + Vector(p2, p3) * 0.5, Vector(p2, p3) & self.plane.normal)
         c = l1.intersection(l2, 1e20)
         self.array = [(points[0],), (points[1], Arc(p1, p2, c)), (points[2], Arc(p2, p3, c))]
+        self.points = points
         for i in range(2, len(points) - 1):
             p1, p2 = points[i], points[i + 1]
             if distance(p1, p2) == 0:
@@ -1001,6 +1004,7 @@ class Spline3D:
         pl3 = Plane(p2, Vector(c, p2), pl.normal)
         v = pl.normal & Vector(c, p2)
         self.array = [(points[0],), (points[1], Arc(p1, p2, c))]
+        self.points = points
         for i in range(2, len(points)):
             p1, p2 = points[i - 1], points[i]
             if distance(p1, p2) == 0:
