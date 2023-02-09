@@ -23,6 +23,7 @@ class Plot:
         self.tlp = tlp
         self.brp = brp
         self.zoom = 1
+        self.zoom_step = 1.5
         self.camera_pos = (0, 0)
         self.clock = pg.time.Clock()
 
@@ -103,16 +104,17 @@ class Plot:
         obj_xz.draw()
         self.screen.update()
 
-    def move_camera(self, x, y):
+    def move_camera(self, x, y, update=True):
         self.axis.move(0, y)
         self.camera_pos = self.camera_pos[0] + x, self.camera_pos[1] + y
         self.pm.camera_pos = self.camera_pos
-        for layer in self.layers:
-            layer.move_objects(x, y)
-            # layer.update_projections()
-        self.sm.update_intersections()
-        self.full_update()
-        self.screen.update()
+        if update:
+            for layer in self.layers:
+                layer.move_objects(x, y)
+                # layer.update_projections()
+            self.sm.update_intersections()
+            self.full_update()
+            self.screen.update()
 
     def moving_camera(self):
         pos = pg.mouse.get_pos()
@@ -224,16 +226,27 @@ class Plot:
         self.screen.menu.update_layer_list()
 
     def zoom_in(self):
-        self.zoom *= 1.5
-        self.pm.zoom *= 1.5
+        pos = pg.mouse.get_pos()
+        if not self.point_is_on_plot(pos):
+            pos = (self.tlp[0] + self.brp[0]) / 2, (self.tlp[1] + self.brp[1]) / 2
+        self.zoom *= self.zoom_step
+        self.pm.zoom *= self.zoom_step
+        self.move_camera((self.zoom_step - 1) * ((self.axis.rp.x - pos[0]) + self.camera_pos[0]),
+                         (self.zoom_step - 1) * (self.axis.rp.y - pos[1]), update=False)
         for layer in self.layers:
             layer.update_projections()
         self.sm.update_intersections()
         self.full_update()
 
     def zoom_out(self):
-        self.zoom /= 1.5
-        self.pm.zoom /= 1.5
+        pos = pg.mouse.get_pos()
+        if not self.point_is_on_plot(pos):
+            pos = (self.tlp[0] + self.brp[0]) / 2, (self.tlp[1] + self.brp[1]) / 2
+        self.zoom /= self.zoom_step
+        self.pm.zoom /= self.zoom_step
+        new_camera_x = (self.camera_pos[0] + self.axis.rp.x - pos[0]) / self.zoom_step - self.axis.rp.x + pos[0]
+        new_axis_y = pos[1] - (pos[1] - self.axis.lp.y) / self.zoom_step
+        self.move_camera(new_camera_x - self.camera_pos[0], new_axis_y - self.axis.lp.y, update=False)
         for layer in self.layers:
             layer.update_projections()
         self.sm.update_intersections()
@@ -459,7 +472,9 @@ class Plot:
     def create_perpendicular(self, line=False):
         self.full_update()
         self.screen.update()
+        self.screen.info_string.print('Выберите отрезок, прямую или плоскость')
         obj = self.select_object((ag.Segment, ag.Line, ag.Plane))
+        self.screen.info_string.print('')
         if isinstance(obj, ag.Segment):
             v = ag.Vector(obj.p1, obj.p2)
             obj = ag.Line(obj.p1, obj.p2)
@@ -500,7 +515,9 @@ class Plot:
     def create_parallel(self, line=False):
         self.full_update()
         self.screen.update()
+        self.screen.info_string.print('Выберите отрезок или прямую')
         obj = self.select_object((ag.Segment, ag.Line))
+        self.screen.info_string.print('')
         if isinstance(obj, ag.Segment):
             v = ag.Vector(obj.p1, obj.p2)
             obj = ag.Line(obj.p1, obj.p2)
@@ -584,7 +601,9 @@ class Plot:
     def create_parallel_plane(self):
         self.full_update()
         self.screen.update()
+        self.screen.info_string.print('Выберите плоскость')
         obj = self.select_object(ag.Plane)
+        self.screen.info_string.print('')
         if obj is None:
             return
         if (r := self.select_screen_point('xy')) is not None:
@@ -605,7 +624,9 @@ class Plot:
     def create_h_f(self, f=False):
         self.full_update()
         self.screen.update()
+        self.screen.info_string.print('Выберите плоскость')
         obj = self.select_object(ag.Plane)
+        self.screen.info_string.print('')
         if obj is None:
             return
         if (r := self.select_screen_point('xy', func=lambda pos: pg.draw.circle(
@@ -626,45 +647,49 @@ class Plot:
         return True
 
     def get_distance(self):
+        self.screen.info_string.print('Выберите 1-ый объект')
         if (r := self.select_object(None)) is None:
             return
         else:
             obj1 = r
+        self.screen.info_string.print('Выберите 2-ой объект')
         if (r := self.select_object(None)) is None:
             return
         else:
             obj2 = r
         try:
-            print(ag.distance(obj1, obj2))
+            self.screen.info_string.print(ag.distance(obj1, obj2))
         except Exception:
-            print('Ошибка')
+            self.screen.info_string.print('Ошибка')
 
     def get_angle(self, plane=''):
         self.full_update()
         self.screen.update()
+        self.screen.info_string.print('Выберите объект')
         if (r := self.select_object(None)) is None:
             return
         else:
             obj1 = r
         if plane == '':
+            self.screen.info_string.print('Выберите 2-ой объект')
             if (r := self.select_object(None)) is None:
                 return
             else:
                 obj2 = r
             try:
-                print(ag.angle(obj1, obj2))
+                self.screen.info_string.print(ag.angle(obj1, obj2))
             except Exception:
-                print('Ошибка')
+                self.screen.info_string.print('Ошибка')
         elif plane == 'xy':
             try:
-                print(ag.angle(obj1, ag.Plane(ag.Vector(0, 0, 1), ag.Point(0, 0, 0))))
+                self.screen.info_string.print(ag.angle(obj1, ag.Plane(ag.Vector(0, 0, 1), ag.Point(0, 0, 0))))
             except Exception:
-                print('Ошибка')
+                self.screen.info_string.print('Ошибка')
         elif plane == 'xz':
             try:
-                print(ag.angle(obj1, ag.Plane(ag.Vector(0, 1, 0), ag.Point(0, 0, 0))))
+                self.screen.info_string.print(ag.angle(obj1, ag.Plane(ag.Vector(0, 1, 0), ag.Point(0, 0, 0))))
             except Exception:
-                print('Ошибка')
+                self.screen.info_string.print('Ошибка')
 
     def get_distance_between_points(self):
         if (r := self.select_screen_point('xy')) is not None:
@@ -698,9 +723,11 @@ class Plot:
         return True
 
     def create_circle(self):
+        self.screen.info_string.print('Выберите плоскость')
         plane = self.select_object(ag.Plane)
         if plane is None:
             return
+        self.screen.info_string.print('')
         if (r := self.select_screen_point('xy', func=lambda pos: pg.draw.circle(
                 self.screen.screen, (0, 162, 232), self.pm.convert_ag_coordinate_to_screen_coordinate(
                     self.pm.convert_screen_x_to_ag_x(pos[0]), 0, plane.z(
@@ -781,9 +808,11 @@ class Plot:
         return True
 
     def create_spline(self):
+        self.screen.info_string.print('Выберите плоскость')
         plane = self.select_object(ag.Plane)
         if plane is None:
             return
+        self.screen.info_string.print('')
         while True:
             points = []
             while True:
@@ -823,16 +852,17 @@ class Plot:
 
     def get_intersection(self):
         random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
+        self.screen.info_string.print('Выберите 1-ый объект')
         if (r := self.select_object(None)) is None:
             return
         else:
             obj1 = r
-        print('Выберите 2-ой объект')
+        self.screen.info_string.print('Выберите 2-ой объект')
         if (r := self.select_object(None)) is None:
             return
         else:
             obj2 = r
-        res = obj1.intersection(obj2)
+        # res = obj1.intersection(obj2)
         try:
             res = obj1.intersection(obj2)
         except Exception:
@@ -840,16 +870,16 @@ class Plot:
                 res = obj1.intersection(obj2)
             except Exception:
                 res = None
-                print('Ошибка')
+                self.screen.info_string.print('Ошибка')
         if res is not None:
             if isinstance(res, tuple):
                 for el in res:
                     self.layers[self.current_layer].add_object(el, random_color)
             else:
                 self.layers[self.current_layer].add_object(res, random_color)
-            print('Готово')
+            self.screen.info_string.print('Готово')
         else:
-            print('Нет пересечения')
+            self.screen.info_string.print('Нет пересечения')
         self.full_update()
         return True
 

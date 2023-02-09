@@ -963,6 +963,8 @@ class Spline2:
 class Spline:
     def __init__(self, plane, *points):
         self.plane = plane
+        if isinstance(points[0], list):
+            points = points[0]
         p1, p2, p3 = points[0], points[1], points[2]
         l1 = Line(p1 + Vector(p1, p2) * 0.5, Vector(p1, p2) & self.plane.normal)
         l2 = Line(p2 + Vector(p2, p3) * 0.5, Vector(p2, p3) & self.plane.normal)
@@ -996,6 +998,8 @@ class Spline:
 
 class Spline3D:
     def __init__(self, *points):
+        if isinstance(points[0], list):
+            points = points[0]
         p1, p2, p3 = points[0], points[1], points[2]
         pl = Plane(p1, p2, p3)
         l1 = Line(p1 + Vector(p1, p2) * 0.5, Vector(p1, p2) & pl.normal)

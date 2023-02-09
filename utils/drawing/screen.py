@@ -22,10 +22,11 @@ class Screen:
 
         self.screen.fill(self.bg_color)
 
-        self.plot = Plot(self, (self.tlp[0] + 10, 70), (self.brp[0] - 10, self.brp[1] - 50))
+        self.plot = Plot(self, (self.tlp[0] + 10, 70), (self.brp[0] - 10, self.brp[1] - 64))
         self.command_line = CommandLine(self)
         self.serializable = ['title', 'bg_color', 'plot']
         self.menu = Menu(self)
+        self.info_string = InfoString(self, pg.font.SysFont('Courier', 12), bg_color=self.bg_color)
 
         self.menu.full_update_toolbars()
 
@@ -69,6 +70,33 @@ class Screen:
         self.height = height
         self.tlp = (0, 0)
         self.brp = (width, height)
-        self.plot.resize((self.tlp[0] + 10, 70), (self.brp[0] - 10, self.brp[1] - 50))
+        self.plot.resize((self.tlp[0] + 10, 70), (self.brp[0] - 10, self.brp[1] - 64))
         self.menu.full_update_toolbars()
         self.command_line.update()
+        self.info_string.update()
+        self.update()
+
+    def create_new_file(self):
+        self.plot.layers.clear()
+        self.plot.add_layer('Слой 1')
+
+
+class InfoString:
+    def __init__(self, screen, font, bg_color=(255, 255, 255)):
+        self.screen = screen
+        self.tlp = (self.screen.tlp[0] + 10, self.screen.brp[1] - 56)
+        self.brp = (self.screen.brp[0] - 10, self.screen.brp[1] - 40)
+        self.font = font
+        self.bg_color = bg_color
+
+    def print(self, *args, sep=' '):
+        pg.draw.rect(self.screen.screen, self.bg_color, (self.tlp, self.brp))
+        self.screen.screen.blit(self.font.render(sep.join(map(str, args)), False, (0, 0, 0), self.bg_color),
+                                (self.tlp[0] + 2, self.tlp[1] + 2))
+        self.screen.update()
+
+    def update(self):
+        self.tlp = (self.screen.tlp[0] + 10, self.screen.brp[1] - 56)
+        self.brp = (self.screen.brp[0] - 10, self.screen.brp[1] - 40)
+        pg.draw.rect(self.screen.screen, self.bg_color, (self.tlp, self.brp))
+

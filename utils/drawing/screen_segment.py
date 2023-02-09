@@ -13,14 +13,14 @@ class ScreenSegment:
             self.x1 = min(p1.x, p2.x)
             self.x2 = max(p1.x, p2.x)
             if self.k > 0:
-                min_x = max(self.x1, self.plot.tlp[0] + 1, self.x(self.plot.tlp[1] + 1))
-                max_x = min(self.x2, self.plot.brp[0] - 1, self.x(self.plot.brp[1] - 1))
+                min_x = max(self.x1, self.plot.tlp[0] + 2, self.x(self.plot.tlp[1] + 2))
+                max_x = min(self.x2, self.plot.brp[0] - 2, self.x(self.plot.brp[1] - 2))
             elif self.k < 0:
-                min_x = max(self.x1, self.plot.tlp[0] + 1, self.x(self.plot.brp[1] - 1))
-                max_x = min(self.x2, self.plot.brp[0] - 1, self.x(self.plot.tlp[1] + 1))
+                min_x = max(self.x1, self.plot.tlp[0] + 2, self.x(self.plot.brp[1] - 2))
+                max_x = min(self.x2, self.plot.brp[0] - 2, self.x(self.plot.tlp[1] + 2))
             elif self.plot.tlp[1] < p1.y < self.plot.brp[1]:
-                min_x = max(self.x1, self.plot.tlp[0] + 1)
-                max_x = min(self.x2, self.plot.brp[0] - 1)
+                min_x = max(self.x1, self.plot.tlp[0] + 2)
+                max_x = min(self.x2, self.plot.brp[0] - 2)
             else:
                 self.drawing = False
                 return
@@ -35,8 +35,8 @@ class ScreenSegment:
             self.b = None
             self.y1 = min(p1.y, p2.y)
             self.y2 = max(p1.y, p2.y)
-            min_y = max(self.y1, self.plot.tlp[1] + 1)
-            max_y = min(self.y2, self.plot.brp[1] - 1)
+            min_y = max(self.y1, self.plot.tlp[1] + 2)
+            max_y = min(self.y2, self.plot.brp[1] - 2)
             if min_y <= max_y and self.plot.tlp[0] < p1.x < self.plot.brp[0]:
                 self.drawing = True
                 self.point1 = ScreenPoint(self.plot, p1.x, min_y, self.color)
@@ -62,8 +62,8 @@ class ScreenSegment:
         if self.k == 'inf':
             self.y1 += y
             self.y2 += y
-            min_y = max(self.y1, self.plot.tlp[1] + 1)
-            max_y = min(self.y2, self.plot.brp[1] - 1)
+            min_y = max(self.y1, self.plot.tlp[1] + 2)
+            max_y = min(self.y2, self.plot.brp[1] - 2)
             if min_y <= max_y and self.plot.tlp[0] < self.p1.x < self.plot.brp[0]:
                 self.drawing = True
                 self.point1 = ScreenPoint(self.plot, self.p1.x, min_y, self.color)
@@ -75,14 +75,14 @@ class ScreenSegment:
             self.x1 += x
             self.x2 += x
             if self.k > 0:
-                min_x = max(self.x1, self.plot.tlp[0] + 1, self.x(self.plot.tlp[1] + 1))
-                max_x = min(self.x2, self.plot.brp[0] - 1, self.x(self.plot.brp[1] - 1))
+                min_x = max(self.x1, self.plot.tlp[0] + 2, self.x(self.plot.tlp[1] + 2))
+                max_x = min(self.x2, self.plot.brp[0] - 2, self.x(self.plot.brp[1] - 2))
             elif self.k < 0:
-                min_x = max(self.x1, self.plot.tlp[0] + 1, self.x(self.plot.brp[1] - 1))
-                max_x = min(self.x2, self.plot.brp[0] - 1, self.x(self.plot.tlp[1] + 1))
+                min_x = max(self.x1, self.plot.tlp[0] + 2, self.x(self.plot.brp[1] - 2))
+                max_x = min(self.x2, self.plot.brp[0] - 2, self.x(self.plot.tlp[1] + 2))
             elif self.plot.tlp[1] < self.p1.y < self.plot.brp[1]:
-                min_x = max(self.x1, self.plot.tlp[0] + 1)
-                max_x = min(self.x2, self.plot.brp[0] - 1)
+                min_x = max(self.x1, self.plot.tlp[0] + 2)
+                max_x = min(self.x2, self.plot.brp[0] - 2)
             else:
                 self.drawing = False
                 return

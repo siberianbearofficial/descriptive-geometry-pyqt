@@ -76,7 +76,10 @@ def deserialize(screen, path='history.txt'):
             params = list()
             for key, val in serialized.items():
                 if key != 'name':
-                    params.append(try_deserialize_ag_object(val))
+                    if isinstance(val, list):
+                        params.append(list(map(try_deserialize_ag_object, val)))
+                    else:
+                        params.append(try_deserialize_ag_object(val))
 
             show_exception = object_instance = None
             try:

@@ -31,7 +31,7 @@ class CommandLine:
         try:
             return eval(cmd, self.commands)
         except Exception as ex:
-            print('Error:', ex)
+            self.screen.info_string.print('Error: {}'.format(ex))
 
     def update(self):
         self.textbox.setWidth(self.screen.brp[0] - 20)
@@ -48,14 +48,14 @@ class CommandLine:
                     arg = command.strip()
                     res = self.execute_command(arg)
                     if res:
-                        print(res)
+                        self.screen.info_string.print(res)
                     break
             self.commands[var] = self.execute_command(arg)
         else:
             arg = command.strip()
             res = self.execute_command(arg)
             if res:
-                print(res)
+                self.screen.info_string.print(res)
 
     @staticmethod
     def command_help():

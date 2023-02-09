@@ -19,8 +19,10 @@ class Menu:
         self.main_toolbars[0].add_button('tools', lambda: self.select_toolbar(5), (221, 0), (99, 20))
 
         self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (550, 60), hidden=True))
-        self.main_toolbars[1].add_button('save', lambda: self.screen.save(), (10, 0), (30, 30))
-        self.main_toolbars[1].add_button('open', lambda: self.screen.load(), (57, 0), (30, 30))
+        self.main_toolbars[1].add_button('new_file', self.screen.create_new_file, (10, 0), (30, 30))
+        self.main_toolbars[1].add_button('open', lambda: self.screen.load(), (45, 0), (30, 30))
+        self.main_toolbars[1].add_button('save', lambda: self.screen.save(), (80, 0), (30, 30))
+        self.main_toolbars[1].add_button('saveas', lambda: self.screen.save(), (115, 0), (30, 30))
 
         self.main_toolbars.append(Toolbar2(self.screen, (0, 25), (550, 60)))
         self.main_toolbars[2].add_button('point', lambda: self.screen.plot.create_point(), (10, 0))
