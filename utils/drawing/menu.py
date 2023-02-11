@@ -61,6 +61,7 @@ class Menu:
         self.main_toolbars[5].add_button('angle', lambda: self.screen.plot.get_angle(), (80, 0))
         self.main_toolbars[5].add_button('more_options', lambda: self.open_toolbar(4), (110, 0), size=(12, 30))
         self.main_toolbars[5].add_button('intersection', lambda: self.screen.plot.get_intersection(), (125, 0))
+        self.main_toolbars[5].add_button('undo', lambda: self.screen.plot.hm.undo(), (160, 0))
 
         self.other_toolbars.append(Toolbar2(self.screen, (40, 60), (250, 130)))
         self.other_toolbars[-1].add_button('perpendicular',

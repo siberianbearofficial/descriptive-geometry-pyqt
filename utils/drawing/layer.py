@@ -10,11 +10,15 @@ class Layer:
 
         self.serializable = ['hidden', 'objects', 'name']
 
-    def add_object(self, ag_object, color):
+    def add_object(self, ag_object, color, history_record=True):
         self.objects.append(GeneralObject(self.plot, ag_object, color))
         self.plot.sm.update_intersections()
+        if history_record:
+            self.plot.hm.add_record('add_object', ag_object, color)
 
-    def delete_object(self, index):
+    def delete_object(self, index, history_record=True):
+        if history_record:
+            self.plot.hm.add_record('delete_object', self.objects[-1].ag_object, self.objects[-1].color)
         self.objects.pop(index)
         self.plot.sm.update_intersections()
         self.plot.full_update()

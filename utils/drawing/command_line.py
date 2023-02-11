@@ -2,7 +2,6 @@ import random
 import pygame as pg
 from pygame_widgets.textbox import TextBox
 import utils.maths.angem as ag
-from utils.drawing.general_object import GeneralObject
 
 
 class CommandLine:
@@ -20,12 +19,23 @@ class CommandLine:
                          'vector': ag.Vector, 'ellipse': ag.Ellipse, 'sphere': ag.Sphere,
                          'cylinder': ag.Cylinder, 'cone': ag.Cone, 'spline': ag.Spline, 'spline3d': ag.Spline3D,
                          'circle': ag.Circle, 'distance': ag.distance, 'angle': ag.angle, 'clear': self.command_clear,
-                         'draw': self.command_draw_object, 'help': CommandLine.command_help,
-                         'save': self.command_serialize, 'load': self.command_deserialize}
+                         'draw': self.command_draw_object, 'help': CommandLine.command_help, 'mtrx': ag.Matrix,
+                         'save': self.command_serialize, 'load': self.command_deserialize, 'generate': self.generate}
 
     def output(self):
         self.process_command(self.textbox.getText())
         self.textbox.setText('')
+
+    def generate(self):
+        for _ in range(100):
+            self.command_draw_object(self.generate_random_object())
+
+    def generate_random_object(self):
+        object_type = random.choice([ag.Point])
+        obj = object_type(random.randint(self.screen.plot.tlp[0], self.screen.plot.brp[0]),
+                          random.randint(self.screen.plot.tlp[1], self.screen.plot.brp[1]),
+                          random.randint(self.screen.plot.tlp[1], self.screen.plot.brp[1]))
+        return obj
 
     def execute_command(self, cmd):
         try:
@@ -78,15 +88,6 @@ class CommandLine:
             segment(point(0, 0, 0), point(1, 1, 1))   # this creates segment but doesn't draw or print it')
             draw(segment(point(0, 0, 0), point(1, 1, 1)))
             segment(point(0, 0, 0), point(1, 1, 1)))
-            
-            Рисование точек мышкой работает так:
-            1. Кликнуть на кнопку Point (должна активироваться, т.е. стать зеленой)
-            2. Кликнуть на нужное место на экране для выбора координаты X
-            3. Аналогично для Y
-            4. Аналогично для Z
-            После этого появится черная точка с выбранными координатами.
-            Чтобы отключить режим, нужно нажать еще раз на кнопку Point или любую другую из Toolbar
-            (в этом случае будет отключен этот режим и сразу включен другой)
             '''
         )
 

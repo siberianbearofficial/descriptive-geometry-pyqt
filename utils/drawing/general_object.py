@@ -2,10 +2,11 @@ import utils.maths.angem as ag
 
 
 class GeneralObject:
-    def __init__(self, plot, ag_object=None, color=(0, 0, 0), xy_projection=None, xz_projection=None):
+    def __init__(self, plot, ag_object=None, color=(0, 0, 0), name='A', xy_projection=None, xz_projection=None):
         self.ag_object = ag_object
         self.plot = plot
         self.color = color
+        self.name = name
         if xy_projection is None or xz_projection is None:
             self.xy_projection, self.xz_projection = self.projections()
         else:
@@ -31,7 +32,7 @@ class GeneralObject:
         self.xy_projection, self.xz_projection = self.projections()
 
     def move(self, x, y):
-        if isinstance(self.ag_object, ag.Line):
+        if isinstance(self.ag_object, ag.Line) or isinstance(self.ag_object, ag.Plane):
             self.xy_projection, self.xz_projection = self.projections()
             return
         for el in self.xy_projection:

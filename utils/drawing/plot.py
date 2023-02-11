@@ -2,12 +2,14 @@ import pygame as pg
 import utils.maths.angem as ag
 from utils.drawing.axis import Axis
 from utils.drawing.projections import ProjectionManager
+from utils.drawing.history import HistoryManager
 import utils.drawing.snap as snap
 from utils.drawing.layer import Layer
 from utils.drawing.screen_point import ScreenPoint, ScreenPoint2
 from utils.drawing.screen_segment import ScreenSegment
 from utils.drawing.screen_circle import ScreenCircle
 from utils.drawing.general_object import GeneralObject
+from utils.drawing.attributes_window import AttributesWindow
 import random
 
 
@@ -37,6 +39,7 @@ class Plot:
         self.axis = Axis(self)
         self.pm = ProjectionManager(self)
         self.sm = snap.SnapManager(self)
+        self.hm = HistoryManager(self)
 
         self.clear()
         self.axis.draw()
@@ -180,6 +183,7 @@ class Plot:
                             self.selected_object, self.selected_object_index = obj, (i, j)
                         break
         if self.selected_object is not None:
+            self.screen.attributes_window = AttributesWindow(self.screen, self.selected_object)
             for el in self.selected_object.xy_projection:
                 if isinstance(el, ScreenPoint) and \
                         self.tlp[0] + 3 <= el.x <= self.brp[0] - 3 and self.tlp[1] + 3 <= el.y <= self.brp[1] - 3:
@@ -209,8 +213,18 @@ class Plot:
                         el.radius - 1 and self.tlp[1] + el.radius + 1 <= el.center.y <= self.brp[1] - el.radius - 1:
                     pg.draw.circle(self.screen.screen, (0, 162, 232), el.center.tuple(), el.radius + 1, 4)
             self.selected_object.draw()
+            self.screen.attributes_window.destroy()
+            self.screen.draw_attributes_window()
+        else:
+            if self.screen.attributes_window is not None:
+                if old_obj is not None:
+                    old_obj.update_projections()
+                self.screen.attributes_window.destroy()
+                self.screen.attributes_window = None
+            self.full_update()
 
     def change_current_layer(self, new_layer):
+        self.hm.add_record('change_layer', self.current_layer, new_layer)
         self.current_layer = new_layer
         self.screen.menu.update_layer_list()
 
@@ -219,6 +233,7 @@ class Plot:
         self.screen.menu.update_layer_list()
 
     def show_hide_layer(self, hidden, index=-1):
+        self.hm.add_record('hide_layer', index, hidden)
         if index == -1:
             self.layers[self.current_layer].hidden = hidden
         else:
@@ -259,6 +274,7 @@ class Plot:
         self.axis.draw()
         for layer in self.layers:
             layer.draw()
+        self.screen.draw_attributes_window()
 
     def point_is_on_plot(self, point):
         return self.tlp[0] < point[0] < self.brp[0] and self.tlp[1] < point[1] < self.brp[1]
@@ -874,7 +890,8 @@ class Plot:
         if res is not None:
             if isinstance(res, tuple):
                 for el in res:
-                    self.layers[self.current_layer].add_object(el, random_color)
+                    self.layers[self.current_layer].add_object(el, random_color, history_record=False)
+                self.hm.add_record('add_several_objects', len(res))
             else:
                 self.layers[self.current_layer].add_object(res, random_color)
             self.screen.info_string.print('Готово')

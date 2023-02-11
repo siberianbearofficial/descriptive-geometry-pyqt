@@ -1,6 +1,7 @@
 from utils.drawing.command_line import CommandLine
 from utils.drawing.plot import Plot
 from utils.drawing.menu import Menu
+from utils.drawing.attributes_window import AttributesWindow
 
 import pygame as pg
 
@@ -22,6 +23,7 @@ class Screen:
 
         self.screen.fill(self.bg_color)
 
+        self.attributes_window = None
         self.plot = Plot(self, (self.tlp[0] + 10, 70), (self.brp[0] - 10, self.brp[1] - 64))
         self.command_line = CommandLine(self)
         self.serializable = ['title', 'bg_color', 'plot']
@@ -50,8 +52,10 @@ class Screen:
                 return
             if self.command_line.clicked_on(self.click_pos):
                 return
-            # TODO: if clicked on plot
-            self.plot.clicked(self.click_pos)
+            if self.attributes_window is not None and self.attributes_window.point_on_window(self.click_pos):
+                self.attributes_window.clicked(self.click_pos)
+            elif self.plot.point_is_on_plot(self.click_pos):
+                self.plot.clicked(self.click_pos)
         elif event.button == 3:
             self.plot.moving_camera()
         elif event.button == 4:
@@ -79,6 +83,10 @@ class Screen:
     def create_new_file(self):
         self.plot.layers.clear()
         self.plot.add_layer('Слой 1')
+
+    def draw_attributes_window(self):
+        if self.attributes_window is not None:
+            self.attributes_window.draw()
 
 
 class InfoString:
