@@ -1,7 +1,7 @@
 from utils.drawing.command_line import CommandLine
 from utils.drawing.plot import Plot
 from utils.drawing.menu import Menu
-from utils.drawing.attributes_window import AttributesWindow
+from utils.drawing.attributes_window_pyqt import open_attribute_window
 
 import pygame as pg
 
@@ -66,6 +66,10 @@ class Screen:
     def key_down(self, event):
         if event.key == 127 and self.plot.selected_object is not None:
             self.plot.layers[self.plot.selected_object_index[0]].delete_object(self.plot.selected_object_index[1])
+        if event.key == 13 and self.plot.selected_object is not None:
+            self.plot.layers[self.plot.selected_object_index[0]].objects[self.plot.selected_object_index[1]] = \
+                open_attribute_window(self.plot.selected_object)
+            self.plot.full_update()
 
     def resize(self, width, height):
         self.screen = pg.display.set_mode((width, height), pg.RESIZABLE)

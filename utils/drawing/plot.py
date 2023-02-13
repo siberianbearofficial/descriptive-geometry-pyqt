@@ -10,6 +10,7 @@ from utils.drawing.screen_segment import ScreenSegment
 from utils.drawing.screen_circle import ScreenCircle
 from utils.drawing.general_object import GeneralObject
 from utils.drawing.attributes_window import AttributesWindow
+from utils.drawing.attributes_window_pyqt import open_attribute_window
 import random
 
 
@@ -183,7 +184,7 @@ class Plot:
                             self.selected_object, self.selected_object_index = obj, (i, j)
                         break
         if self.selected_object is not None:
-            self.screen.attributes_window = AttributesWindow(self.screen, self.selected_object)
+            # self.screen.attributes_window = AttributesWindow(self.screen, self.selected_object)
             for el in self.selected_object.xy_projection:
                 if isinstance(el, ScreenPoint) and \
                         self.tlp[0] + 3 <= el.x <= self.brp[0] - 3 and self.tlp[1] + 3 <= el.y <= self.brp[1] - 3:
@@ -213,15 +214,16 @@ class Plot:
                         el.radius - 1 and self.tlp[1] + el.radius + 1 <= el.center.y <= self.brp[1] - el.radius - 1:
                     pg.draw.circle(self.screen.screen, (0, 162, 232), el.center.tuple(), el.radius + 1, 4)
             self.selected_object.draw()
-            self.screen.attributes_window.destroy()
-            self.screen.draw_attributes_window()
+            # self.screen.attributes_window.destroy()
+            # self.screen.draw_attributes_window()
         else:
-            if self.screen.attributes_window is not None:
-                if old_obj is not None:
-                    old_obj.update_projections()
-                self.screen.attributes_window.destroy()
-                self.screen.attributes_window = None
-            self.full_update()
+            # if self.screen.attributes_window is not None:
+            #     if old_obj is not None:
+            #         old_obj.update_projections()
+            #     self.screen.attributes_window.destroy()
+            #     self.screen.attributes_window = None
+            # self.full_update()
+            pass
 
     def change_current_layer(self, new_layer):
         self.hm.add_record('change_layer', self.current_layer, new_layer)

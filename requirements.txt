@@ -2,3 +2,4 @@ pip~=22.3.1
 pygame~=2.1.2
 setuptools~=65.6.3
 pygame-widgets==1.1.0
+PyQt5~=5.15.9

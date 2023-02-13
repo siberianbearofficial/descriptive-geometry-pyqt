@@ -11,7 +11,7 @@ class Layer:
         self.serializable = ['hidden', 'objects', 'name']
 
     def add_object(self, ag_object, color, history_record=True):
-        self.objects.append(GeneralObject(self.plot, ag_object, color))
+        self.objects.append(GeneralObject(self.plot, ag_object, color, name='GENERATE'))
         self.plot.sm.update_intersections()
         if history_record:
             self.plot.hm.add_record('add_object', ag_object, color)
