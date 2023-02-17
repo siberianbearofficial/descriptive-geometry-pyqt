@@ -144,7 +144,7 @@ class SnapManager:
 class Snap:
     def __init__(self, func, image):
         self.func = func
-        self.image = pg.image.load('images\\snap_' + image + '.bmp')
+        self.image = pg.image.load('images/snap_' + image + '.bmp')
         self.image.set_colorkey((255, 255, 255))
 
     def draw(self, screen, pos):

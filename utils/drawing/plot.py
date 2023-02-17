@@ -880,6 +880,7 @@ class Plot:
             return
         else:
             obj2 = r
+        self.screen.info_string.print('...')
         # res = obj1.intersection(obj2)
         try:
             res = obj1.intersection(obj2)
@@ -889,6 +890,7 @@ class Plot:
             except Exception:
                 res = None
                 self.screen.info_string.print('Ошибка')
+                return True
         if res is not None:
             if isinstance(res, tuple):
                 for el in res:

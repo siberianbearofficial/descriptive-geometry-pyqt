@@ -143,12 +143,12 @@ class Menu:
         self.main_toolbars[4].buttons[0].text = self.font.render(
             self.screen.plot.layers[self.screen.plot.current_layer].name, False, (0, 0, 0))
         if self.screen.plot.layers[self.screen.plot.current_layer].hidden:
-            self.main_toolbars[4].buttons[2].image = pg.image.load('images\\button_show.bmp')
-            self.main_toolbars[4].buttons[2].image_pressed = pg.image.load('images\\button_show_pressed.bmp')
+            self.main_toolbars[4].buttons[2].image = pg.image.load('images/button_show.bmp')
+            self.main_toolbars[4].buttons[2].image_pressed = pg.image.load('images/button_show_pressed.bmp')
             self.main_toolbars[4].buttons[2].function = lambda: self.screen.plot.show_hide_layer(False)
         else:
-            self.main_toolbars[4].buttons[2].image = pg.image.load('images\\button_hide.bmp')
-            self.main_toolbars[4].buttons[2].image_pressed = pg.image.load('images\\button_hide_pressed.bmp')
+            self.main_toolbars[4].buttons[2].image = pg.image.load('images/button_hide.bmp')
+            self.main_toolbars[4].buttons[2].image_pressed = pg.image.load('images/button_hide_pressed.bmp')
             self.main_toolbars[4].buttons[2].function = lambda: self.screen.plot.show_hide_layer(True)
         self.full_update_toolbars()
         self.screen.plot.full_update()

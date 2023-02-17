@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from utils.drawing.general_object import GeneralObject
 
 
@@ -31,7 +31,7 @@ class MainWindow(QtWidgets.QMainWindow):
         label = QtWidgets.QLabel('Name:', self.attributes_panel)
         label.setGeometry(0, 0, 75, 25)
         name_line = QtWidgets.QLineEdit(self.dict['name'], self.attributes_panel)
-        name_line.setGeometry(75, 0, 200, 25)
+        name_line.setGeometry(75, 0, 190, 25)
         name_line.textChanged.connect(self.set_name)
 
         label = QtWidgets.QLabel('Color:', self.attributes_panel)
@@ -57,6 +57,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.attributes_panel.move(10, 10 - self.scroll_bar.value() * 10)
 
     def set_color(self):
+        QtWidgets.QColorDialog.setStandardColor(0, QtGui.QColor(*self.obj.color))
         color = self.color_dialog.getColor()
         self.dict['color'] = color.red(), color.green(), color.blue()
         self.color_button.setStyleSheet(f'background: rgb{str((color.red(), color.green(), color.blue()))}')

@@ -8,6 +8,7 @@ class HistoryManager:
         self.records.append(Record(action_type, action_info))
         if len(self.records) > self.max_count:
             self.records.pop(0)
+        # print(*self.records, sep='\n', end='\n------------------\n')
 
     def undo(self):
         if len(self.records) == 0:

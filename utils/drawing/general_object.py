@@ -29,10 +29,10 @@ class GeneralObject:
 
     def projections(self):
         xy_projection = self.plot.pm.get_projection(self.ag_object, 'xy', self.color)
-        if not isinstance(xy_projection, tuple):
+        if not isinstance(xy_projection, (tuple, list)):
             xy_projection = xy_projection,
         xz_projection = self.plot.pm.get_projection(self.ag_object, 'xz', self.color)
-        if not isinstance(xz_projection, tuple):
+        if not isinstance(xz_projection, (tuple, list)):
             xz_projection = xz_projection,
         return xy_projection, xz_projection
 

@@ -3,8 +3,8 @@ import pygame as pg
 
 class Button:
     def __init__(self, image, function, pos, size=(30, 30), text=None, text_pos=(0, 0), hide_tb=False):
-        self.image = pg.image.load('images\\button_' + image + '.bmp')
-        self.image_pressed = pg.image.load('images\\button_' + image + '_pressed.bmp')
+        self.image = pg.image.load('images/button_' + image + '.bmp')
+        self.image_pressed = pg.image.load('images/button_' + image + '_pressed.bmp')
         self.p1 = pos
         self.p2 = pos[0] + size[0], pos[1] + size[1]
         self.function = function

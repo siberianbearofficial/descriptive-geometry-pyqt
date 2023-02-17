@@ -17,11 +17,13 @@ class ProjectionManager:
         if isinstance(obj, ag.Point):
             return ScreenPoint(self.plot, *self.convert_ag_coordinate_to_screen_coordinate(obj.x, obj.y, obj.z, plane),
                                color)
+
         elif isinstance(obj, ag.Circle):
             if obj.radius == 0:
                 return self.get_projection(obj.center, plane, color)
             if obj.normal.x == 0 and (obj.normal.y if plane == 'xy' else obj.normal.z) == 0:
-                return ScreenCircle(self.plot, self.get_projection(obj.center, plane, color), obj.radius * self.zoom, color),
+                return ScreenCircle(self.plot, self.get_projection(obj.center, plane, color), obj.radius * self.zoom,
+                                    color),
             if obj.normal * (ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0)) == 0:
                 point1, point2 = obj.intersection(
                     ag.Line(obj.center, obj.normal & (ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0))))
@@ -40,6 +42,7 @@ class ProjectionManager:
                 lst.append(self.get_point(obj.center + -vector_sin * s + -vector_cos * c, plane, color))
                 x += step
             return tuple(lst)
+
         elif isinstance(obj, ag.Arc):
             step = 1 / self.zoom / obj.radius
             x, lst = 0, []
@@ -54,6 +57,7 @@ class ProjectionManager:
                     lst.append(self.get_point(obj.center + obj.vector_sin * s + obj.vector_cos * c, plane, color))
                     x -= step
             return tuple(lst)
+
         elif isinstance(obj, ag.Segment):
             p1 = ScreenPoint(self.plot,
                              *self.convert_ag_coordinate_to_screen_coordinate(obj.p1.x, obj.p1.y, obj.p1.z, plane),
@@ -62,10 +66,12 @@ class ProjectionManager:
                              *self.convert_ag_coordinate_to_screen_coordinate(obj.p2.x, obj.p2.y, obj.p2.z, plane),
                              color)
             return ScreenSegment(self.plot, p1, p2, color)
+
         elif isinstance(obj, ag.Plane):
             if plane == 'xy':
                 return self.get_projection(obj.trace_xy(), plane, color)
             return self.get_projection(obj.trace_xz(), plane, color)
+
         elif isinstance(obj, ag.Line):
             if plane == 'xy':
                 if obj.vector.x == 0 and obj.vector.y == 0:
@@ -93,6 +99,7 @@ class ProjectionManager:
                         obj.cut_by_z(self.convert_screen_y_to_ag_z(self.axis.lp.y - 1),
                                      self.convert_screen_y_to_ag_z(self.plot.tlp[1] + 1)),
                         plane, color)
+
         elif isinstance(obj, ag.Ellipse):
             lst = []
             step = 1 / self.zoom
@@ -109,51 +116,50 @@ class ProjectionManager:
                             lst.append(self.get_point(res, plane, color))
                 c2 += step
                 c1 -= step
-            return tuple(lst)
+            return lst
+
         elif isinstance(obj, ag.Sphere):
             return ScreenCircle(self.plot, self.get_projection(obj.center, plane, color), obj.radius * self.zoom, color)
+
         elif isinstance(obj, ag.Cylinder):
             v = ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0)
             if obj.vector | v:
                 return self.get_projection(ag.Circle(obj.center1, obj.radius, obj.vector), plane, color)
-            return *self.get_projection(ag.Circle(obj.center1, obj.radius, obj.vector), plane, color), \
-                *self.get_projection(ag.Circle(obj.center2, obj.radius, obj.vector), plane, color), \
-                self.get_projection(ag.Segment(obj.center1 + (obj.vector & v * (obj.radius / abs(obj.vector & v))),
-                                               obj.center2 + (obj.vector & v * (obj.radius / abs(obj.vector & v)))),
-                                    plane, color), \
-                self.get_projection(ag.Segment(obj.center1 + -(obj.vector & v * (obj.radius / abs(obj.vector & v))),
-                                               obj.center2 + -(obj.vector & v * (obj.radius / abs(obj.vector & v)))),
-                                    plane, color)
+            res = self.get_projection(ag.Circle(obj.center1, obj.radius, obj.vector), plane, color), \
+                  self.get_projection(ag.Circle(obj.center2, obj.radius, obj.vector), plane, color), \
+                  self.get_projection(ag.Segment(obj.center1 + (obj.vector & v * (obj.radius / abs(obj.vector & v))),
+                                                 obj.center2 + (obj.vector & v * (obj.radius / abs(obj.vector & v)))),
+                                      plane, color), \
+                  self.get_projection(ag.Segment(obj.center1 + -(obj.vector & v * (obj.radius / abs(obj.vector & v))),
+                                                 obj.center2 + -(obj.vector & v * (obj.radius / abs(obj.vector & v)))),
+                                      plane, color)
+            return unpack_inner_tuples(res)
+
         elif isinstance(obj, ag.Cone):
             v = ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0)
-            if obj.radius2 == 0:
-                if obj.vector | v:
-                    return self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color)
-                return *self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color), \
-                       self.get_projection(
-                           ag.Segment(obj.center1 + (obj.vector & v * (obj.radius1 / abs(obj.vector & v))),
-                                      obj.center2), plane, color), \
-                       self.get_projection(
-                           ag.Segment(obj.center1 + -(obj.vector & v * (obj.radius1 / abs(obj.vector & v))),
-                                      obj.center2), plane, color)
             if obj.vector | v:
-                return self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color)
-            return *self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color), \
-                *self.get_projection(ag.Circle(obj.center2, obj.radius2, obj.vector), plane, color), \
-                self.get_projection(ag.Segment(obj.center1 + (obj.vector & v * (obj.radius1 / abs(obj.vector & v))),
-                                               obj.center2 + (obj.vector & v * (obj.radius2 / abs(obj.vector & v)))),
-                                    plane, color), \
-                self.get_projection(ag.Segment(obj.center1 + -(obj.vector & v * (obj.radius1 / abs(obj.vector & v))),
-                                               obj.center2 + -(obj.vector & v * (obj.radius2 / abs(obj.vector & v)))),
-                                    plane, color)
+                res = self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color), \
+                      self.get_projection(ag.Circle(obj.center1, obj.radius2, obj.vector), plane, color)
+            else:
+                res = self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color), \
+                      self.get_projection(ag.Circle(obj.center2, obj.radius2, obj.vector), plane, color), \
+                      self.get_projection(
+                          ag.Segment(obj.center1 + (obj.vector & v * (obj.radius1 / abs(obj.vector & v))),
+                                     obj.center2 + (obj.vector & v * (obj.radius2 / abs(obj.vector & v)))),
+                          plane, color), \
+                      self.get_projection(
+                          ag.Segment(obj.center1 + -(obj.vector & v * (obj.radius1 / abs(obj.vector & v))),
+                                     obj.center2 + -(obj.vector & v * (obj.radius2 / abs(obj.vector & v)))),
+                          plane, color)
+            return unpack_inner_tuples(res)
+
         elif isinstance(obj, ag.RotationSurface):
             v = ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0)
-            if obj.vector | v:
-                return *self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color), \
-                       *self.get_projection(ag.Circle(obj.center2, obj.radius2, obj.vector), plane, color)
-            return *self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color), \
-                *self.get_projection(ag.Circle(obj.center2, obj.radius2, obj.vector), plane, color), \
-                *self.get_projection(obj.spline1, plane, color), *self.get_projection(obj.spline2, plane, color)
+            res = self.get_projection(ag.Circle(obj.center1, obj.radius1, obj.vector), plane, color), \
+                  self.get_projection(ag.Circle(obj.center2, obj.radius2, obj.vector), plane, color), \
+                  self.get_projection(obj.spline1, plane, color), self.get_projection(obj.spline2, plane, color)
+            return unpack_inner_tuples(res)
+
         elif isinstance(obj, ag.Tor):
             if obj.tube_radius > obj.radius:
                 circles = *self.get_projection(ag.Circle(obj.center, obj.radius + obj.tube_radius, obj.vector), plane,
@@ -181,27 +187,16 @@ class ProjectionManager:
                 ag.Plane(obj.center, obj.vector, ag.Vector(1, 0, 0) if plane == 'xy' else ag.Vector(1, 0, 0)))
             return *circles, *self.get_projection(c1, plane, color), *self.get_projection(c2, plane, color), \
                    *self.get_projection(c3, plane, color), *self.get_projection(c4, plane, color)
-        elif isinstance(obj, ag.Spline2):
-            lst = []
-            for i in range(1, len(obj.array)):
-                y = lambda x: obj.array[i][1] * x**3 + obj.array[i][2] * x**2 + obj.array[i][3] * x + obj.array[i][4]
-                x = obj.array[i - 1][0].x
-                print(obj.array[i])
-                print(y(x))
-                while x < obj.array[i][0].x:
-                    lst.append(self.get_point(obj.convert_2d_point_to_3d(ag.Point(x, y(x), 0)), plane, color))
-                    d = 3 * obj.array[i][1] * x ** 2 + 2 * obj.array[i][2] * x + obj.array[i][3]
-                    x += min(1, max(0.1, 1 / abs(d))) / self.zoom
-            return tuple(lst)
+
         elif isinstance(obj, ag.Spline) or isinstance(obj, ag.Spline3D):
-            lst = []
+            res = []
             for i in range(1, len(obj.array)):
                 pr = self.get_projection(obj.array[i][1], plane, color)
-                if isinstance(pr, tuple):
-                    lst.extend(list(pr))
+                if isinstance(pr, (tuple, list)):
+                    res.extend(list(pr))
                 else:
-                    lst.append(pr)
-            return tuple(lst)
+                    res.append(pr)
+            return res
 
     def get_point(self, obj, plane, color):
         return ScreenPoint2(self.plot, *self.convert_ag_coordinate_to_screen_coordinate(obj.x, obj.y, obj.z, plane),
@@ -220,3 +215,13 @@ class ProjectionManager:
 
     def convert_screen_y_to_ag_z(self, z):
         return (self.axis.lp.y - z) / self.zoom
+
+
+def unpack_inner_tuples(tpl):
+    new = list()
+    for el in tpl:
+        if isinstance(el, (tuple, list)):
+            new.extend(el)
+        else:
+            new.append(el)
+    return new

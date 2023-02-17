@@ -20,7 +20,10 @@ class CommandLine:
                          'cylinder': ag.Cylinder, 'cone': ag.Cone, 'spline': ag.Spline, 'spline3d': ag.Spline3D,
                          'circle': ag.Circle, 'distance': ag.distance, 'angle': ag.angle, 'clear': self.command_clear,
                          'draw': self.command_draw_object, 'help': CommandLine.command_help, 'mtrx': ag.Matrix,
-                         'save': self.command_serialize, 'load': self.command_deserialize, 'generate': self.generate}
+                         'save': self.command_serialize, 'load': self.command_deserialize, 'generate': self.generate,
+                         'reset': self.command_reset}
+
+        self.variables = self.commands.copy()
 
     def output(self):
         self.process_command(self.textbox.getText())
@@ -39,7 +42,7 @@ class CommandLine:
 
     def execute_command(self, cmd):
         try:
-            return eval(cmd, self.commands)
+            return eval(cmd, self.variables)
         except Exception as ex:
             self.screen.info_string.print('Error: {}'.format(ex))
 
@@ -60,12 +63,24 @@ class CommandLine:
                     if res:
                         self.screen.info_string.print(res)
                     break
-            self.commands[var] = self.execute_command(arg)
+            if var != 'reset':
+                self.variables[var] = self.execute_command(arg)
+            else:
+                raise Exception("You can't change command reset")
         else:
             arg = command.strip()
             res = self.execute_command(arg)
             if res:
                 self.screen.info_string.print(res)
+
+    def command_reset(self, function=None):
+        if function:
+            if function in self.variables:
+                self.variables[function] = self.commands[function]
+            else:
+                self.variables.pop(function)
+        else:
+            self.variables = self.commands.copy()
 
     @staticmethod
     def command_help():
