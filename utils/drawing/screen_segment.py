@@ -2,11 +2,17 @@ from utils.drawing.screen_point import ScreenPoint
 
 
 class ScreenSegment:
-    def __init__(self, plot, p1, p2, color=(0, 0, 0)):
+    def __init__(self, plot, p1, p2, color=(0, 0, 0), thickness=3, line_type=1):
+        if isinstance(p1, tuple):
+            p1 = ScreenPoint(plot, *p1, color)
+        if isinstance(p2, tuple):
+            p2 = ScreenPoint(plot, *p2, color)
         self.p1 = p1
         self.p2 = p2
         self.plot = plot
         self.color = color
+        self.thickness = thickness
+        self.line_type = line_type
         if self.p2.x != self.p1.x:
             self.k = ((self.p2.y - self.p1.y) / (self.p2.x - self.p1.x))
             self.b = p1.y - self.k * p1.x
@@ -47,6 +53,14 @@ class ScreenSegment:
     def draw(self):
         if self.drawing:
             self.plot.draw_segment(self, self.color)
+
+    def draw_qt(self, color=None, thickness=-1):
+        if thickness == -1:
+            thickness = self.thickness
+        if color is None:
+            color = self.color
+        if self.drawing:
+            self.plot.draw_segment(self.p1.tuple(), self.p2.tuple(), color, thickness, self.line_type)
 
     def y(self, x):
         return self.k * x + self.b

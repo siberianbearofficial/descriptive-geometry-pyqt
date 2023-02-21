@@ -21,12 +21,16 @@ class Layer:
             self.plot.hm.add_record('delete_object', self.objects[-1].ag_object, self.objects[-1].color)
         self.objects.pop(index)
         self.plot.sm.update_intersections()
-        self.plot.full_update()
 
     def draw(self):
         if not self.hidden:
             for obj in self.objects:
                 obj.draw()
+
+    def draw_qt(self):
+        if not self.hidden:
+            for obj in self.objects:
+                obj.draw_qt()
 
     def update_projections(self):
         for obj in self.objects:

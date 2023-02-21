@@ -9,14 +9,10 @@ from utils.drawing.screen_point import ScreenPoint, ScreenPoint2
 from utils.drawing.screen_segment import ScreenSegment
 from utils.drawing.screen_circle import ScreenCircle
 from utils.drawing.general_object import GeneralObject
-from utils.drawing.attributes_window import AttributesWindow
-from utils.drawing.attributes_window_pyqt import open_attribute_window
 import random
 
 
 class Plot:
-    POINT_SELECTION = 0
-    SEGMENT_SELECTION = 1
 
     def __init__(self, screen, tlp, brp):
         self.screen = screen

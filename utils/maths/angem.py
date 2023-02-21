@@ -708,7 +708,7 @@ class Cylinder:
         else:
             self.height = point2_or_height
             self.vector = vector
-            self.center2 = self.center1 + vector * self.height / abs(vector)
+            self.center2 = self.center1 + vector * (self.height / abs(vector))
 
     def intersection(self, other):
         if isinstance(other, Plane) and other.normal | self.vector:

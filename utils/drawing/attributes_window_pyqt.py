@@ -43,7 +43,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.color_button.clicked.connect(lambda *args: self.set_color())
         self.color_button.setStyleSheet(f'background: rgb{str(obj.color)}')
 
-        attributes_window = AttributeWindow(self.attributes_panel, self.dict)
+        attributes_window = AttributeWindow(self.attributes_panel, self.dict['ag_object'])
         attributes_window.setGeometry(0, 60, 275, attributes_window.h)
         h = attributes_window.h + 70
 

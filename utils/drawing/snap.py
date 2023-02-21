@@ -10,29 +10,27 @@ class SnapManager:
         self.snaps = [Snap(SnapManager.snap_point, 'point'),
                       Snap(SnapManager.snap_segment_points, 'point'),
                       Snap(SnapManager.snap_intersection, 'intersection'),
-                      Snap(SnapManager.snap_perpendicular, 'perpendicular'),
                       Snap(SnapManager.snap_nearest_point, 'nearest'),
                       Snap(SnapManager.snap_nearest_point_2, 'nearest')]
 
         self.intersections_xy = []
         self.intersections_xz = []
 
-    def get_snap(self, screen, pos, plane, x=None, y=None, z=None, last_point=None):
+    def get_snap(self, pos, plane, x=None, y=None, z=None):
         self.x, self.y, self.z = x, y, z
         self.plane = plane
-        self.last_point = last_point
         if plane == 'xy':
             p = (pos[0] if x is None else x, pos[1] if y is None else y)
             for el in self.snaps:
                 for snap in el.func(self, p):
                     if x is not None and abs(x - snap[0]) < 1 and abs(pos[1] - snap[1]) <= 10:
-                        el.draw(screen, snap)
+                        el.draw(snap)
                         return snap
                     if y is not None and abs(y - snap[1]) < 1 and abs(pos[0] - snap[0]) <= 10:
-                        el.draw(screen, snap)
+                        el.draw(snap)
                         return snap
                     if x is None and y is None and distance(pos, snap) <= 10:
-                        el.draw(screen, snap)
+                        el.draw(snap)
                         return snap
             return p
         if plane == 'xz':
@@ -40,13 +38,13 @@ class SnapManager:
             for el in self.snaps:
                 for snap in el.func(self, p):
                     if x is not None and abs(x - snap[0]) < 1 and abs(pos[1] - snap[1]) <= 10:
-                        el.draw(screen, snap)
+                        el.draw(snap)
                         return snap
                     if z is not None and abs(z - snap[1]) < 1 and abs(pos[0] - snap[0]) <= 10:
-                        el.draw(screen, snap)
+                        el.draw(snap)
                         return snap
                     if x is None and z is None and distance(pos, snap) <= 10:
-                        el.draw(screen, snap)
+                        el.draw(snap)
                         return snap
             return p
         return pos
@@ -89,18 +87,12 @@ class SnapManager:
                     if min(obj.p1.x, obj.p2.x) < pos[0] < max(obj.p1.x, obj.p2.x):
                         k = ((obj.p1.y - obj.p2.y) / (obj.p1.x - obj.p2.x)) if obj.p1.x - obj.p2.x != 0 else 10000000000
                         b = obj.p1.y - obj.p1.x * k
-                        yield pos[0], k * pos[0] + b
+                        yield pos[0], int(k * pos[0] + b)
 
     def snap_nearest_point_2(self, pos):
         for obj in self.get_screen_objects(self.plane):
             if isinstance(obj, ScreenPoint2):
                 yield obj.tuple()
-
-    def snap_perpendicular(self, pos):
-        if self.last_point is not None and self.plane == 'xy':
-            for obj in self.get_screen_objects(self.plane):
-                if isinstance(obj, ScreenSegment):
-                    yield nearest_point(self.last_point, obj)
 
     def update_intersections(self):
         lst = []
@@ -119,7 +111,7 @@ class SnapManager:
                     y = k*x + b
                     if min(obj1.p1.x, obj1.p2.x) <= x <= max(obj1.p1.x, obj1.p2.x) and \
                             min(obj2[0].p1.x, obj2[0].p2.x) <= x <= max(obj2[0].p1.x, obj2[0].p2.x):
-                        self.intersections_xy.append((x, y))
+                        self.intersections_xy.append((int(x), int(y)))
                 lst.append((obj1, k, b))
         lst.clear()
         self.intersections_xz.clear()
@@ -137,18 +129,19 @@ class SnapManager:
                     y = k * x + b
                     if min(obj1.p1.x, obj1.p2.x) <= x <= max(obj1.p1.x, obj1.p2.x) and \
                             min(obj2[0].p1.x, obj2[0].p2.x) <= x <= max(obj2[0].p1.x, obj2[0].p2.x):
-                        self.intersections_xz.append((x, y))
+                        self.intersections_xz.append((int(x), int(y)))
                 lst.append((obj1, k, b))
 
 
 class Snap:
     def __init__(self, func, image):
         self.func = func
-        self.image = pg.image.load('images/snap_' + image + '.bmp')
-        self.image.set_colorkey((255, 255, 255))
+        # self.image = pg.image.load('images/snap_' + image + '.bmp')
+        # self.image.set_colorkey((255, 255, 255))
 
-    def draw(self, screen, pos):
-        screen.screen.blit(self.image, (pos[0] - 8, pos[1] - 8))
+    def draw(self, screen):
+        pass
+        # screen.screen.blit(self.image, (pos[0] - 8, pos[1] - 8))
 
 
 def distance(p1, p2):
@@ -167,7 +160,7 @@ def nearest_point(point, segment, as_line=False):
         k2 = 100000000000
     b2 = point[1] - point[0] * k2
     intersection_point = (b2 - b1) / (k1 - k2)
-    intersection_point = intersection_point, k1 * intersection_point + b1
+    intersection_point = int(intersection_point), int(k1 * intersection_point + b1)
     if as_line:
         return intersection_point
     if min(segment.p1.x, segment.p2.x) < intersection_point[0] < max(segment.p1.x, segment.p2.x):

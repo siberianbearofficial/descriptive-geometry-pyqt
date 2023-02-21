@@ -27,6 +27,17 @@ class GeneralObject:
         for el in self.xz_projection:
             el.draw()
 
+    def draw_qt(self, selected=False):
+        if selected:
+            for el in self.xy_projection:
+                el.draw_qt(color=(250, 30, 30), thickness=(el.thickness + 2))
+            for el in self.xz_projection:
+                el.draw_qt(color=(250, 30, 30), thickness=(el.thickness + 2))
+        for el in self.xy_projection:
+            el.draw_qt()
+        for el in self.xz_projection:
+            el.draw_qt()
+
     def projections(self):
         xy_projection = self.plot.pm.get_projection(self.ag_object, 'xy', self.color)
         if not isinstance(xy_projection, (tuple, list)):
@@ -70,10 +81,7 @@ class GeneralObject:
                 res[key] = convert(dct[key])
             return res
 
-        res_dct = convert(self.ag_object)
-        res_dct['color'] = self.color
-        res_dct['name'] = self.name
-        return res_dct
+        return {'name': self.name, 'color': self.color, 'ag_object': convert(self.ag_object)}
 
     @staticmethod
     def from_dict(plot, dct):
@@ -85,4 +93,4 @@ class GeneralObject:
             if isinstance(obj, dict):
                 return obj['class'](*[unpack_ag_object(obj[key]) for key in serializable.angem_objects[obj['class']]])
 
-        return GeneralObject(plot, unpack_ag_object(dct), dct['color'], dct['name'])
+        return GeneralObject(plot, unpack_ag_object(dct['ag_object']), dct['color'], dct['name'])
