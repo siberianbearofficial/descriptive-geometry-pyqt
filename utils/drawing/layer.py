@@ -15,7 +15,6 @@ class Layer:
         self.plot.sm.update_intersections()
         if history_record:
             self.plot.hm.add_record('add_object', ag_object, color)
-
     def delete_object(self, index, history_record=True):
         if history_record:
             self.plot.hm.add_record('delete_object', self.objects[-1].ag_object, self.objects[-1].color)

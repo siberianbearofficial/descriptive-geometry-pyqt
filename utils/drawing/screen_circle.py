@@ -1,9 +1,17 @@
+from utils.drawing.screen_point import ScreenPoint
+
+
 class ScreenCircle:
-    def __init__(self, plot, center, radius, color=(0, 0, 0)):
+    def __init__(self, plot, center, radius, color=(0, 0, 0), thickness=2):
+        if isinstance(center, ScreenPoint):
+            center = center.list()
+        elif isinstance(center, tuple):
+            center = list(center)
         self.center = center
-        self.radius = radius
+        self.radius = int(radius)
         self.plot = plot
         self.color = color
+        self.thickness = thickness
 
     def tuple(self):
         return self.center, self.radius
@@ -11,11 +19,14 @@ class ScreenCircle:
     def draw(self):
         self.plot.draw_circle(self, self.color)
 
-    def draw_qt(self):
-        self.plot.draw_circle(self.center.tuple(), self.radius, self.color)
-
+    def draw_qt(self, color=None, thickness=-1):
+        if thickness == -1:
+            thickness = self.thickness
+        if color is None:
+            color = self.color
+        self.plot.draw_circle(self.center, self.radius, color, thickness)
 
     def move(self, x, y):
-        self.center.x += x
-        self.center.y += y
+        self.center[0] += x
+        self.center[1] += y
 

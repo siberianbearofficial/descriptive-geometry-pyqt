@@ -1,5 +1,5 @@
 class ScreenPoint:
-    def __init__(self, plot, x, y, color=(0, 0, 0), thickness=3):
+    def __init__(self, plot, x, y, color=(0, 0, 0), thickness=4):
         self.x = x
         self.y = y
         self.plot = plot
@@ -8,6 +8,9 @@ class ScreenPoint:
 
     def tuple(self):
         return self.x, self.y
+
+    def list(self):
+        return [self.x, self.y]
 
     def draw(self):
         self.plot.draw_point(self, self.color)

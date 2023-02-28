@@ -52,7 +52,7 @@ class GeneralObject:
 
     def move(self, x, y):
         if isinstance(self.ag_object, ag.Line) or isinstance(self.ag_object, ag.Plane):
-            self.xy_projection, self.xz_projection = self.projections()
+            self.update_projections()
             return
         for el in self.xy_projection:
             el.move(x, y)

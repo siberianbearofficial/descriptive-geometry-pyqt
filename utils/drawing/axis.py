@@ -13,8 +13,8 @@ class Axis:
         self.dimensions()
 
     def dimensions(self):
-        self.lp = ScreenPoint(self.plot, self.plot.tlp[0], (self.plot.brp[1] + self.plot.tlp[1]) // 2, self.color)
-        self.rp = ScreenPoint(self.plot, self.plot.brp[0] - 1, (self.plot.brp[1] + self.plot.tlp[1]) // 2, self.color)
+        self.lp = [self.plot.tlp[0], (self.plot.brp[1] + self.plot.tlp[1]) // 2]
+        self.rp = [self.plot.brp[0] - 1, (self.plot.brp[1] + self.plot.tlp[1]) // 2]
         self.segment = ScreenSegment(self.plot, self.lp, self.rp, self.color)
 
     def update(self, plot):
@@ -28,4 +28,5 @@ class Axis:
         self.segment.draw_qt()
 
     def move(self, x, y):
-        self.segment.move(x, y)
+        self.lp[1] += y
+        self.rp[1] += y

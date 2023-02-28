@@ -14,12 +14,20 @@ from utils.drawing.layer import Layer
 import utils.drawing.drawing_on_plot as drw
 from random import randint
 
-
-drawing_functions = {'point': drw.create_point, 'segment': drw.create_segment, 'cylinder': drw.create_cylinder}
+drawing_functions = {
+    'point': drw.create_point, 'segment': drw.create_segment, 'line': drw.create_line, 'plane': drw.create_plane,
+    'perpendicular_segment': drw.create_perpendicular_segment, 'parallel_segment': drw.create_parallel_segment,
+    'perpendicular_line': drw.create_perpendicular_line, 'parallel_line': drw.create_parallel_line,
+    'plane_3p': drw.create_plane_3p, 'parallel_plane': drw.create_parallel_plane,
+    'horizontal': drw.create_horizontal, 'frontal': drw.create_frontal,
+    'distance': drw.get_distance, 'angle': drw.get_angle, 'circle': drw.create_circle, 'sphere': drw.create_sphere,
+    'cylinder': drw.create_cylinder, 'cone': drw.create_cone, 'tor': drw.create_point, 'spline': drw.create_spline,
+    'rotation_surface': drw.create_rotation_surface, 'intersection': drw.get_intersection}
 
 
 class Plot(QWidget):
     objectSelected = pyqtSignal(object)
+    printToCommandLine = pyqtSignal(str)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -56,6 +64,8 @@ class Plot(QWidget):
         self.mouse_move = None
         self.mouse_left = None
         self.mouse_right = None
+        self.enter = None
+        self.esc = None
 
     def paintEvent(self, e):
         self.painter.begin(self)
@@ -71,7 +81,12 @@ class Plot(QWidget):
     def keyPressEvent(self, a0):
         key = a0.key()
         if key == Qt.Key_Escape:
-            print('esc')
+            if self.esc is not None:
+                self.esc(a0)
+        if key == Qt.Key_Space:
+            print('Enter')
+            if self.enter is not None:
+                self.enter(a0)
         elif key == Qt.Key_Delete and self.selected_object is not None:
             self.layers[self.selected_object_index[0]].delete_object(self.selected_object_index[1])
             self.selected_object_index, self.selected_object = None, None
@@ -82,15 +97,51 @@ class Plot(QWidget):
             self.draw('point')
         elif key == Qt.Key_S:
             self.draw('segment')
+        elif key == Qt.Key_O:
+            self.draw('plane')
+        elif key == Qt.Key_L:
+            self.draw('line')
+        elif key == Qt.Key_W:
+            self.draw('perpendicular_segment')
+        elif key == Qt.Key_E:
+            self.draw('parallel_segment')
+        elif key == Qt.Key_G:
+            self.draw('perpendicular_line')
+        elif key == Qt.Key_T:
+            self.draw('parallel_line')
+        elif key == Qt.Key_I:
+            self.draw('plane_3p')
+        elif key == Qt.Key_U:
+            self.draw('parallel_plane')
+        elif key == Qt.Key_H:
+            self.draw('horizontal')
+        elif key == Qt.Key_F:
+            self.draw('frontal')
+        elif key == Qt.Key_D:
+            self.draw('distance')
+        elif key == Qt.Key_A:
+            self.draw('angle')
+        elif key == Qt.Key_V:
+            self.draw('circle')
+        elif key == Qt.Key_B:
+            self.draw('sphere')
+        elif key == Qt.Key_K:
+            self.draw('cone')
+        elif key == Qt.Key_X:
+            self.draw('intersection')
+        elif key == Qt.Key_Q:
+            self.draw('spline')
+        elif key == Qt.Key_R:
+            self.draw('rotation_surface')
 
     def draw_segment(self, p1, p2, color=(0, 0, 0), thickness=1, line_type=1):
         self.set_pen(color, thickness, line_type)
         self.painter.drawLine(*p1, *p2)
 
     def draw_point(self, point, color=(0, 0, 0), thickness=1):
-        if self.tlp[0] <= point[0] <= self.brp[0] and self.tlp[1] <= point[1] <= self.brp[1]:
+        if self.tlp[0] + 1 <= point[0] <= self.brp[0] - 1 and self.tlp[1] + 1 <= point[1] <= self.brp[1] - 1:
             self.set_pen(color, thickness)
-            # self.painter.setBrush(QColor(*color))
+            self.painter.setBrush(QColor(*self.bg_color))
             self.painter.drawEllipse(point[0] - 5, point[1] - 5, 10, 10)
 
     def draw_point2(self, point, color=(0, 0, 0), thickness=1):
@@ -98,13 +149,13 @@ class Plot(QWidget):
             self.set_pen(color, thickness)
             self.painter.drawPoint(*point)
 
-    def draw_circle(self, center, radius, color=(0, 0, 0)):
+    def draw_circle(self, center, radius, color=(0, 0, 0), thickness=2):
+        self.set_pen(color, thickness)
+        self.painter.drawEllipse(center[0] - radius, center[1] - radius, radius * 2, radius * 2)
         # self.painter.setPen(QColor(*color))
         # self.painter.drawEllipse(*center, radius, radius)
-        if self.tlp[0] + radius <= center[0] <= self.brp[0] - radius \
-                and self.tlp[1] + radius + 1 <= center[1] <= self.brp[1] - radius:
-            self.painter.setPen(QColor(*color))
-            self.painter.drawEllipse(center[0] - radius, center[1] - radius, radius * 2, radius * 2)
+        # if self.tlp[0] + radius <= center[0] <= self.brp[0] - radius \
+        #         and self.tlp[1] + radius + 1 <= center[1] <= self.brp[1] - radius:
 
     def set_pen(self, color, thickness, line_type=1):
         self.painter.setPen(QPen(QColor(*color), thickness, line_type))
@@ -173,7 +224,7 @@ class Plot(QWidget):
             self.moving_camera = False
 
     def mouseMoveEvent(self, a0) -> None:
-        print('mouse move')
+        # print('mouse move')
         if self.moving_camera:
             self.move_camera(a0.x() - self.mouse_pos[0], a0.y() - self.mouse_pos[1])
             self.mouse_pos = a0.x(), a0.y()
@@ -187,7 +238,6 @@ class Plot(QWidget):
             self.zoom_out()
 
     def select_object(self, pos):
-        print(pos)
         old_obj = self.selected_object
         self.selected_object, self.selected_object_index = None, None
         for i in range(len(self.layers)):
@@ -195,9 +245,9 @@ class Plot(QWidget):
                 continue
             for j in range(len(self.layers[i].objects)):
                 obj = self.layers[i].objects[j]
-                # TODO: избавится от копипаста
+                # TODO: избавиться от копипаста
                 for el in obj.xy_projection:
-                    if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 4:
+                    if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 7:
                         if obj != old_obj:
                             self.selected_object, self.selected_object_index = obj, (i, j)
                         break
@@ -209,12 +259,12 @@ class Plot(QWidget):
                         if obj != old_obj:
                             self.selected_object, self.selected_object_index = obj, (i, j)
                         break
-                    if isinstance(el, ScreenCircle) and abs(snap.distance(pos, el.center.tuple()) - el.radius) <= 3:
+                    if isinstance(el, ScreenCircle) and abs(snap.distance(pos, el.center) - el.radius) <= 3:
                         if obj != old_obj:
                             self.selected_object, self.selected_object_index = obj, (i, j)
                         break
                 for el in obj.xz_projection:
-                    if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 2:
+                    if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 7:
                         if obj != old_obj:
                             self.selected_object, self.selected_object_index = obj, (i, j)
                         break
@@ -226,7 +276,7 @@ class Plot(QWidget):
                         if obj != old_obj:
                             self.selected_object, self.selected_object_index = obj, (i, j)
                         break
-                    if isinstance(el, ScreenCircle) and abs(snap.distance(pos, el.center.tuple()) - el.radius) <= 3:
+                    if isinstance(el, ScreenCircle) and abs(snap.distance(pos, el.center) - el.radius) <= 3:
                         if obj != old_obj:
                             self.selected_object, self.selected_object_index = obj, (i, j)
                         break
@@ -239,8 +289,8 @@ class Plot(QWidget):
             pos = (self.tlp[0] + self.brp[0]) // 2, (self.tlp[1] + self.brp[1]) // 2
         self.zoom *= self.zoom_step
         self.pm.zoom *= self.zoom_step
-        self.move_camera((self.zoom_step - 1) * ((self.axis.rp.x - pos[0]) + self.camera_pos[0]),
-                         (self.zoom_step - 1) * (self.axis.rp.y - pos[1]), update=False)
+        self.move_camera((self.zoom_step - 1) * ((self.axis.rp[0] - pos[0]) + self.camera_pos[0]),
+                         (self.zoom_step - 1) * (self.axis.rp[1] - pos[1]), update=False)
         for layer in self.layers:
             layer.update_projections()
         self.sm.update_intersections()
@@ -251,9 +301,9 @@ class Plot(QWidget):
             pos = (self.tlp[0] + self.brp[0]) // 2, (self.tlp[1] + self.brp[1]) // 2
         self.zoom /= self.zoom_step
         self.pm.zoom /= self.zoom_step
-        new_camera_x = (self.camera_pos[0] + self.axis.rp.x - pos[0]) / self.zoom_step - self.axis.rp.x + pos[0]
-        new_axis_y = pos[1] - (pos[1] - self.axis.lp.y) / self.zoom_step
-        self.move_camera(new_camera_x - self.camera_pos[0], new_axis_y - self.axis.lp.y, update=False)
+        new_camera_x = (self.camera_pos[0] + self.axis.rp[0] - pos[0]) / self.zoom_step - self.axis.rp[0] + pos[0]
+        new_axis_y = pos[1] - (pos[1] - self.axis.lp[1]) / self.zoom_step
+        self.move_camera(new_camera_x - self.camera_pos[0], new_axis_y - self.axis.lp[1], update=False)
         for layer in self.layers:
             layer.update_projections()
         self.sm.update_intersections()
@@ -265,6 +315,10 @@ class Plot(QWidget):
         self.mouse_right = None
         self.setMouseTracking(False)
         self.update()
+
+    def print(self, s):
+        self.printToCommandLine.emit(s)
+        print(s)
 
     @staticmethod
     def random_color():
