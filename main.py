@@ -1,34 +1,31 @@
-import pygame as pg
-import pygame_widgets as pw
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
+
 import utils.history.serializer as srl
-from utils.drawing.screen import Screen
+from test import Ui_MainWindow
+
+import sys
+
+
+class MainWindow(QMainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle('DescriptiveGeometry')
+        self.setFixedSize(1080, 720)
+
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+
+    def keyPressEvent(self, a0) -> None:
+        self.ui.plot.keyPressEvent(a0)
+
 
 
 def main():
-    # init
-    pg.init()
-
-    screen = Screen(640, 480, 'Начертательная геометрия', srl)
-
-    pg.display.flip()  # update the display
-
-    # main loop
-    while True:
-        events = pg.event.get()
-
-        for event in events:
-            if event.type == pg.QUIT:
-                pg.quit()
-                return
-            elif event.type == pg.MOUSEBUTTONDOWN:
-                screen.clicked(event)
-            elif event.type == pg.VIDEORESIZE:
-                screen.resize(event.w, event.h)
-            elif event.type == pg.KEYDOWN:
-                screen.key_down(event)
-
-        pw.update(events)
-        pg.display.update()
+    app = QApplication(sys.argv)
+    widget = MainWindow()
+    widget.show()
+    sys.exit(app.exec())
 
 
 if __name__ == '__main__':

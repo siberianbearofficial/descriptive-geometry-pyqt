@@ -31,16 +31,22 @@ class Plot(QWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
+
+        self.setGeometry(159, 20, 711, 601)
+
+        self.setStyleSheet("border-radius: 10px;")
+        self.setObjectName("plot")
+
         self.screen = parent
         self.painter = QPainter()
+
+        self.bg_color = (255, 255, 255)
 
         self.tlp = 0, 0
         self.brp = self.width(), self.height()
         self.zoom = 1
         self.zoom_step = 1.5
         self.camera_pos = (0, 0)
-
-        self.bg_color = (255, 255, 255)
 
         self.layers = [Layer(self, 'Слой 1')]
         self.current_layer = 0
@@ -69,6 +75,11 @@ class Plot(QWidget):
 
     def paintEvent(self, e):
         self.painter.begin(self)
+
+        self.painter.setBackground(QColor(*self.bg_color))
+        self.painter.setBackgroundMode(Qt.OpaqueMode)
+        self.painter.fillRect(*self.tlp, *self.brp, QColor(*self.bg_color))
+
         self.axis.draw_qt()
         for layer in self.layers:
             layer.draw_qt()
@@ -202,6 +213,7 @@ class Plot(QWidget):
         if color is None:
             color = self.random_color()
         self.layers[self.current_layer].add_object(ag_object, color, history_record=True)
+        self.update()
         if end:
             self.end()
 
@@ -212,15 +224,18 @@ class Plot(QWidget):
                 self.mouse_left(a0.pos())
             else:
                 self.select_object((a0.x(), a0.y()))
-        if a0.button() == 2:
+        elif a0.button() == 2:
             if self.mouse_right:
                 self.mouse_right(a0.pos())
             else:
                 self.mouse_pos = a0.x(), a0.y()
                 self.moving_camera = True
+        elif a0.button() == Qt.MouseButton.MidButton:
+            self.mouse_pos = a0.x(), a0.y()
+            self.moving_camera = True
 
     def mouseReleaseEvent(self, a0) -> None:
-        if a0.button() == 2:
+        if a0.button() in (2, Qt.MouseButton.MidButton):
             self.moving_camera = False
 
     def mouseMoveEvent(self, a0) -> None:
