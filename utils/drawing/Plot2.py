@@ -217,6 +217,9 @@ class Plot(QWidget):
         if end:
             self.end()
 
+    def delete_selected(self):
+        print(str(self.selected_object), 'is near to be deleted! Please, don\'t do it!')
+
     def mousePressEvent(self, a0) -> None:
         if a0.button() == 1:
             print('mouse left')

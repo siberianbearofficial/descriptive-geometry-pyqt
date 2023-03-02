@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 
 import utils.history.serializer as srl
 from test import Ui_MainWindow
+from MenuBar import MenuBar
 
 import sys
 
@@ -16,9 +17,11 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        menu_bar = MenuBar('Delete').connect(self.ui.plot.delete_selected)
+        self.setMenuBar(menu_bar)
+
     def keyPressEvent(self, a0) -> None:
         self.ui.plot.keyPressEvent(a0)
-
 
 
 def main():
