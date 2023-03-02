@@ -19,6 +19,7 @@ class Layer:
     def delete_object(self, index, history_record=True):
         if history_record:
             self.plot.hm.add_record('delete_object', self.objects[-1].ag_object, self.objects[-1].color)
+        self.objects[index].destroy_name_bars()
         self.objects.pop(index)
         self.plot.sm.update_intersections()
 

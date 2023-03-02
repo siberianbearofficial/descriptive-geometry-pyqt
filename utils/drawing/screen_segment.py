@@ -1,4 +1,5 @@
 from utils.drawing.screen_point import ScreenPoint
+from math import inf
 
 
 class ScreenSegment:
@@ -24,15 +25,23 @@ class ScreenSegment:
             self.x2 = max(p1[0], p2[0])
             if self.k > 0:
                 min_x = max(self.x1, self.plot.tlp[0] + 2, self.x(self.plot.tlp[1] + 2))
+                self.p1_by_y = self.x(self.plot.tlp[1] + 2) > self.plot.tlp[0] + 2
                 max_x = min(self.x2, self.plot.brp[0] - 2, self.x(self.plot.brp[1] - 2))
+                self.p2_by_y = self.x(self.plot.brp[1] + 2) > self.plot.brp[0] + 2
             elif self.k < 0:
                 min_x = max(self.x1, self.plot.tlp[0] + 2, self.x(self.plot.brp[1] - 2))
+                self.p1_by_y = self.x(self.plot.brp[1] + 2) > self.plot.tlp[0] + 2
                 max_x = min(self.x2, self.plot.brp[0] - 2, self.x(self.plot.tlp[1] + 2))
+                self.p2_by_y = self.x(self.plot.tlp[1] + 2) > self.plot.brp[0] + 2
             elif self.plot.tlp[1] < p1[1] < self.plot.brp[1]:
                 min_x = max(self.x1, self.plot.tlp[0] + 2)
+                self.p1_by_y = True
                 max_x = min(self.x2, self.plot.brp[0] - 2)
+                self.p2_by_y = True
             else:
                 self.drawing = False
+                self.p1_by_y = False
+                self.p2_by_y = False
                 return
             if min_x > max_x:
                 self.drawing = False
@@ -41,8 +50,10 @@ class ScreenSegment:
                 self.point1 = ScreenPoint(self.plot, min_x, self.y(min_x), self.color)
                 self.point2 = ScreenPoint(self.plot, max_x, self.y(max_x), self.color)
         else:
-            self.k = 'inf'
+            self.k = None
             self.b = None
+            self.p1_by_y = True
+            self.p2_by_y = True
             self.y1 = min(p1[1], p2[1])
             self.y2 = max(p1[1], p2[1])
             min_y = max(self.y1, self.plot.tlp[1] + 2)
@@ -70,6 +81,8 @@ class ScreenSegment:
         return self.k * x + self.b
 
     def x(self, y):
+        if self.k is None:
+            return self.p1[0]
         return (y - self.b) / self.k
 
     def move(self, x, y):
@@ -77,7 +90,7 @@ class ScreenSegment:
         self.p1[1] += y
         self.p2[0] += x
         self.p2[1] += y
-        if self.k == 'inf':
+        if self.k is None:
             self.y1 += y
             self.y2 += y
             min_y = max(self.y1, self.plot.tlp[1] + 2)
@@ -94,13 +107,19 @@ class ScreenSegment:
             self.x2 += x
             if self.k > 0:
                 min_x = max(self.x1, self.plot.tlp[0] + 2, self.x(self.plot.tlp[1] + 2))
+                self.p1_by_y = self.x(self.plot.tlp[1] + 2) > self.plot.tlp[0] + 2
                 max_x = min(self.x2, self.plot.brp[0] - 2, self.x(self.plot.brp[1] - 2))
+                self.p2_by_y = self.x(self.plot.brp[1] + 2) > self.plot.brp[0] + 2
             elif self.k < 0:
                 min_x = max(self.x1, self.plot.tlp[0] + 2, self.x(self.plot.brp[1] - 2))
+                self.p1_by_y = self.x(self.plot.brp[1] + 2) > self.plot.tlp[0] + 2
                 max_x = min(self.x2, self.plot.brp[0] - 2, self.x(self.plot.tlp[1] + 2))
+                self.p2_by_y = self.x(self.plot.tlp[1] + 2) > self.plot.brp[0] + 2
             elif self.plot.tlp[1] < self.p1[1] < self.plot.brp[1]:
                 min_x = max(self.x1, self.plot.tlp[0] + 2)
+                self.p1_by_y = True
                 max_x = min(self.x2, self.plot.brp[0] - 2)
+                self.p2_by_y = True
             else:
                 self.drawing = False
                 return

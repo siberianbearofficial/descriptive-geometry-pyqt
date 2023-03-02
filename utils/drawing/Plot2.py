@@ -218,11 +218,14 @@ class Plot(QWidget):
             self.end()
 
     def delete_selected(self):
-        print(str(self.selected_object), 'is near to be deleted! Please, don\'t do it!')
+        if self.selected_object is None:
+            return
+        self.layers[self.selected_object_index[0]].delete_object(self.selected_object_index[1])
+        self.selected_object = None
+        self.update()
 
     def mousePressEvent(self, a0) -> None:
         if a0.button() == 1:
-            print('mouse left')
             if self.mouse_left:
                 self.mouse_left(a0.pos())
             else:
@@ -251,9 +254,9 @@ class Plot(QWidget):
 
     def wheelEvent(self, a0) -> None:
         if a0.angleDelta().y() > 0:
-            self.zoom_in()
+            self.zoom_in((a0.x(), a0.y()))
         else:
-            self.zoom_out()
+            self.zoom_out((a0.x(), a0.y()))
 
     def select_object(self, pos):
         old_obj = self.selected_object

@@ -682,7 +682,6 @@ def create_spline(plot, step, **kwargs):
                 spline = ag.Segment(kwargs['points'][0], point)
             elif len(kwargs['points']) > 1:
                 spline = ag.Spline(kwargs['obj'].ag_object, *kwargs['points'], point)
-            # print(spline)
             plot.update(GeneralObject(plot, point, color=COLOR1), GeneralObject(plot, spline, color=COLOR1))
 
         def mouse_left(pos):
@@ -734,20 +733,140 @@ def create_rotation_surface(plot, step, **kwargs):
                       plot.pm.convert_screen_y_to_ag_z(kwargs['c']))
         if ag.Vector(p1, p2) | ag.Vector(0, 0, 1):
             plane = ag.Plane(p1, p2, ag.Vector(0, 1, 0) & ag.Vector(p1, p2))
-            l1 = plot.pm.get_projection(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xz', (200, 200, 200))
-            l2 = plot.pm.get_projection(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xz', (200, 200, 200))
+            l1 = plot.pm.get_projection(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xz', COLOR_CONNECT_LINE)
+            l2 = plot.pm.get_projection(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xz', COLOR_CONNECT_LINE)
 
             def mouse_move(pos):
-                print(pos)
                 pos = nearest_point((pos.x(), pos.y()), l1, as_line=True)
-                print(plane)
-                point = ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]), plot.pm.convert_screen_y_to_ag_y(pos[1]),
-                                 plane.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
-                                         plot.pm.convert_screen_y_to_ag_y(pos[1])))
-                print(1)
+                point = ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                 plane.y(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                         plot.pm.convert_screen_y_to_ag_z(pos[1])),
+                                 plot.pm.convert_screen_y_to_ag_z(pos[1]))
                 plot.update(GeneralObject(plot, point, color=COLOR1),
-                            GeneralObject(plot, ag.Segment(p1, p2), color=COLOR1))
-                print(2)
+                            GeneralObject(plot, ag.Segment(p1, p2), color=COLOR1), l1, l2)
+
+            def mouse_left(pos):
+                pos = nearest_point((pos.x(), pos.y()), l1, as_line=True)
+                point = ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                 plane.y(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                         plot.pm.convert_screen_y_to_ag_z(pos[1])),
+                                 plot.pm.convert_screen_y_to_ag_z(pos[1]))
+                create_rotation_surface(plot, 6, **kwargs, points=[point])
 
             plot.mouse_move = mouse_move
-            # plot.mouse_left = mouse_left
+            plot.mouse_left = mouse_left
+        else:
+            plane = ag.Plane(p1, p2, ag.Vector(0, 0, 1) & ag.Vector(p1, p2))
+            l1 = plot.pm.get_projection(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)
+            l2 = plot.pm.get_projection(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)
+
+            def mouse_move(pos):
+                pos = nearest_point((pos.x(), pos.y()), l1, as_line=True)
+                point = ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                 plot.pm.convert_screen_y_to_ag_y(pos[1]),
+                                 plane.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                         plot.pm.convert_screen_y_to_ag_y(pos[1])))
+                plot.update(GeneralObject(plot, point, color=COLOR1),
+                            GeneralObject(plot, ag.Segment(p1, p2), color=COLOR1), l1, l2)
+
+            def mouse_left(pos):
+                pos = nearest_point((pos.x(), pos.y()), l1, as_line=True)
+                point = ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                 plot.pm.convert_screen_y_to_ag_y(pos[1]),
+                                 plane.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                         plot.pm.convert_screen_y_to_ag_y(pos[1])))
+                create_rotation_surface(plot, 6, **kwargs, points=[point])
+
+            plot.mouse_move = mouse_move
+            plot.mouse_left = mouse_left
+    elif step == 6:
+        p1 = ag.Point(plot.pm.convert_screen_x_to_ag_x(kwargs['x1']), plot.pm.convert_screen_y_to_ag_y(kwargs['y1']),
+                      plot.pm.convert_screen_y_to_ag_z(kwargs['z1']))
+        p2 = ag.Point(plot.pm.convert_screen_x_to_ag_x(kwargs['x2']), plot.pm.convert_screen_y_to_ag_y(kwargs['y2']),
+                      plot.pm.convert_screen_y_to_ag_z(kwargs['c']))
+        v = ag.Vector(p1, p2) * (1 / ag.distance(p1, p2))
+        if ag.Vector(p1, p2) | ag.Vector(0, 0, 1):
+            plane = ag.Plane(p1, p2, ag.Vector(0, 1, 0) & ag.Vector(p1, p2))
+            l1 = plot.pm.get_projection(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xz', COLOR_CONNECT_LINE)
+            l2 = plot.pm.get_projection(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xz', COLOR_CONNECT_LINE)
+
+            def mouse_move(pos):
+                pos = plot.sm.get_snap((pos.x(), pos.y()), 'xz')
+                point = ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                 plane.y(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                         plot.pm.convert_screen_y_to_ag_z(pos[1])),
+                                 plot.pm.convert_screen_y_to_ag_z(pos[1]))
+
+                if len(kwargs['points']) == 1:
+                    spline = ag.Segment(kwargs['points'][0], point)
+                else:
+                    spline = ag.Spline(plane, *kwargs['points'], point)
+                plot.update(GeneralObject(plot, point, color=COLOR1),
+                            GeneralObject(plot, ag.Segment(p1, p2), color=COLOR1),
+                            GeneralObject(plot, spline, color=COLOR1), l1, l2)
+
+            def mouse_left(pos):
+                pos = plot.sm.get_snap((pos.x(), pos.y()), 'xz')
+                if distance(pos, nearest_point(pos, l2, as_line=True)) < 10:
+                    pos = nearest_point(pos, l2, as_line=True)
+                    point = ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                     plane.y(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                             plot.pm.convert_screen_y_to_ag_z(pos[1])),
+                                     plot.pm.convert_screen_y_to_ag_z(pos[1]))
+                    kwargs['points'].append(point)
+                    kwargs['points'][0] += -v
+                    kwargs['points'][-1] += v
+                    plot.add_object(ag.RotationSurface(p1, p2, ag.Spline(plane, kwargs['points'])), end=True)
+                else:
+                    point = ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                     plane.y(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                             plot.pm.convert_screen_y_to_ag_z(pos[1])),
+                                     plot.pm.convert_screen_y_to_ag_z(pos[1]))
+                    kwargs['points'].append(point)
+                    create_rotation_surface(plot, 6, **kwargs)
+
+            plot.mouse_move = mouse_move
+            plot.mouse_left = mouse_left
+        else:
+            print('else')
+            plane = ag.Plane(p1, p2, ag.Vector(0, 0, 1) & ag.Vector(p1, p2))
+            l1 = plot.pm.get_projection(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)
+            l2 = plot.pm.get_projection(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)
+
+            def mouse_move(pos):
+                pos = plot.sm.get_snap((pos.x(), pos.y()), 'xy')
+                point = ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                 plot.pm.convert_screen_y_to_ag_y(pos[1]),
+                                 plane.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                         plot.pm.convert_screen_y_to_ag_y(pos[1])))
+
+                if len(kwargs['points']) == 1:
+                    spline = ag.Segment(kwargs['points'][0], point)
+                else:
+                    spline = ag.Spline(plane, *kwargs['points'], point)
+                plot.update(GeneralObject(plot, point, color=COLOR1),
+                            GeneralObject(plot, ag.Segment(p1, p2), color=COLOR1),
+                            GeneralObject(plot, spline, color=COLOR1), l1, l2)
+
+            def mouse_left(pos):
+                pos = plot.sm.get_snap((pos.x(), pos.y()), 'xy')
+                if distance(pos, nearest_point(pos, l2, as_line=True)) < 10:
+                    pos = nearest_point(pos, l2, as_line=True)
+                    point = ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                     plot.pm.convert_screen_y_to_ag_y(pos[1]),
+                                     plane.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                             plot.pm.convert_screen_y_to_ag_y(pos[1])))
+                    kwargs['points'].append(point)
+                    kwargs['points'][0] += -v
+                    kwargs['points'][-1] += v
+                    plot.add_object(ag.RotationSurface(p1, p2, ag.Spline(plane, kwargs['points'])), end=True)
+                else:
+                    point = ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                     plot.pm.convert_screen_y_to_ag_y(pos[1]),
+                                     plane.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                             plot.pm.convert_screen_y_to_ag_y(pos[1])))
+                    kwargs['points'].append(point)
+                    create_rotation_surface(plot, 6, **kwargs)
+
+            plot.mouse_move = mouse_move
+            plot.mouse_left = mouse_left
