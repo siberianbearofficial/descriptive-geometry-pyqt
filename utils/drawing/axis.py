@@ -30,3 +30,5 @@ class Axis:
     def move(self, x, y):
         self.lp[1] += y
         self.rp[1] += y
+        self.segment.point1 = self.segment.point1[0], self.segment.point1[1] + y
+        self.segment.point2 = self.segment.point2[0], self.segment.point2[1] + y

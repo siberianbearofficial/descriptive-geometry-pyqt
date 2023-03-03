@@ -39,7 +39,7 @@ class PropertiesBar(QWidget):
                                      "background-color: #EAEAEA;\n"
                                      "border: 2px solid #00ABB3;\n"
                                      "padding-left: 3px;")
-        self.name_line_edit.returnPressed.connect(lambda: self.on_name_change(self.name_line_edit.text()))
+        self.name_line_edit.editingFinished.connect(lambda: self.on_name_change(self.name_line_edit.text()))
         name.addWidget(self.name_line_edit)
 
         self.layout.addLayout(name)

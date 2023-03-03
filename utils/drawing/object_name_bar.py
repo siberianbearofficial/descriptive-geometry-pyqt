@@ -77,16 +77,16 @@ def get_name_bar_pos(obj):
     if isinstance(obj.ag_object, ag.Line) or isinstance(obj.ag_object, ag.Plane):
         if isinstance(obj.xy_projection[0], ScreenPoint):
             res_p1 = (obj.xy_projection[0].tuple(), True)
+        elif not obj.xy_projection[0].drawing:
+            res_p1 = None
         else:
-            if obj.xy_projection[0].p1[1] > obj.xy_projection[0].p2[1]:
-                p1 = obj.xy_projection[0].p1
+            if obj.xy_projection[0].point1[1] > obj.xy_projection[0].point2[1]:
+                p1 = obj.xy_projection[0].point1
                 p1_by_y = obj.xy_projection[0].p1_by_y
             else:
-                p1 = obj.xy_projection[0].p2
+                p1 = obj.xy_projection[0].point2
                 p1_by_y = obj.xy_projection[0].p2_by_y
-            if not obj.xy_projection[0].drawing:
-                res_p1 = None
-            elif obj.xy_projection[0].k is None:
+            if obj.xy_projection[0].k is None:
                 res_p1 = (get_point((obj.xy_projection[0].p1[0], obj.plot.brp[1] - 10),
                                     obj.xy_projection[0].k, DIST1, True, True), True)
             elif p1_by_y:
@@ -97,19 +97,18 @@ def get_name_bar_pos(obj):
                 d = 10 if obj.xy_projection[0].k > 0 else 30
                 res_p1 = (get_point((obj.xy_projection[0].x(p1[1] - d), p1[1] - d),
                                     obj.xy_projection[0].k, DIST1, True, True), obj.xy_projection[0].k > 0)
-
         if isinstance(obj.xz_projection[0], ScreenPoint):
             res_p2 = (obj.xz_projection[0].tuple(), True)
+        elif not obj.xz_projection[0].drawing:
+            res_p2 = None
         else:
-            if obj.xz_projection[0].p1[1] < obj.xz_projection[0].p2[1]:
-                p2 = obj.xz_projection[0].p1
+            if obj.xz_projection[0].point1[1] < obj.xz_projection[0].point2[1]:
+                p2 = obj.xz_projection[0].point1
                 p2_by_y = obj.xz_projection[0].p1_by_y
             else:
-                p2 = obj.xz_projection[0].p2
+                p2 = obj.xz_projection[0].point2
                 p2_by_y = obj.xz_projection[0].p2_by_y
-            if not obj.xz_projection[0].drawing:
-                res_p2 = None
-            elif obj.xz_projection[0].k is None:
+            if obj.xz_projection[0].k is None:
                 res_p2 = (get_point((obj.xz_projection[0].p1[0], obj.plot.tlp[1] + 10),
                                     obj.xz_projection[0].k, DIST1, True, True), False)
             elif p2_by_y:
@@ -120,7 +119,6 @@ def get_name_bar_pos(obj):
                 d = 30 if obj.xz_projection[0].k > 0 else 10
                 res_p2 = (get_point((obj.xz_projection[0].x(p2[1] + d), p2[1] + d),
                                     obj.xz_projection[0].k, DIST1, True, True), obj.xz_projection[0].k > 0)
-
         return res_p1, res_p2
 
     return tuple()

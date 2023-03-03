@@ -17,11 +17,17 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        menu_bar = MenuBar('Delete').connect(self.ui.plot.delete_selected)
+        menu_bar = MenuBar('Delete', 'Save', 'Load').connect(self.ui.plot.delete_selected, self.serialize, self.deserialize)
         self.setMenuBar(menu_bar)
 
     def keyPressEvent(self, a0) -> None:
         self.ui.plot.keyPressEvent(a0)
+
+    def serialize(self):
+        srl.serialize(self.ui.plot.serialize())
+
+    def deserialize(self):
+        self.ui.plot.deserialize(srl.deserialize())
 
 
 def main():

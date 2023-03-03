@@ -11,11 +11,13 @@ SEP = '-'
 
 
 class GeneralObject:
-    def __init__(self, plot, ag_object=None, color=(0, 0, 0), name='', xy_projection=None, xz_projection=None):
+    def __init__(self, plot, ag_object=None, color=(0, 0, 0), name='', xy_projection=None, xz_projection=None,
+                 **kwargs):
         self.ag_object = ag_object
         self.plot = plot
         self.color = color
         self.name = name
+        self.config = set_config(ag_object, kwargs)
 
         self.generate_name()
 
@@ -45,10 +47,10 @@ class GeneralObject:
             el.draw_qt()
 
     def projections(self):
-        xy_projection = self.plot.pm.get_projection(self.ag_object, 'xy', self.color)
+        xy_projection = self.plot.pm.get_projection(self.ag_object, 'xy', self.color, **self.config)
         if not isinstance(xy_projection, (tuple, list)):
             xy_projection = xy_projection,
-        xz_projection = self.plot.pm.get_projection(self.ag_object, 'xz', self.color)
+        xz_projection = self.plot.pm.get_projection(self.ag_object, 'xz', self.color, **self.config)
         if not isinstance(xz_projection, (tuple, list)):
             xz_projection = xz_projection,
         return xy_projection, xz_projection
@@ -102,19 +104,22 @@ class GeneralObject:
                 indexL += 1
                 indexL %= len(alph)
 
-    def to_dict(self):
+    def to_dict(self, class_names=False):
         def convert(obj):
             if isinstance(obj, int) or isinstance(obj, float):
                 return obj
             if isinstance(obj, list) or isinstance(obj, tuple):
                 return list(map(convert, obj))
             dct = obj.__dict__
-            res = {'class': obj.__class__}
+            if class_names:
+                res = {'class': obj.__class__.__name__}
+            else:
+                res = {'class': obj.__class__}
             for key in serializable.angem_objects[obj.__class__]:
                 res[key] = convert(dct[key])
             return res
 
-        return {'name': self.name, 'color': self.color, 'ag_object': convert(self.ag_object)}
+        return {'name': self.name, 'color': self.color, 'ag_object': convert(self.ag_object), 'config': self.config}
 
     @staticmethod
     def from_dict(plot, dct):
@@ -124,9 +129,12 @@ class GeneralObject:
             if isinstance(obj, list) or isinstance(obj, tuple):
                 return list(map(unpack_ag_object, obj))
             if isinstance(obj, dict):
+                if isinstance(obj['class'], str):
+                    cls = serializable.angem_class_by_name[obj['class']]
+                    return cls(*[unpack_ag_object(obj[key]) for key in serializable.angem_objects[cls]])
                 return obj['class'](*[unpack_ag_object(obj[key]) for key in serializable.angem_objects[obj['class']]])
 
-        return GeneralObject(plot, unpack_ag_object(dct['ag_object']), dct['color'], dct['name'])
+        return GeneralObject(plot, unpack_ag_object(dct['ag_object']), dct['color'], dct['name'], **dct['config'])
 
     def set_name_bars(self):
         text = get_name_bar_text(self)
@@ -136,3 +144,11 @@ class GeneralObject:
     def destroy_name_bars(self):
         for el in self.name_bars:
             el.hide()
+
+
+def set_config(obj, config):
+    # if isinstance(obj, ag.Plane):
+    #     if 'draw_3p' not in config and obj.vector1 is not None:
+    #         config['draw_3p'] = True
+
+    return config

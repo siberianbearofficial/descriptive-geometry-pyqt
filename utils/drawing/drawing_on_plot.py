@@ -190,11 +190,14 @@ def create_plane(plot, step, **kwargs):
             plot, create_plane, 3, {'x0': kwargs['x0'], 'x1': kwargs['x'], 'y1': kwargs['c']},
             'xz', objects=(a1, a2, s1),
             object_func=lambda pos: (ScreenSegment(plot, (kwargs['x0'], plot.axis.lp[1]), pos, COLOR1),),
-            final_func=lambda pos: plot.add_object(ag.Plane(
-                ag.Point(plot.pm.convert_screen_x_to_ag_x(kwargs['x0']), 0, 0),
-                ag.Point(plot.pm.convert_screen_x_to_ag_x(kwargs['x']), plot.pm.convert_screen_y_to_ag_y(kwargs['c'])),
-                ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]), 0, plot.pm.convert_screen_y_to_ag_z(pos[1])
-                         )), end=True))
+            final_func=lambda pos: plot.add_object(
+                ag.Plane(ag.Vector(ag.Point(plot.pm.convert_screen_x_to_ag_x(kwargs['x0']), 0, 0),
+                                   ag.Point(plot.pm.convert_screen_x_to_ag_x(kwargs['x']),
+                                            plot.pm.convert_screen_y_to_ag_y(kwargs['c']))) & ag.Vector(
+                    ag.Point(plot.pm.convert_screen_x_to_ag_x(kwargs['x0']), 0, 0),
+                    ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]), 0, plot.pm.convert_screen_y_to_ag_z(pos[1])
+                             )),
+                         ag.Point(plot.pm.convert_screen_x_to_ag_x(kwargs['x0']), 0, 0)), end=True))
 
 
 def create_cylinder(plot, step, **kwargs):
@@ -436,7 +439,7 @@ def create_plane_3p(plot, step, **kwargs):
                                     plot.pm.convert_screen_x_to_ag_x(kwargs['x3']),
                                     plot.pm.convert_screen_y_to_ag_y(kwargs['y3']),
                                     plot.pm.convert_screen_y_to_ag_z(pos[1]))
-                            ), end=True))
+                            ), end=True, draw_3p=True))
 
 
 def create_parallel_plane(plot, step, **kwargs):
@@ -828,7 +831,6 @@ def create_rotation_surface(plot, step, **kwargs):
             plot.mouse_move = mouse_move
             plot.mouse_left = mouse_left
         else:
-            print('else')
             plane = ag.Plane(p1, p2, ag.Vector(0, 0, 1) & ag.Vector(p1, p2))
             l1 = plot.pm.get_projection(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)
             l2 = plot.pm.get_projection(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)

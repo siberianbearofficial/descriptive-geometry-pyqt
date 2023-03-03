@@ -10,8 +10,8 @@ class Layer:
 
         self.serializable = ['hidden', 'objects', 'name']
 
-    def add_object(self, ag_object, color, history_record=True):
-        self.objects.append(GeneralObject(self.plot, ag_object, color, name='GENERATE'))
+    def add_object(self, ag_object, color, history_record=True, **config):
+        self.objects.append(GeneralObject(self.plot, ag_object, color, name='GENERATE', **config))
         self.plot.sm.update_intersections()
         if history_record:
             self.plot.hm.add_record('add_object', ag_object, color)
@@ -38,8 +38,19 @@ class Layer:
             obj.update_projections()
 
     def clear(self):
+        for obj in self.objects:
+            obj.destroy_name_bars()
         self.objects = []
 
     def move_objects(self, x, y):
         for obj in self.objects:
             obj.move(x, y)
+
+    def to_dict(self):
+        return {'name': self.name, 'hidden': self.hidden, 'objects': [obj.to_dict(True) for obj in self.objects]}
+
+    @staticmethod
+    def from_dict(dct, plot):
+        layer = Layer(plot, dct['name'], dct['hidden'])
+        layer.objects = [GeneralObject.from_dict(plot, el) for el in dct['objects']]
+        return layer

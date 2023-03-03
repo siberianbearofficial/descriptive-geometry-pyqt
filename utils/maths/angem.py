@@ -289,6 +289,7 @@ class Plane:
                     self.point = Point(0, -self.d / self.normal.y, 0)
                 elif self.normal * Vector(1, 0, 0) != 0:
                     self.point = Point(-self.d / self.normal.x, 0, 0)
+            self.vector1, self.vector2 = self.generate_vectors()
             return
         if isinstance(object1, str):
             p = Plane.from_str(object1)
@@ -300,6 +301,7 @@ class Plane:
                 self.point = Point(0, -self.d / self.normal.y, 0)
             elif self.normal * Vector(1, 0, 0) != 0:
                 self.point = Point(-self.d / self.normal.x, 0, 0)
+            self.vector1, self.vector2 = self.generate_vectors()
             return
         self.point = object1
         if isinstance(object2, Point):
@@ -420,6 +422,20 @@ class Plane:
 
     def frontal(self, point):
         return Line(point, self.normal & Vector(0, 1, 0))
+
+    def generate_vectors(self):
+        if self.normal.x != 0:
+            x = -(self.normal.y + self.normal.z) / self.normal.x
+            v = Vector(x, 1, 1)
+            return v, self.normal & v
+        elif self.normal.y != 0:
+            y = -(self.normal.x + self.normal.z) / self.normal.y
+            v = Vector(1, y, 1)
+            return v, self.normal & v
+        else:
+            z = -(self.normal.x + self.normal.y) / self.normal.z
+            v = Vector(1, 1, z)
+            return v, self.normal & v
 
 
 def distance(object1, object2):

@@ -144,6 +144,8 @@ class Plot(QWidget):
             self.draw('spline')
         elif key == Qt.Key_R:
             self.draw('rotation_surface')
+        elif key == Qt.Key_M:
+            self.serialize()
 
     def draw_segment(self, p1, p2, color=(0, 0, 0), thickness=1, line_type=1):
         self.set_pen(color, thickness, line_type)
@@ -209,10 +211,10 @@ class Plot(QWidget):
             self.sm.update_intersections()
             self.update()
 
-    def add_object(self, ag_object, color=None, end=False):
+    def add_object(self, ag_object, color=None, end=False, **config):
         if color is None:
             color = self.random_color()
-        self.layers[self.current_layer].add_object(ag_object, color, history_record=True)
+        self.layers[self.current_layer].add_object(ag_object, color, history_record=True, **config)
         self.update()
         if end:
             self.end()
@@ -353,6 +355,17 @@ class Plot(QWidget):
             blue = randint(20, 570 - red - green)
             if 300 < red + green + blue < 570:
                 return red, green, blue
+
+    def serialize(self):
+        ready = {'current_layer': self.current_layer, 'layers': [layer.to_dict() for layer in self.layers]}
+        # print(ready)
+        return ready
+
+    def deserialize(self, dct):
+        self.clear()
+        self.layers = [Layer.from_dict(el, self) for el in dct['layers']]
+        self.current_layer = dct['current_layer']
+        self.update()
 
 
 def main():

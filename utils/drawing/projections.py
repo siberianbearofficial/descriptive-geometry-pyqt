@@ -13,7 +13,7 @@ class ProjectionManager:
         self.zoom = 1
         self.camera_pos = (0, 0)
 
-    def get_projection(self, obj, plane, color):
+    def get_projection(self, obj, plane, color, **kwargs):
         if isinstance(obj, ag.Point):
             return self.point_projections(obj, plane, color)
 
@@ -29,7 +29,7 @@ class ProjectionManager:
             return self.segment_projections(obj, plane, color), point1, point2
 
         elif isinstance(obj, ag.Plane):
-            return self.plane_projections(obj, plane, color)
+            return self.plane_projections(obj, plane, color, draw_3p=kwargs.get('draw_3p', False))
 
         elif isinstance(obj, ag.Line):
             return self.line_projections(obj, plane, color)
@@ -97,7 +97,14 @@ class ProjectionManager:
                                  self.convert_screen_y_to_ag_z(self.plot.tlp[1] + 1)),
                     plane, color)
 
-    def plane_projections(self, obj, plane, color):
+    def plane_projections(self, obj, plane, color, draw_3p=False):
+        if draw_3p:
+            p1 = self.point_projections(obj.point, plane, color)
+            p2 = self.point_projections(obj.point + obj.vector1, plane, color)
+            p3 = self.point_projections(obj.point + obj.vector2, plane, color)
+            return ScreenSegment(self.plot, p1.tuple(), p2.tuple(), color), \
+                   ScreenSegment(self.plot, p2.tuple(), p3.tuple(), color), \
+                   ScreenSegment(self.plot, p3.tuple(), p1.tuple(), color), p1, p2, p3
         if plane == 'xy':
             return self.get_projection(obj.trace_xy(), plane, color)
         return self.get_projection(obj.trace_xz(), plane, color)

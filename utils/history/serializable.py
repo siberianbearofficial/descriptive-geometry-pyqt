@@ -4,7 +4,7 @@ angem_objects = {
     ag.Point: ['x', 'y', 'z'],
     ag.Vector: ['x', 'y', 'z'],
     ag.Line: ['point', 'vector'],
-    ag.Plane: ['normal', 'point'],
+    ag.Plane: ['point', 'vector1', 'vector2'],
     ag.Segment: ['p1', 'p2'],
     ag.Circle: ['center', 'radius', 'normal'],
     ag.Arc: ['p1', 'p2', 'center', 'big_arc'],
