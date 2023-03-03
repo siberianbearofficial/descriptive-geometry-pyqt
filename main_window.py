@@ -63,8 +63,34 @@ class MainWindow(QMainWindow):
         self.properties_bar = PropertiesBar(self.centralwidget)
         self.inspector_bar = InspectorBar(self.centralwidget)
 
-        self.menu_bar = MenuBar('Delete', 'Save', 'Load').connect(self.plot.delete_selected, self.serialize,
-                                                                  self.deserialize)
+        self.menu_bar = MenuBar(
+            {
+                'File':
+                    {
+                        'Save': (self.serialize, 'Ctrl+S'),
+                        'Load': (self.deserialize, 'Ctrl+Alt+Y'),
+                    },
+                'Edit':
+                    {
+                        'Undo': (lambda: print('undo'), 'Ctrl+Z'),
+                        'Redo': (lambda: print('redo'), 'Ctrl+Shift+Z'),
+                        'Delete': (self.plot.delete_selected, None),
+                        'Copy': (lambda: print('copy'), 'Ctrl+C'),
+                        'Paste': (lambda: print('paste'), 'Ctrl+V'),
+                    },
+                'Draw':
+                    {
+                        'Point': (lambda: self.plot.draw('point'), 'Alt+P'),
+                        'Segment': (lambda: self.plot.draw('segment'), 'Alt+S'),
+                        'Line': (lambda: self.plot.draw('line'), 'Alt+L'),
+                        'Plane': (lambda: self.plot.draw('plane'), None),
+                        'Cylinder': (lambda: self.plot.draw('cylinder'), 'Shift+Alt+P'),
+                        'PerpL': (lambda: self.plot.draw('perpendicular_line'), None),
+                        'Plane3p': (lambda: self.plot.draw('plane_3p'), 'Shift+Alt+P'),
+                    },
+                'Kill': (lambda: print('Это просто кнопка, чтобы протестировать меню)'), 'Ctrl+K'),
+            }
+        )
         self.setMenuBar(self.menu_bar)
 
         self.setCentralWidget(self.centralwidget)
