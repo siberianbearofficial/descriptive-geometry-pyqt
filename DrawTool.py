@@ -18,8 +18,8 @@ class DrawTool(QWidget):
         self.icon = QLabel(self)
         self.icon.setMaximumSize(QSize(30, 30))
         self.icon.setStyleSheet("border: 2px solid #00ABB3;\n"
-                           "border-radius: 10px;\n"
-                           "background-color: #ffffff;")
+                                "border-radius: 10px;\n"
+                                "background-color: #ffffff;")
         self.icon.setText("")
         self.icon.setPixmap(QPixmap(":/img/img/point.png"))
         self.icon.setScaledContents(True)
@@ -41,9 +41,8 @@ class DrawTool(QWidget):
 
     def mousePressEvent(self, a0) -> None:
         if a0.button() == 1:
-            print('Button pressed!')
             if self.clicked:
-                self.clicked(self.name.lower())
+                self.clicked()
 
     def setText(self, text):
         self.label.setText(text)
