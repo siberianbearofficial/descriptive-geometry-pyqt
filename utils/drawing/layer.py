@@ -2,9 +2,11 @@ from utils.drawing.general_object import GeneralObject
 
 
 class Layer:
-    def __init__(self, plot, name='', hidden=False):
+    def __init__(self, plot, name='', hidden=False, color=None, thickness=2):
         self.plot = plot
         self.hidden = hidden
+        self.color = color
+        self.thickness = thickness
         self.objects = []
         self.name = name
 
@@ -54,3 +56,21 @@ class Layer:
         layer = Layer(plot, dct['name'], dct['hidden'])
         layer.objects = [GeneralObject.from_dict(plot, el) for el in dct['objects']]
         return layer
+
+    def set_name(self, name):
+        self.name = name
+
+    def set_hidden(self, hidden):
+        self.hidden = hidden
+        if hidden:
+            for el in self.objects:
+                el.hide_name_bars()
+        else:
+            for el in self.objects:
+                el.show_name_bars()
+        self.plot.update()
+
+    def replace_object(self, index, dct):
+        self.objects[index].destroy_name_bars()
+        self.objects[index] = GeneralObject.from_dict(self.plot, dct)
+        self.plot.sm.update_intersections()

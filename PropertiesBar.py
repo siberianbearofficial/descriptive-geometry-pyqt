@@ -16,6 +16,7 @@ class PropertiesBar(QWidget):
         self.strange_widget.setFixedSize(self.geometry().size())
 
         self.layout = QVBoxLayout(self.strange_widget)
+        self.layout.setAlignment(Qt.AlignTop)
         self.layout.setContentsMargins(15, 15, 15, 15)
 
         font = QFont()

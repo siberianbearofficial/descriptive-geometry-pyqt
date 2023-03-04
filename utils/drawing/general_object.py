@@ -22,7 +22,7 @@ class GeneralObject:
         self.generate_name()
 
         if xy_projection is None or xz_projection is None:
-            self.xy_projection, self.xz_projection = self.projections()
+            self.xy_projection, self.xz_projection, self.connection_lines = self.projections()
         else:
             self.xy_projection = xy_projection
             self.xz_projection = xz_projection
@@ -35,28 +35,44 @@ class GeneralObject:
         for el in self.xz_projection:
             el.draw()
 
-    def draw_qt(self, selected=False):
+    def draw_qt(self, selected=0):
+        for el in self.connection_lines:
+            el.draw_qt()
         if selected:
+            if selected == 1:
+                for el in self.xy_projection:
+                    el.draw_qt(color=(250, 30, 30), thickness=(el.thickness + 2))
+                for el in self.xz_projection:
+                    el.draw_qt(color=(250, 30, 30), thickness=(el.thickness + 2))
+                for el in self.xy_projection:
+                    el.draw_qt()
+                for el in self.xz_projection:
+                    el.draw_qt()
+            elif selected == 2:
+                for el in self.xy_projection:
+                    el.draw_qt(thickness=(el.thickness + 2))
+                for el in self.xz_projection:
+                    el.draw_qt(thickness=(el.thickness + 2))
+        else:
             for el in self.xy_projection:
-                el.draw_qt(color=(250, 30, 30), thickness=(el.thickness + 2))
+                el.draw_qt()
             for el in self.xz_projection:
-                el.draw_qt(color=(250, 30, 30), thickness=(el.thickness + 2))
-        for el in self.xy_projection:
-            el.draw_qt()
-        for el in self.xz_projection:
-            el.draw_qt()
+                el.draw_qt()
 
     def projections(self):
-        xy_projection = self.plot.pm.get_projection(self.ag_object, 'xy', self.color, **self.config)
+        proj = self.plot.pm.get_projection(self.ag_object, self.color, **self.config)
+        xy_projection, xz_projection = proj[0], proj[1]
+        connection_lines = proj[2] if len(proj) >= 3 else tuple()
         if not isinstance(xy_projection, (tuple, list)):
             xy_projection = xy_projection,
-        xz_projection = self.plot.pm.get_projection(self.ag_object, 'xz', self.color, **self.config)
         if not isinstance(xz_projection, (tuple, list)):
             xz_projection = xz_projection,
-        return xy_projection, xz_projection
+        if not isinstance(connection_lines, (tuple, list)):
+            connection_lines = connection_lines,
+        return xy_projection, xz_projection, connection_lines
 
     def update_projections(self):
-        self.xy_projection, self.xz_projection = self.projections()
+        self.xy_projection, self.xz_projection, self.connection_lines = self.projections()
         for bar, pos in zip(self.name_bars, get_name_bar_pos(self)):
             if pos is None:
                 bar.hide()
@@ -65,12 +81,15 @@ class GeneralObject:
                 bar.move3(*pos[0], pos[1])
 
     def move(self, x, y):
-        if isinstance(self.ag_object, ag.Line) or isinstance(self.ag_object, ag.Plane):
+        if isinstance(self.ag_object, ag.Line) or \
+                isinstance(self.ag_object, ag.Plane) and self.config.get('draw_3p', False):
             self.update_projections()
             return
         for el in self.xy_projection:
             el.move(x, y)
         for el in self.xz_projection:
+            el.move(x, y)
+        for el in self.connection_lines:
             el.move(x, y)
         for el in self.name_bars:
             el.move2(x, y)
@@ -144,11 +163,20 @@ class GeneralObject:
     def destroy_name_bars(self):
         for el in self.name_bars:
             el.hide()
+            el.destroy()
+
+    def hide_name_bars(self):
+        for el in self.name_bars:
+            el.hide()
+
+    def show_name_bars(self):
+        for el in self.name_bars:
+            el.show()
 
 
 def set_config(obj, config):
-    # if isinstance(obj, ag.Plane):
-    #     if 'draw_3p' not in config and obj.vector1 is not None:
-    #         config['draw_3p'] = True
+    if isinstance(obj, ag.Point) or isinstance(obj, ag.Point) or \
+            isinstance(obj, ag.Point) and config.get('draw_3p', False):
+        config['draw_cl'] = True
 
     return config

@@ -11,6 +11,7 @@ from utils.drawing.projections import ProjectionManager
 from utils.drawing.history import HistoryManager
 import utils.drawing.snap as snap
 from utils.drawing.layer import Layer
+from utils.drawing.general_object import GeneralObject
 import utils.drawing.drawing_on_plot as drw
 from random import randint
 
@@ -48,7 +49,7 @@ class Plot(QWidget):
         self.zoom_step = 1.5
         self.camera_pos = (0, 0)
 
-        self.layers = [Layer(self, 'Слой 1')]
+        self.layers = [Layer(self, 'Layer 1')]
         self.current_layer = 0
         self.selected_object = None
         self.selected_object_index = None
@@ -62,6 +63,7 @@ class Plot(QWidget):
         self.moving_camera = False
         self.mouse_pos = 0, 0
         self.extra_objects = tuple()
+        self.selected_mode = 0
         self.i = 0
 
         self.serializable = ['bg_color', 'layers', 'current_layer']
@@ -84,9 +86,12 @@ class Plot(QWidget):
         for layer in self.layers:
             layer.draw_qt()
         for obj in self.extra_objects:
-            obj.draw_qt()
+            if isinstance(obj, GeneralObject):
+                obj.draw_qt(selected=self.selected_mode)
+            else:
+                obj.draw_qt()
         if self.selected_object is not None:
-            self.selected_object.draw_qt(selected=True)
+            self.selected_object.draw_qt(selected=1)
         self.painter.end()
 
     def keyPressEvent(self, a0):
@@ -186,8 +191,9 @@ class Plot(QWidget):
         self.setMouseTracking(True)
         drawing_functions[figure](self, 1)
 
-    def update(self, *objects) -> None:
+    def update(self, *objects, selected=0) -> None:
         self.extra_objects = objects
+        self.selected_mode = selected
         super(Plot, self).update()
 
     def resizeEvent(self, a0) -> None:
@@ -225,6 +231,12 @@ class Plot(QWidget):
         self.layers[self.selected_object_index[0]].delete_object(self.selected_object_index[1])
         self.selected_object = None
         self.update()
+
+    def delete_layer(self, index):
+        self.layers[index].clear()
+        self.layers.pop(index)
+        if self.current_layer >= index:
+            self.current_layer -= 1
 
     def mousePressEvent(self, a0) -> None:
         if a0.button() == 1:
@@ -365,6 +377,19 @@ class Plot(QWidget):
         self.clear()
         self.layers = [Layer.from_dict(el, self) for el in dct['layers']]
         self.current_layer = dct['current_layer']
+        self.update()
+
+    def set_current_layer(self, ind):
+        self.current_layer = ind
+
+    def add_layer(self):
+        self.layers.append(Layer(self, ''))
+
+    def replace_object(self, dct, layer=None, index=None):
+        if layer is None:
+            layer, index = self.selected_object_index
+        self.hm.add_record('object_modified', self.layers[layer].objects[index].to_dict(), layer, index)
+        self.layers[layer].replace_object(index, dct)
         self.update()
 
 

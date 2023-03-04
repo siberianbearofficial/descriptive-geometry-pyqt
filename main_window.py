@@ -6,6 +6,7 @@ from PropertiesBar import PropertiesBar
 from InspectorBar import InspectorBar
 from ToolBar import ToolBar
 from MenuBar import MenuBar
+from layer_window import LayerWindow
 
 import utils.history.serializer as srl
 
@@ -62,6 +63,12 @@ class MainWindow(QMainWindow):
             *[tool_info['func'] for tool_info in tools_info])
         self.properties_bar = PropertiesBar(self.centralwidget)
         self.inspector_bar = InspectorBar(self.centralwidget)
+        self.layer_window = LayerWindow(self.plot.layers, self.plot.current_layer)
+        self.layer_window.selectLayer.connect(self.plot.set_current_layer)
+        self.layer_window.addLayer.connect(lambda: (self.plot.add_layer(), self.layer_window.update_layer_list(
+            self.plot.layers, self.plot.current_layer)))
+        self.layer_window.setLayerHidden.connect(lambda ind, flag: self.plot.layers[ind].set_hidden(flag))
+        self.layer_window.removeLayer.connect(self.plot.delete_layer)
 
         self.menu_bar = MenuBar(
             {
@@ -88,7 +95,7 @@ class MainWindow(QMainWindow):
                         'PerpL': (lambda: self.plot.draw('perpendicular_line'), None),
                         'Plane3p': (lambda: self.plot.draw('plane_3p'), 'Shift+Alt+P'),
                     },
-                'Kill': (lambda: print('Это просто кнопка, чтобы протестировать меню)'), 'Ctrl+K'),
+                'Layers': (lambda: self.layer_window.show(), 'Ctrl+L'),
             }
         )
         self.setMenuBar(self.menu_bar)
@@ -103,6 +110,7 @@ class MainWindow(QMainWindow):
 
     def deserialize(self):
         self.plot.deserialize(srl.deserialize())
+        self.layer_window.update_layer_list(self.plot.layers, self.plot.current_layer)
 
 
 import resources_rc

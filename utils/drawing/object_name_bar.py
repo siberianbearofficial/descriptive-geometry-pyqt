@@ -6,6 +6,8 @@ SEP = '-'
 DIST1 = 5
 DIST2 = 10
 
+point_name_bars = dict()
+
 
 class ObjectNameBar(QLabel):
     def __init__(self, parent, pos, bottom=False, text=''):
@@ -144,3 +146,7 @@ def get_point(point, k, dist, right, perpendicular=False):
             else:
                 c *= -1
     return int(point[0] + dist * c), int(point[1] + dist * s)
+
+
+def add_point_name_bar():
+    pass
