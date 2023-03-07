@@ -411,10 +411,19 @@ class Plot(QWidget):
 
     def save_object_properties(self, obj: GeneralObject, name=None, layer=None, thickness=None, color=None,
                                ag_obj=None, config=None, history_record=True):
-        if name:
-            old_name = obj.name
-            if obj.set_name(name) and history_record:
-                self.hm.add_record('object_modified', obj, 'name', old_name)
+        if obj:
+            if name:
+                old_name = obj.name
+                if obj.set_name(name) and history_record:
+                    self.hm.add_record('object_modified', obj, 'name', old_name)
+            if thickness:
+                old_thickness = obj.thickness
+                if obj.set_thickness(thickness) and history_record:
+                    self.hm.add_record('object_modified', obj, 'thickness', old_thickness)
+            if color:
+                old_color = obj.color
+                if obj.set_color(color) and history_record:
+                    self.hm.add_record('object_modified', obj, 'color', old_color)
         self.update()
 
     def update_layer_list(self):

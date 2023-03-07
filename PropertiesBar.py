@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QLayout, QComboBox
-from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QLayout, QComboBox, \
+    QColorDialog
+from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt
 
 
@@ -66,7 +67,9 @@ class PropertiesBar(QWidget):
                                         "background-color: #CCFCE5;\n"
                                         "border: 2px solid #00ABB3;\n"
                                         "padding-top: 3px;")
+        self.color_button_stylesheet = self.color_button.styleSheet().split('\n')
         self.color_button.setText("")
+        self.color_button.clicked.connect(lambda: self.on_color_change((0, 0, 255)))
         color.addWidget(self.color_button)
 
         self.clt.addLayout(color)
@@ -125,7 +128,7 @@ class PropertiesBar(QWidget):
         self.thickness_combobox.addItem("medium")
         self.thickness_combobox.addItem("bold")
         self.thickness_combobox.currentIndexChanged.connect(
-            lambda: self.on_thickness_change(self.thickness_combobox.currentText()))
+            lambda: self.on_thickness_change(self.thickness_combobox.currentIndex() + 1))
         thickness.addWidget(self.thickness_combobox)
 
         self.clt.addLayout(thickness)
@@ -163,15 +166,22 @@ class PropertiesBar(QWidget):
         # self.properties_bar_layout.addLayout(self.properties_bar_objects)
 
     def on_layer_change(self, layer):
-        print('Layer:', layer)
+        # print('Layer:', layer)
         self.save(self.current_object, layer=layer)
 
     def on_color_change(self, color):
-        print('Color:', color)
-        self.save(self.current_object, color=color)
+        # print('Color:', color)
+        color = QColorDialog(QColor(*self.current_object.color), self).getColor()
+        self.change_stylesheet(self.color_button, f'background-color: rgb{color.getRgb()};')
+        self.save(self.current_object, color=color.getRgb())
+
+    def change_stylesheet(self, obj=None, new_style_sheet=None):
+        self.color_button_stylesheet[1] = new_style_sheet
+        self.color_button.setStyleSheet('\n'.join(self.color_button_stylesheet))
+        print('\n'.join(self.color_button_stylesheet))
 
     def on_thickness_change(self, thickness):
-        print('Thickness:', thickness)
+        # print('Thickness:', thickness)
         self.save(self.current_object, thickness=thickness)
 
     def on_name_change(self, name):
@@ -180,7 +190,7 @@ class PropertiesBar(QWidget):
 
     def open(self, obj):
         if obj:
-            print('Object:', obj)
+            # print('Object:', obj)
             self.current_object = obj
             self.show()
         elif self.current_object:
@@ -190,8 +200,9 @@ class PropertiesBar(QWidget):
 
     def show(self):
         self.name_line_edit.setText(self.current_object.name)
+        self.change_stylesheet(self.color_button, f'background-color: rgb{self.current_object.color};')
         # self.layer_line_edit.setText(self.current_object.layer)
-        self.thickness_combobox.setCurrentIndex(self.current_object.thickness)
+        self.thickness_combobox.setCurrentIndex(self.current_object.thickness - 1)
         self.thickness_combobox.setDisabled(False)
 
     def clear(self):

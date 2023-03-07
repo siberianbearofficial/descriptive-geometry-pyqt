@@ -174,30 +174,35 @@ class GeneralObject:
         return True
 
     def set_color(self, color):
-        if color == self.color:
+        if color != self.color:
             self.color = color
-            return False
-        return True
+            for el in self.xy_projection:
+                el.color = color
+            for el in self.xz_projection:
+                el.color = color
+            return True
+        return False
 
     def set_thickness(self, thickness):
-        if thickness == self.thickness:
+        if thickness != self.thickness:
+            print('THICKNESS', thickness)
             self.thickness = thickness
-            return False
-        return True
+            return True
+        return False
 
     def set_config(self, config):
-        if config == self.config:
+        if config != self.config:
             self.config = config
             self.xy_projection, self.xz_projection, self.connection_lines = self.projections()
-            return False
-        return True
+            return True
+        return False
 
     def set_ag_object(self, dct):
-        if dct == self.to_dict()['ag_object']:
+        if dct != self.to_dict()['ag_object']:
             self.ag_object = unpack_ag_object(dct)
             self.xy_projection, self.xz_projection, self.connection_lines = self.projections()
-            return False
-        return True
+            return True
+        return False
 
 
 def set_config(obj, config):
