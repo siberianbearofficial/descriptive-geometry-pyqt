@@ -17,6 +17,7 @@ class GeneralObject:
         self.plot = plot
         self.color = color
         self.name = name
+        self.thickness = 1
         self.config = set_config(ag_object, kwargs)
 
         self.generate_name()
@@ -172,6 +173,11 @@ class GeneralObject:
     def show_name_bars(self):
         for el in self.name_bars:
             el.show()
+
+    def set_name(self, name):
+        self.name = name
+        self.destroy_name_bars()
+        self.name_bars = self.set_name_bars()
 
 
 def set_config(obj, config):

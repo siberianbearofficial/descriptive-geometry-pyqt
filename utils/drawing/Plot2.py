@@ -317,6 +317,7 @@ class Plot(QWidget):
                         break
         if self.selected_object is not None:
             self.objectSelected.emit(self.selected_object)
+        self.show_object_properties(self.selected_object)
         self.update()
 
     def zoom_in(self, pos=None):
@@ -390,6 +391,12 @@ class Plot(QWidget):
             layer, index = self.selected_object_index
         self.hm.add_record('object_modified', self.layers[layer].objects[index].to_dict(), layer, index)
         self.layers[layer].replace_object(index, dct)
+        self.update()
+
+    def save_object_properties(self, obj: GeneralObject, name=None, layer=None, thickness=None, color=None, objects=None):
+        if name:
+            print(f'Setting name {name} to {obj}')
+            obj.set_name(name)
         self.update()
 
 

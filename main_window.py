@@ -61,7 +61,11 @@ class MainWindow(QMainWindow):
         self.tool_bar = ToolBar(self.centralwidget, *[tool_info['name'] for tool_info in tools_info]).set_images(
             *[tool_info['image'] for tool_info in tools_info]).set_on_click_listeners(
             *[tool_info['func'] for tool_info in tools_info])
+
         self.properties_bar = PropertiesBar(self.centralwidget)
+        self.plot.show_object_properties = self.properties_bar.open
+        self.properties_bar.save = self.plot.save_object_properties
+
         self.inspector_bar = InspectorBar(self.centralwidget)
         self.layer_window = LayerWindow(self.plot.layers, self.plot.current_layer)
         self.layer_window.selectLayer.connect(self.plot.set_current_layer)
