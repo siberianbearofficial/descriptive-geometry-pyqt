@@ -65,7 +65,7 @@ class MainWindow(QMainWindow):
             *[tool_info['func'] for tool_info in tools_info])
 
         self.properties_bar = PropertiesBar(self.centralwidget)
-        self.plot.show_object_properties = self.properties_bar.open
+        self.plot.show_object_properties = self.properties_bar.open_object
         self.properties_bar.save = self.plot.save_object_properties
 
         self.inspector_bar = InspectorBar(self.centralwidget)
@@ -103,6 +103,8 @@ class MainWindow(QMainWindow):
                         'Plane3p': (lambda: self.plot.draw('plane_3p'), 'Shift+Alt+P'),
                     },
                 'Layers': (lambda: self.layer_window.show(), 'Ctrl+L'),
+                'Hide props': (self.properties_bar.hide, None),
+                'Show props': (self.properties_bar.show, None),
             }
         )
         self.setMenuBar(self.menu_bar)

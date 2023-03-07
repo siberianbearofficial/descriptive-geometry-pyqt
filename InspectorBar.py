@@ -22,7 +22,7 @@ class InspectorBar(QWidget):
         self.layout.setSpacing(0)
         self.layout.setAlignment(Qt.AlignTop)
 
-        for i in range(3):
+        for i in range(7):
 
             # Widget
             inspector_bar_object = QWidget(self)
@@ -45,7 +45,7 @@ class InspectorBar(QWidget):
             inspector_bar_object_label = QLabel(inspector_bar_object)
             inspector_bar_object_label.setFont(font)
             inspector_bar_object_label.setStyleSheet("color: #00ABB3;")
-            inspector_bar_object_label.setText('A: Cylinder')
+            inspector_bar_object_label.setText(f'A: Cylinder {i}')
             inspector_bar_object_layout.addWidget(inspector_bar_object_label)
 
             self.layout.addWidget(inspector_bar_object)

@@ -172,7 +172,7 @@ class PropertiesBar(QWidget):
     def on_color_change(self, color):
         # print('Color:', color)
         color = QColorDialog(QColor(*self.current_object.color), self).getColor()
-        self.change_stylesheet(self.color_button, f'background-color: rgb{color.getRgb()};')
+        self.change_stylesheet(self.color_button, f'background-color: rgba{color.getRgb()};')
         self.save(self.current_object, color=color.getRgb())
 
     def change_stylesheet(self, obj=None, new_style_sheet=None):
@@ -188,17 +188,19 @@ class PropertiesBar(QWidget):
         print('Name:', name)
         self.save(self.current_object, name=name)
 
-    def open(self, obj):
+    def open_object(self, obj):
         if obj:
             # print('Object:', obj)
             self.current_object = obj
+            self.show_object()
             self.show()
         elif self.current_object:
             self.save(self.current_object, name=self.current_object.name, color=None,
                       thickness=self.current_object.thickness, layer=None)
             self.clear()
+            self.hide()
 
-    def show(self):
+    def show_object(self):
         self.name_line_edit.setText(self.current_object.name)
         self.change_stylesheet(self.color_button, f'background-color: rgb{self.current_object.color};')
         # self.layer_line_edit.setText(self.current_object.layer)
