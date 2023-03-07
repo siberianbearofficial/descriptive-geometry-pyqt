@@ -29,6 +29,7 @@ drawing_functions = {
 class Plot(QWidget):
     objectSelected = pyqtSignal(object)
     printToCommandLine = pyqtSignal(str)
+    layersModified = pyqtSignal(object, int)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -159,8 +160,10 @@ class Plot(QWidget):
     def draw_point(self, point, color=(0, 0, 0), thickness=1):
         if self.tlp[0] + 1 <= point[0] <= self.brp[0] - 1 and self.tlp[1] + 1 <= point[1] <= self.brp[1] - 1:
             self.set_pen(color, thickness)
+            brush = self.painter.brush()
             self.painter.setBrush(QColor(*self.bg_color))
             self.painter.drawEllipse(point[0] - 5, point[1] - 5, 10, 10)
+            self.painter.setBrush(brush)
 
     def draw_point2(self, point, color=(0, 0, 0), thickness=1):
         if self.tlp[0] <= point[0] <= self.brp[0] and self.tlp[1] <= point[1] <= self.brp[1]:
@@ -225,14 +228,16 @@ class Plot(QWidget):
         if end:
             self.end()
 
-    def delete_selected(self):
+    def delete_selected(self, history_record=True):
         if self.selected_object is None:
             return
         self.layers[self.selected_object_index[0]].delete_object(self.selected_object_index[1])
         self.selected_object = None
         self.update()
 
-    def delete_layer(self, index):
+    def delete_layer(self, index, history_record=True):
+        if history_record:
+            self.hm.add_record('delete_layer', self.layers[index].to_dict(), index)
         self.layers[index].clear()
         self.layers.pop(index)
         if self.current_layer >= index:
@@ -380,24 +385,40 @@ class Plot(QWidget):
         self.current_layer = dct['current_layer']
         self.update()
 
-    def set_current_layer(self, ind):
+    def set_current_layer(self, ind, history_record=True):
+        if ind == self.current_layer:
+            return
+        if history_record:
+            self.hm.add_record('change_layer', self.current_layer)
         self.current_layer = ind
 
-    def add_layer(self):
-        self.layers.append(Layer(self, ''))
+    def add_layer(self, layer=None, history_record=True):
+        if history_record:
+            self.hm.add_record('add_layer', len(self.layers) - 1)
+        if layer:
+            self.layers.append(layer)
+        else:
+            self.layers.append(Layer(self, ''))
 
-    def replace_object(self, dct, layer=None, index=None):
+    def insert_layer_from_dict(self, dct, index):
+        self.layers.insert(index, Layer.from_dict(dct, self))
+
+    def replace_object(self, dct, layer=None, index=None, history_record=True):
         if layer is None:
             layer, index = self.selected_object_index
-        self.hm.add_record('object_modified', self.layers[layer].objects[index].to_dict(), layer, index)
         self.layers[layer].replace_object(index, dct)
         self.update()
 
-    def save_object_properties(self, obj: GeneralObject, name=None, layer=None, thickness=None, color=None, objects=None):
+    def save_object_properties(self, obj: GeneralObject, name=None, layer=None, thickness=None, color=None,
+                               ag_obj=None, config=None, history_record=True):
         if name:
-            print(f'Setting name {name} to {obj}')
-            obj.set_name(name)
+            old_name = obj.name
+            if obj.set_name(name) and history_record:
+                self.hm.add_record('object_modified', obj, 'name', old_name)
         self.update()
+
+    def update_layer_list(self):
+        self.layersModified.emit(self.layers, self.current_layer)
 
 
 def main():

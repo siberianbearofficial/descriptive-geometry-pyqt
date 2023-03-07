@@ -1,5 +1,3 @@
-import pygame as pg
-
 from utils.drawing.screen_point import ScreenPoint, ScreenPoint2
 from utils.drawing.screen_segment import ScreenSegment
 

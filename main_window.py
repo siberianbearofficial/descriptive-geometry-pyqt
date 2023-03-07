@@ -23,7 +23,7 @@ class MainWindow(QMainWindow):
 
         self.plot = Plot(self.centralwidget)
 
-        draw_tools_names = ['Point', 'Segment', 'Line', 'Plane', 'Cylinder', 'PerpL', 'Plane3p']
+        draw_tools_names = ['Point', 'Segment', 'Line', 'Plane', 'Cylinder', 'PerpL', 'Plane3p', 'Spline', 'RS']
         self.draw_bar = DrawBar(self.centralwidget, *draw_tools_names).set_on_click_listeners(
             *[
                 lambda: self.plot.draw('point'),
@@ -33,6 +33,8 @@ class MainWindow(QMainWindow):
                 lambda: self.plot.draw('cylinder'),
                 lambda: self.plot.draw('perpendicular_line'),
                 lambda: self.plot.draw('plane_3p'),
+                lambda: self.plot.draw('spline'),
+                lambda: self.plot.draw('rotation_surface')
             ]
         )
 
@@ -73,6 +75,7 @@ class MainWindow(QMainWindow):
             self.plot.layers, self.plot.current_layer)))
         self.layer_window.setLayerHidden.connect(lambda ind, flag: self.plot.layers[ind].set_hidden(flag))
         self.layer_window.removeLayer.connect(self.plot.delete_layer)
+        self.plot.layersModified.connect(self.layer_window.update_layer_list)
 
         self.menu_bar = MenuBar(
             {
@@ -83,8 +86,8 @@ class MainWindow(QMainWindow):
                     },
                 'Edit':
                     {
-                        'Undo': (lambda: print('undo'), 'Ctrl+Z'),
-                        'Redo': (lambda: print('redo'), 'Ctrl+Shift+Z'),
+                        'Undo': (lambda: self.plot.hm.undo(), 'Alt+Z'),
+                        'Redo': (lambda: self.plot.hm.undo(redo=True), 'Alt+Shift+Z'),
                         'Delete': (self.plot.delete_selected, None),
                         'Copy': (lambda: print('copy'), 'Ctrl+C'),
                         'Paste': (lambda: print('paste'), 'Ctrl+V'),

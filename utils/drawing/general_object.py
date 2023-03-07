@@ -143,23 +143,14 @@ class GeneralObject:
 
     @staticmethod
     def from_dict(plot, dct):
-        def unpack_ag_object(obj):
-            if isinstance(obj, int) or isinstance(obj, float):
-                return obj
-            if isinstance(obj, list) or isinstance(obj, tuple):
-                return list(map(unpack_ag_object, obj))
-            if isinstance(obj, dict):
-                if isinstance(obj['class'], str):
-                    cls = serializable.angem_class_by_name[obj['class']]
-                    return cls(*[unpack_ag_object(obj[key]) for key in serializable.angem_objects[cls]])
-                return obj['class'](*[unpack_ag_object(obj[key]) for key in serializable.angem_objects[obj['class']]])
-
         return GeneralObject(plot, unpack_ag_object(dct['ag_object']), dct['color'], dct['name'], **dct['config'])
 
     def set_name_bars(self):
-        text = get_name_bar_text(self)
-        pos = get_name_bar_pos(self)
-        return tuple(ObjectNameBar(self.plot, *pos[i], text[i]) for i in range(len(pos)))
+        if self.name:
+            text = get_name_bar_text(self)
+            pos = get_name_bar_pos(self)
+            return tuple(ObjectNameBar(self.plot, *pos[i], text[i]) for i in range(len(pos)))
+        return tuple()
 
     def destroy_name_bars(self):
         for el in self.name_bars:
@@ -175,9 +166,38 @@ class GeneralObject:
             el.show()
 
     def set_name(self, name):
+        if name == self.name:
+            return False
         self.name = name
         self.destroy_name_bars()
         self.name_bars = self.set_name_bars()
+        return True
+
+    def set_color(self, color):
+        if color == self.color:
+            self.color = color
+            return False
+        return True
+
+    def set_thickness(self, thickness):
+        if thickness == self.thickness:
+            self.thickness = thickness
+            return False
+        return True
+
+    def set_config(self, config):
+        if config == self.config:
+            self.config = config
+            self.xy_projection, self.xz_projection, self.connection_lines = self.projections()
+            return False
+        return True
+
+    def set_ag_object(self, dct):
+        if dct == self.to_dict()['ag_object']:
+            self.ag_object = unpack_ag_object(dct)
+            self.xy_projection, self.xz_projection, self.connection_lines = self.projections()
+            return False
+        return True
 
 
 def set_config(obj, config):
@@ -186,3 +206,21 @@ def set_config(obj, config):
         config['draw_cl'] = True
 
     return config
+
+
+def unpack_ag_object(obj):
+    if isinstance(obj, int) or isinstance(obj, float):
+        return obj
+    if isinstance(obj, list) or isinstance(obj, tuple):
+        return list(map(unpack_ag_object, obj))
+    if isinstance(obj, dict):
+        if isinstance(obj['class'], str):
+            cls = serializable.angem_class_by_name[obj['class']]
+            return cls(*[unpack_ag_object(obj[key]) for key in serializable.angem_objects[cls]])
+        return obj['class'](*[unpack_ag_object(obj[key]) for key in serializable.angem_objects[obj['class']]])
+
+
+class IntersectionObject:
+    def __init__(self, *objects):
+        self.objects = objects
+

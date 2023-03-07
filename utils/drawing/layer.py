@@ -16,11 +16,15 @@ class Layer:
         self.objects.append(GeneralObject(self.plot, ag_object, color, name='GENERATE', **config))
         self.plot.sm.update_intersections()
         if history_record:
-            self.plot.hm.add_record('add_object', ag_object, color)
+            self.plot.hm.add_record('add_object')
+
+    def add_object_from_dict(self, dct):
+        self.objects.append(GeneralObject.from_dict(self.plot, dct))
+        self.plot.sm.update_intersections()
 
     def delete_object(self, index, history_record=True):
         if history_record:
-            self.plot.hm.add_record('delete_object', self.objects[-1].ag_object, self.objects[-1].color)
+            self.plot.hm.add_record('delete_object', self.objects[-1].to_dict())
         self.objects[index].destroy_name_bars()
         self.objects.pop(index)
         self.plot.sm.update_intersections()

@@ -5,6 +5,7 @@ from utils.drawing.general_object import GeneralObject
 from utils.drawing.snap import distance, nearest_point
 import utils.maths.angem as ag
 from PyQt5.QtCore import Qt
+from utils.drawing.general_object import IntersectionObject
 
 COLOR1 = (0, 162, 232)
 COLOR_CONNECT_LINE = (180, 180, 180)
@@ -692,9 +693,7 @@ def get_intersection(plot, step, **kwargs):
                 return
         if res is not None:
             if isinstance(res, tuple):
-                for el in res:
-                    plot.add_object(el)
-                plot.hm.add_record('add_several_objects', len(res))
+                plot.add_object(IntersectionObject(*res))
                 plot.end()
             else:
                 plot.add_object(res, end=True)
@@ -769,8 +768,8 @@ def create_rotation_surface(plot, step, **kwargs):
                       plot.pm.convert_screen_y_to_ag_z(kwargs['c']))
         if ag.Vector(p1, p2) | ag.Vector(0, 0, 1):
             plane = ag.Plane(p1, p2, ag.Vector(0, 1, 0) & ag.Vector(p1, p2))
-            l1 = plot.pm.get_projection(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xz', COLOR_CONNECT_LINE)
-            l2 = plot.pm.get_projection(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xz', COLOR_CONNECT_LINE)
+            l1 = plot.pm.line_projections(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xz', COLOR_CONNECT_LINE)
+            l2 = plot.pm.line_projections(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xz', COLOR_CONNECT_LINE)
 
             def mouse_move(pos):
                 pos = nearest_point((pos.x(), pos.y()), l1, as_line=True)
@@ -793,8 +792,8 @@ def create_rotation_surface(plot, step, **kwargs):
             plot.mouse_left = mouse_left
         else:
             plane = ag.Plane(p1, p2, ag.Vector(0, 0, 1) & ag.Vector(p1, p2))
-            l1 = plot.pm.get_projection(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)
-            l2 = plot.pm.get_projection(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)
+            l1 = plot.pm.line_projections(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)
+            l2 = plot.pm.line_projections(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)
 
             def mouse_move(pos):
                 pos = nearest_point((pos.x(), pos.y()), l1, as_line=True)
@@ -823,8 +822,8 @@ def create_rotation_surface(plot, step, **kwargs):
         v = ag.Vector(p1, p2) * (1 / ag.distance(p1, p2))
         if ag.Vector(p1, p2) | ag.Vector(0, 0, 1):
             plane = ag.Plane(p1, p2, ag.Vector(0, 1, 0) & ag.Vector(p1, p2))
-            l1 = plot.pm.get_projection(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xz', COLOR_CONNECT_LINE)
-            l2 = plot.pm.get_projection(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xz', COLOR_CONNECT_LINE)
+            l1 = plot.pm.line_projections(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xz', COLOR_CONNECT_LINE)
+            l2 = plot.pm.line_projections(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xz', COLOR_CONNECT_LINE)
 
             def mouse_move(pos):
                 pos = plot.sm.get_snap((pos.x(), pos.y()), 'xz')
@@ -865,8 +864,8 @@ def create_rotation_surface(plot, step, **kwargs):
             plot.mouse_left = mouse_left
         else:
             plane = ag.Plane(p1, p2, ag.Vector(0, 0, 1) & ag.Vector(p1, p2))
-            l1 = plot.pm.get_projection(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)
-            l2 = plot.pm.get_projection(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)
+            l1 = plot.pm.line_projections(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)
+            l2 = plot.pm.line_projections(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xy', COLOR_CONNECT_LINE)
 
             def mouse_move(pos):
                 pos = plot.sm.get_snap((pos.x(), pos.y()), 'xy')
