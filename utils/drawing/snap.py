@@ -149,7 +149,7 @@ class SnapManager:
     def update_intersections(self):
         lst = []
         self.intersections_xy.clear()
-        for obj1 in self.get_screen_objects('xy'):
+        for obj1, _ in self.get_screen_objects('xy'):
             if isinstance(obj1, ScreenSegment):
                 if obj1.p1[0] - obj1.p2[0] == 0:
                     k = 100000000000
@@ -167,7 +167,7 @@ class SnapManager:
                 lst.append((obj1, k, b))
         lst.clear()
         self.intersections_xz.clear()
-        for obj1 in self.get_screen_objects('xz'):
+        for obj1, _ in self.get_screen_objects('xz'):
             if isinstance(obj1, ScreenSegment):
                 if obj1.p1[0] - obj1.p2[0] == 0:
                     k = 100000000000
@@ -183,6 +183,7 @@ class SnapManager:
                             min(obj2[0].p1[0], obj2[0].p2[0]) <= x <= max(obj2[0].p1[0], obj2[0].p2[0]):
                         self.intersections_xz.append((x, y))
                 lst.append((obj1, k, b))
+        print(self.intersections_xy, self.intersections_xz)
 
 
 class Snap:
