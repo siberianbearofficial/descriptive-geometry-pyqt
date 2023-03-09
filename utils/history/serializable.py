@@ -16,6 +16,7 @@ angem_objects = {
     ag.Spline: ['plane', 'points'],
     ag.Spline3D: ['points'],
     ag.RotationSurface: ['center1', 'center2', 'spline1'],
+    ag.IntersectionObject: ['object1', 'object2']
 }
 
 angem_class_by_name = {key.__name__: key for key in angem_objects}

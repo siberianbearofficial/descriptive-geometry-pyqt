@@ -9,6 +9,7 @@ from utils.drawing.screen_circle import ScreenCircle
 from utils.drawing.axis import Axis
 from utils.drawing.projections import ProjectionManager
 from utils.drawing.history import HistoryManager
+from utils.drawing.label_manager import LabelManager
 import utils.drawing.snap as snap
 from utils.drawing.layer import Layer
 from utils.drawing.general_object import GeneralObject
@@ -59,6 +60,7 @@ class Plot(QWidget):
         self.pm = ProjectionManager(self)
         self.sm = snap.SnapManager(self)
         self.hm = HistoryManager(self)
+        self.lm = LabelManager(self)
 
         self.clear()
         self.moving_camera = False
@@ -93,6 +95,8 @@ class Plot(QWidget):
                 obj.draw_qt()
         if self.selected_object is not None:
             self.selected_object.draw_qt(selected=1)
+        self.set_pen((0, 0, 0), 4)
+        self.lm.draw()
         self.painter.end()
 
     def keyPressEvent(self, a0):
@@ -155,28 +159,30 @@ class Plot(QWidget):
 
     def draw_segment(self, p1, p2, color=(0, 0, 0), thickness=1, line_type=1):
         self.set_pen(color, thickness, line_type)
-        self.painter.drawLine(*p1, *p2)
+        self.painter.drawLine(int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1]))
 
     def draw_point(self, point, color=(0, 0, 0), thickness=1):
         if self.tlp[0] + 1 <= point[0] <= self.brp[0] - 1 and self.tlp[1] + 1 <= point[1] <= self.brp[1] - 1:
             self.set_pen(color, thickness)
             brush = self.painter.brush()
             self.painter.setBrush(QColor(*self.bg_color))
-            self.painter.drawEllipse(point[0] - 5, point[1] - 5, 10, 10)
+            self.painter.drawEllipse(int(point[0]) - 5, int(point[1]) - 5, 10, 10)
             self.painter.setBrush(brush)
 
     def draw_point2(self, point, color=(0, 0, 0), thickness=1):
         if self.tlp[0] <= point[0] <= self.brp[0] and self.tlp[1] <= point[1] <= self.brp[1]:
             self.set_pen(color, thickness)
-            self.painter.drawPoint(*point)
+            self.painter.drawPoint(int(point[0]), int(point[1]))
 
     def draw_circle(self, center, radius, color=(0, 0, 0), thickness=2):
         self.set_pen(color, thickness)
-        self.painter.drawEllipse(center[0] - radius, center[1] - radius, radius * 2, radius * 2)
-        # self.painter.setPen(QColor(*color))
-        # self.painter.drawEllipse(*center, radius, radius)
-        # if self.tlp[0] + radius <= center[0] <= self.brp[0] - radius \
-        #         and self.tlp[1] + radius + 1 <= center[1] <= self.brp[1] - radius:
+        self.painter.drawEllipse(int(center[0]) - radius, int(center[1] - radius), int(radius * 2), int(radius * 2))
+
+    def draw_text(self, pos, text):
+        self.painter.drawText(*pos, text)
+
+    def draw_text2(self, rect, text, option):
+        self.painter.drawText(rect, text, option)
 
     def set_pen(self, color, thickness, line_type=1):
         self.painter.setPen(QPen(QColor(*color), thickness, line_type))
@@ -216,7 +222,7 @@ class Plot(QWidget):
         if update:
             for layer in self.layers:
                 layer.move_objects(x, y)
-                # layer.update_projections()
+            self.lm.move(x, y)
             self.sm.update_intersections()
             self.update()
 

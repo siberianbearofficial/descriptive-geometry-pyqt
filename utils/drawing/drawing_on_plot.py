@@ -5,7 +5,6 @@ from utils.drawing.general_object import GeneralObject
 from utils.drawing.snap import distance, nearest_point
 import utils.maths.angem as ag
 from PyQt5.QtCore import Qt
-from utils.drawing.general_object import IntersectionObject
 
 COLOR1 = (0, 162, 232)
 COLOR_CONNECT_LINE = (180, 180, 180)
@@ -130,6 +129,18 @@ def select_object(plot, func, step, kwargs, types=None, final_func=None):
     plot.mouse_right = lambda pos: plot.end()
 
 
+def convert_point(plot, x, y, z):
+    if not isinstance(y, int) and not isinstance(y, float):
+        x = plot.pm.convert_screen_x_to_ag_x(x)
+        z = plot.pm.convert_screen_y_to_ag_z(z)
+        return x, y(x, z), z
+    if not isinstance(z, int) and not isinstance(z, float):
+        x = plot.pm.convert_screen_x_to_ag_x(x)
+        y = plot.pm.convert_screen_y_to_ag_y(y)
+        return x, y, z(x, y)
+    return plot.pm.convert_screen_x_to_ag_x(x), plot.pm.convert_screen_y_to_ag_y(y), plot.pm.convert_screen_y_to_ag_z(z)
+
+
 def create_point(plot, step, **kwargs):
     if step == 1:
         select_screen_point(plot, create_point, 1, kwargs, 'xy')
@@ -137,10 +148,7 @@ def create_point(plot, step, **kwargs):
         a = ScreenPoint(plot, kwargs['x'], kwargs['c'], color=COLOR1)
         select_screen_point(plot, create_point, 2, kwargs, 'xz', x=kwargs['x'], c=kwargs['c'], objects=(a,),
                             final_func=lambda pos: plot.add_object(ag.Point(
-                                plot.pm.convert_screen_x_to_ag_x(kwargs['x']),
-                                plot.pm.convert_screen_y_to_ag_y(kwargs['c']),
-                                plot.pm.convert_screen_y_to_ag_z(pos[1])
-                            ), end=True))
+                                *convert_point(plot, kwargs['x'], kwargs['c'], pos[1])), end=True))
 
 
 def create_segment(plot, step, **kwargs):
@@ -169,10 +177,8 @@ def create_segment(plot, step, **kwargs):
             'xz', x=kwargs['x2'], c=kwargs['y2'], objects=(a1, a2, s1, s2, b1),
             object_func=lambda pos: (ScreenSegment(plot, (kwargs['x'], kwargs['c']), pos, COLOR1),),
             final_func=lambda pos: plot.add_object(ag.Segment(
-                ag.Point(plot.pm.convert_screen_x_to_ag_x(kwargs['x1']), plot.pm.convert_screen_y_to_ag_y(kwargs['y1']),
-                         plot.pm.convert_screen_y_to_ag_z(kwargs['c'])),
-                ag.Point(plot.pm.convert_screen_x_to_ag_x(kwargs['x2']), plot.pm.convert_screen_y_to_ag_y(kwargs['y2']),
-                         plot.pm.convert_screen_y_to_ag_z(pos[1]))
+                ag.Point(*convert_point(plot, kwargs['x1'], kwargs['y1'], kwargs['c'])),
+                ag.Point(*convert_point(plot, kwargs['x2'], kwargs['y2'], pos[1]))
             ), end=True, draw_cl=True))
 
 
@@ -202,10 +208,8 @@ def create_line(plot, step, **kwargs):
             'xz', x=kwargs['x2'], c=kwargs['y2'], objects=(a1, a2, s1, s2, b1),
             object_func=lambda pos: (ScreenSegment(plot, (kwargs['x'], kwargs['c']), pos, COLOR1),),
             final_func=lambda pos: plot.add_object(ag.Line(
-                ag.Point(plot.pm.convert_screen_x_to_ag_x(kwargs['x1']), plot.pm.convert_screen_y_to_ag_y(kwargs['y1']),
-                         plot.pm.convert_screen_y_to_ag_z(kwargs['c'])),
-                ag.Point(plot.pm.convert_screen_x_to_ag_x(kwargs['x2']), plot.pm.convert_screen_y_to_ag_y(kwargs['y2']),
-                         plot.pm.convert_screen_y_to_ag_z(pos[1]))
+                ag.Point(*convert_point(plot, kwargs['x1'], kwargs['y1'], kwargs['c'])),
+                ag.Point(*convert_point(plot, kwargs['x2'], kwargs['y2'], pos[1]))
             ), end=True))
 
 
@@ -693,7 +697,7 @@ def get_intersection(plot, step, **kwargs):
                 return
         if res is not None:
             if isinstance(res, tuple):
-                plot.add_object(IntersectionObject(*res))
+                plot.add_object(ag.IntersectionObject(kwargs['obj'], kwargs['obj1'], *res))
                 plot.end()
             else:
                 plot.add_object(res, end=True)

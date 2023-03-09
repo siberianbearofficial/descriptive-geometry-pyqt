@@ -4,7 +4,6 @@ from utils.drawing.screen_segment import ScreenSegment
 from utils.drawing.screen_circle import ScreenCircle
 import math
 from PyQt5.QtCore import Qt
-from utils.drawing.general_object import IntersectionObject
 
 COLOR_CL = (180, 180, 180)
 
@@ -80,7 +79,7 @@ class ProjectionManager:
         elif isinstance(obj, ag.Spline) or isinstance(obj, ag.Spline3D):
             return self.spline_projections(obj, color)
 
-        elif isinstance(obj, IntersectionObject):
+        elif isinstance(obj, ag.IntersectionObject):
             l1, l2, l3 = [], [], []
             for el in obj.objects:
                 pr = self.get_projection(el, color)
@@ -338,8 +337,8 @@ class ProjectionManager:
 
     def convert_ag_coordinate_to_screen_coordinate(self, x, y=None, z=None, plane='xy'):
         if plane == 'xy':
-            return int(self.axis.rp[0] + self.camera_pos[0] - x * self.zoom), int(self.axis.lp[1] + y * self.zoom)
-        return int(self.axis.rp[0] + self.camera_pos[0] - x * self.zoom), int(self.axis.lp[1] - z * self.zoom)
+            return self.axis.rp[0] + self.camera_pos[0] - x * self.zoom, self.axis.lp[1] + y * self.zoom
+        return self.axis.rp[0] + self.camera_pos[0] - x * self.zoom, self.axis.lp[1] - z * self.zoom
 
     def convert_screen_x_to_ag_x(self, x):
         return (self.camera_pos[0] + self.axis.rp[0] - x) / self.zoom

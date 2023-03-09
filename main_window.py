@@ -23,7 +23,7 @@ class MainWindow(QMainWindow):
 
         self.plot = Plot(self.centralwidget)
 
-        draw_tools_names = ['Point', 'Segment', 'Line', 'Plane', 'Cylinder', 'PerpL', 'Plane3p', 'Spline', 'RS']
+        draw_tools_names = ['Point', 'Segment', 'Line', 'Plane', 'Cylinder', 'PerpL', 'Plane3p', 'Spline', 'RS', 'Horizontal']
         self.draw_bar = DrawBar(self.centralwidget, *draw_tools_names).set_on_click_listeners(
             *[
                 lambda: self.plot.draw('point'),
@@ -34,7 +34,8 @@ class MainWindow(QMainWindow):
                 lambda: self.plot.draw('perpendicular_line'),
                 lambda: self.plot.draw('plane_3p'),
                 lambda: self.plot.draw('spline'),
-                lambda: self.plot.draw('rotation_surface')
+                lambda: self.plot.draw('rotation_surface'),
+                lambda: self.plot.draw('horizontal')
             ]
         )
 

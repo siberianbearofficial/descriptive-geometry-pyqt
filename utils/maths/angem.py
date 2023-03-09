@@ -143,7 +143,7 @@ class Line:
             return self.vector | other
         raise ValueError(f'unsupported operand type(s) for |: "Line" and "{other.__class__.__name__}"')
 
-    def intersection(self, other, eps=1e-10):
+    def intersection(self, other, eps=1e-6):
         if isinstance(other, Plane):
             if self | other:
                 return None
@@ -1111,3 +1111,18 @@ def intersection_rotation_surface_and_rotation_surface(self, other):
                 lst[-1] += list(el2.intersection(el1))
     res = Spline3D.convert_points_to_splines(lst, 4 * abs(v))
     return tuple(res)
+
+class IntersectionObject:
+    def __init__(self, p1, p2, objects=None):
+        self.object1 = p1
+        self.object2 = p2
+        if objects is not None:
+            self.objects = objects
+        else:
+            try:
+                self.objects = self.object1.intersection(self.object2)
+            except:
+                try:
+                    self.objects = self.object2.intersection(self.object1)
+                except:
+                    self.objects = []

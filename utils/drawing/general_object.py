@@ -1,6 +1,5 @@
 import utils.maths.angem as ag
 import utils.history.serializable as serializable
-from utils.drawing.object_name_bar import ObjectNameBar, get_name_bar_text, get_name_bar_pos
 
 indexU, indexL = 0, 0
 ALPH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -20,15 +19,15 @@ class GeneralObject:
         self.thickness = 1
         self.config = set_config(ag_object, kwargs)
 
-        self.generate_name()
-
         if xy_projection is None or xz_projection is None:
             self.xy_projection, self.xz_projection, self.connection_lines = self.projections()
         else:
             self.xy_projection = xy_projection
             self.xz_projection = xz_projection
 
-        self.name_bars = self.set_name_bars()
+        self.generate_name()
+        if self.name:
+            self.labels = self.plot.lm.add_labels_to_obj(self)
 
     def draw(self):
         for el in self.xy_projection:
@@ -74,16 +73,12 @@ class GeneralObject:
 
     def update_projections(self):
         self.xy_projection, self.xz_projection, self.connection_lines = self.projections()
-        for bar, pos in zip(self.name_bars, get_name_bar_pos(self)):
-            if pos is None:
-                bar.hide()
-            else:
-                bar.show()
-                bar.move3(*pos[0], pos[1])
+        self.destroy_name_bars()
+        self.set_name_bars()
 
     def move(self, x, y):
         if isinstance(self.ag_object, ag.Line) or \
-                isinstance(self.ag_object, ag.Plane) and self.config.get('draw_3p', False):
+                isinstance(self.ag_object, ag.Plane) and not self.config.get('draw_3p', False):
             self.update_projections()
             return
         for el in self.xy_projection:
@@ -92,37 +87,69 @@ class GeneralObject:
             el.move(x, y)
         for el in self.connection_lines:
             el.move(x, y)
-        for el in self.name_bars:
-            el.move2(x, y)
+
+    def delete(self):
+        self.destroy_name_bars()
+        if self.name in used_names:
+            used_names.remove(self.name)
 
     def generate_name(self):
         if self.name == 'GENERATE':
             # TODO: check if all names used
-            global indexU, indexL, alph, ALPH
             if isinstance(self.ag_object, ag.Point):
-                while ALPH[indexU] not in used_names:
-                    self.name = ALPH[indexU]
-                    used_names.add(self.name)
-                indexU += 1
-                indexU %= len(ALPH)
+                self.name = self.name_to_point(self.xy_projection[0].tuple())
             elif isinstance(self.ag_object, ag.Segment):
-                s = '!'
-                while ALPH[indexU] not in used_names:
-                    s = ALPH[indexU]
-                    used_names.add(s)
-                indexU += 1
-                indexU %= len(ALPH)
-                while ALPH[indexU] not in used_names:
-                    self.name = s + SEP + ALPH[indexU]
-                    used_names.add(ALPH[indexU])
-                indexU += 1
-                indexU %= len(ALPH)
+                self.name = self.name_to_point(self.xy_projection[0].p1) + SEP + \
+                            self.name_to_point(self.xy_projection[0].p2)
+            elif isinstance(self.ag_object, ag.Plane) and self.config.get('draw_3p', False):
+                self.name = self.name_to_point(self.xy_projection[3].tuple()) + SEP + \
+                            self.name_to_point(self.xy_projection[4].tuple()) + SEP + \
+                            self.name_to_point(self.xy_projection[5].tuple())
             elif isinstance(self.ag_object, ag.Line) or isinstance(self.ag_object, ag.Plane):
-                while alph[indexL] not in used_names:
-                    self.name = alph[indexL]
-                    used_names.add(self.name)
-                indexL += 1
-                indexL %= len(alph)
+                self.name = GeneralObject.get_alpha(lower=True)
+            else:
+                i, ag_class = 1, self.ag_object.__class__.__name__
+                while True:
+                    if ag_class + ' ' + str(i) not in used_names:
+                        self.name = ag_class + ' ' + str(i)
+                        used_names.add(self.name)
+                        break
+                    i += 1
+
+    @staticmethod
+    def get_alpha(lower=False):
+        if lower:
+            for symbol in alph:
+                if symbol not in used_names:
+                    used_names.add(symbol)
+                    return symbol
+            i, s = 1, '1'
+            while True:
+                for symbol in alph:
+                    if symbol + s not in used_names:
+                        used_names.add(symbol + s)
+                        return symbol + s
+                i += 1
+                s = str(i)
+        else:
+            for symbol in ALPH:
+                if symbol not in used_names:
+                    used_names.add(symbol)
+                    return symbol
+            i, s = 1, '1'
+            while True:
+                for symbol in ALPH:
+                    if symbol + s not in used_names:
+                        used_names.add(symbol + s)
+                        return symbol + s
+                i += 1
+                s = str(i)
+
+    def name_to_point(self, pos):
+        name = self.plot.lm.get_name_to_new_obj(pos)
+        if name:
+            return name
+        return GeneralObject.get_alpha()
 
     def to_dict(self, class_names=False):
         def convert(obj):
@@ -146,31 +173,18 @@ class GeneralObject:
         return GeneralObject(plot, unpack_ag_object(dct['ag_object']), dct['color'], dct['name'], **dct['config'])
 
     def set_name_bars(self):
-        if self.name:
-            text = get_name_bar_text(self)
-            pos = get_name_bar_pos(self)
-            return tuple(ObjectNameBar(self.plot, *pos[i], text[i]) for i in range(len(pos)))
-        return tuple()
+        self.labels = self.plot.lm.add_labels_to_obj(self)
 
     def destroy_name_bars(self):
-        for el in self.name_bars:
-            el.hide()
-            el.destroy()
-
-    def hide_name_bars(self):
-        for el in self.name_bars:
-            el.hide()
-
-    def show_name_bars(self):
-        for el in self.name_bars:
-            el.show()
+        for pos, text in self.labels:
+            self.plot.lm.delete_label(pos, text)
 
     def set_name(self, name):
         if name == self.name:
             return False
         self.name = name
         self.destroy_name_bars()
-        self.name_bars = self.set_name_bars()
+        self.set_name_bars()
         return True
 
     def set_color(self, color):
@@ -223,9 +237,4 @@ def unpack_ag_object(obj):
             cls = serializable.angem_class_by_name[obj['class']]
             return cls(*[unpack_ag_object(obj[key]) for key in serializable.angem_objects[cls]])
         return obj['class'](*[unpack_ag_object(obj[key]) for key in serializable.angem_objects[obj['class']]])
-
-
-class IntersectionObject:
-    def __init__(self, *objects):
-        self.objects = objects
 

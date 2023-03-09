@@ -34,6 +34,7 @@ class HistoryManager:
             add_action('delete_object', self.plot.layers[self.plot.current_layer].objects[-1].to_dict(),
                        clear_redo=False)
             self.plot.layers[self.plot.current_layer].delete_object(-1, history_record=False)
+            self.plot.selected_object = None
             self.plot.update()
         elif record.action_type == 'delete_object':
             add_action('add_object', -1, clear_redo=False)
