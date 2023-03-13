@@ -2,16 +2,14 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit
 from PyQt5.QtGui import QFont
 
 import utils.maths.angem as ag
+from widget import Widget
 
 
-class CmdBar(QWidget):
+class CmdBar(Widget):
     def __init__(self, parent):
         super().__init__(parent)
 
         self.command = None
-        self.plot = None
-
-        self.setGeometry(160, 640, 711, 61)
         self.setStyleSheet("background-color: #B2B2B2;\n"
                            "border-radius: 10px;")
 
@@ -19,11 +17,8 @@ class CmdBar(QWidget):
         font.setFamily("Alegreya Sans SC Medium")
         font.setPointSize(6)
 
-        strange_widget = QWidget(self)
-        strange_widget.setFixedSize(self.geometry().size())
-
         # Layout
-        self.layout = QVBoxLayout(strange_widget)
+        self.layout = QVBoxLayout(self.central_widget)
         self.layout.setContentsMargins(15, 10, 0, 10)
         self.layout.setSpacing(0)
 
@@ -72,11 +67,6 @@ class CmdBar(QWidget):
         self.command = command
         return self
 
-    def set_plot(self, plot):
-        # TODO: REMOVE THIS STRANGE THING :)
-        self.plot = plot
-        return self
-
     def execute_command(self, cmd):
         try:
             return eval(cmd, self.variables)
@@ -115,30 +105,10 @@ class CmdBar(QWidget):
 
     @staticmethod
     def command_help():
-        # TODO: refactor this to make it more readable
-        print(
-            '''
-            Commands:
-            segment(point, point) - creates segment
-            point(x, y, z) - creates point
-            line(point, point) - creates line
-            print(*args) - prints args
-            clear() - clears screen
-            draw(*args) - draws args
-            help() - prints this message
-
-            Some tips:
-            Typing command without parentheses won't execute it.
-            You can't use variables to store results of commands.
-            Typical usage looks like this:
-            segment(point(0, 0, 0), point(1, 1, 1))   # this creates segment but doesn't draw or print it')
-            draw(segment(point(0, 0, 0), point(1, 1, 1)))
-            segment(point(0, 0, 0), point(1, 1, 1)))
-            '''
-        )
+        print('Unfortunately we can\'t help you right now, try again later')
 
     def command_clear(self, index=-1):
-        self.plot.clear(index)
+        self.clear_plot(index)
 
     def command_serialize(self):
         pass
@@ -148,4 +118,10 @@ class CmdBar(QWidget):
 
     def command_draw_object(self, *args):
         for obj in args:
-            self.plot.add_object(obj)
+            self.add_object(obj)
+
+    def clear_plot(self, index=-1):
+        pass
+
+    def add_object(self, obj):
+        pass

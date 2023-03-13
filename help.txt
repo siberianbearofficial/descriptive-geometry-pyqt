@@ -1,0 +1,16 @@
+Commands:
+segment(point, point) - creates segment
+point(x, y, z) - creates point
+line(point, point) - creates line
+print(*args) - prints args
+clear() - clears screen
+draw(*args) - draws args
+help() - prints this message
+
+Some tips:
+Typing command without parentheses won't execute it.
+You can't use variables to store results of commands.
+Typical usage looks like this:
+segment(point(0, 0, 0), point(1, 1, 1))   # this creates segment but doesn't draw or print it')
+draw(segment(point(0, 0, 0), point(1, 1, 1)))
+segment(point(0, 0, 0), point(1, 1, 1)))

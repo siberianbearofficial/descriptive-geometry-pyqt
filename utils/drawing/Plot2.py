@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QApplication
+from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout
 from PyQt5.QtGui import QColor, QPainter, QPen
 from PyQt5.QtCore import Qt, pyqtSignal
 
@@ -14,6 +14,9 @@ import utils.drawing.snap as snap
 from utils.drawing.layer import Layer
 from utils.drawing.general_object import GeneralObject
 import utils.drawing.drawing_on_plot as drw
+
+from widget import Widget
+
 from random import randint
 
 drawing_functions = {
@@ -27,6 +30,18 @@ drawing_functions = {
     'rotation_surface': drw.create_rotation_surface, 'intersection': drw.get_intersection}
 
 
+class PlotBar(Widget):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.setStyleSheet("background-color: #ffffff; border-radius: 10px;")
+
+        self.layout = QVBoxLayout(self.central_widget)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.painter_widget = Plot(self.central_widget)
+        self.layout.addWidget(self.painter_widget)
+
+
 class Plot(QWidget):
     objectSelected = pyqtSignal(object)
     printToCommandLine = pyqtSignal(str)
@@ -34,11 +49,6 @@ class Plot(QWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
-
-        self.setGeometry(159, 20, 711, 601)
-
-        self.setStyleSheet("border-radius: 10px;")
-        self.setObjectName("plot")
 
         self.screen = parent
         self.painter = QPainter()
@@ -81,10 +91,6 @@ class Plot(QWidget):
     def paintEvent(self, e):
         self.painter.begin(self)
 
-        self.painter.setBackground(QColor(*self.bg_color))
-        self.painter.setBackgroundMode(Qt.OpaqueMode)
-        self.painter.fillRect(*self.tlp, *self.brp, QColor(*self.bg_color))
-
         self.axis.draw_qt()
         for layer in self.layers:
             layer.draw_qt()
@@ -95,6 +101,7 @@ class Plot(QWidget):
                 obj.draw_qt()
         if self.selected_object is not None:
             self.selected_object.draw_qt(selected=1)
+
         self.set_pen((0, 0, 0), 4)
         self.lm.draw()
         self.painter.end()

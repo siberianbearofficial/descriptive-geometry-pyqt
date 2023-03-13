@@ -1,22 +1,18 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QLayout, QComboBox, \
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QLayout, QComboBox, \
     QColorDialog
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt
+from widget import Widget
 
 
-class PropertiesBar(QWidget):
+class PropertiesBar(Widget):
     def __init__(self, parent):
         super().__init__(parent)
 
         self.current_object = None
-
-        self.setGeometry(889, 150, 171, 331)
         self.setStyleSheet("background-color: #FFFFFF; border-radius: 10px;")
 
-        self.strange_widget = QWidget(self)
-        self.strange_widget.setFixedSize(self.geometry().size())
-
-        self.layout = QVBoxLayout(self.strange_widget)
+        self.layout = QVBoxLayout(self.central_widget)
         self.layout.setAlignment(Qt.AlignTop)
         self.layout.setContentsMargins(15, 15, 15, 15)
 
@@ -26,7 +22,7 @@ class PropertiesBar(QWidget):
 
         # Name
         name = QVBoxLayout()
-        name_label = QLabel(self.strange_widget)
+        name_label = QLabel(self.central_widget)
         name_label.setFixedHeight(20)
 
         name_label.setFont(font)
@@ -34,7 +30,7 @@ class PropertiesBar(QWidget):
         name_label.setText('Name')
         name.addWidget(name_label)
 
-        self.name_line_edit = QLineEdit(self.strange_widget)
+        self.name_line_edit = QLineEdit(self.central_widget)
         self.name_line_edit.setFixedHeight(30)
         self.name_line_edit.setFont(font)
         self.name_line_edit.setStyleSheet("color: #00ABB3;\n"
@@ -54,14 +50,14 @@ class PropertiesBar(QWidget):
         color = QVBoxLayout()
         color.setSpacing(5)
 
-        color_label = QLabel(self.strange_widget)
+        color_label = QLabel(self.central_widget)
         color_label.setFixedHeight(20)
         color_label.setFont(font)
         color_label.setStyleSheet("color: #00ABB3;")
         color_label.setText('Color')
         color.addWidget(color_label)
 
-        self.color_button = QPushButton(self.strange_widget)
+        self.color_button = QPushButton(self.central_widget)
         self.color_button.setFixedSize(30, 30)
         self.color_button.setStyleSheet("color: #00ABB3;\n"
                                         "background-color: #CCFCE5;\n"
@@ -79,14 +75,14 @@ class PropertiesBar(QWidget):
         layer.setSizeConstraint(QLayout.SetMinimumSize)
         layer.setSpacing(5)
 
-        layer_label = QLabel(self.strange_widget)
+        layer_label = QLabel(self.central_widget)
         layer_label.setFixedHeight(20)
         layer_label.setFont(font)
         layer_label.setStyleSheet("color: #00ABB3;")
         layer_label.setText('Layer')
         layer.addWidget(layer_label)
 
-        self.layer_line_edit = QLineEdit(self.strange_widget)
+        self.layer_line_edit = QLineEdit(self.central_widget)
         self.layer_line_edit.setFixedSize(30, 30)
         self.layer_line_edit.setFont(font)
         self.layer_line_edit.setAcceptDrops(False)
@@ -103,14 +99,14 @@ class PropertiesBar(QWidget):
         thickness = QVBoxLayout()
         thickness.setSpacing(5)
 
-        thickness_label = QLabel(self.strange_widget)
+        thickness_label = QLabel(self.central_widget)
         thickness_label.setFixedHeight(20)
         thickness_label.setFont(font)
         thickness_label.setStyleSheet("color: #00ABB3;")
         thickness_label.setText('Thickness')
         thickness.addWidget(thickness_label)
 
-        self.thickness_combobox = QComboBox(self.strange_widget)
+        self.thickness_combobox = QComboBox(self.central_widget)
         self.thickness_combobox.setFixedSize(70, 30)
         self.thickness_combobox.setFont(font)
         self.thickness_combobox.setLayoutDirection(Qt.RightToLeft)

@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget
-from utils.drawing.Plot2 import Plot
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel, QSizePolicy
+from PyQt5.QtCore import Qt
+from utils.drawing.Plot2 import PlotBar
 from DrawBar import DrawBar
 from CmdBar import CmdBar
 from PropertiesBar import PropertiesBar
@@ -7,6 +8,7 @@ from InspectorBar import InspectorBar
 from ToolBar import ToolBar
 from MenuBar import MenuBar
 from layer_window import LayerWindow
+from column import Column
 
 import utils.history.serializer as srl
 
@@ -16,15 +18,26 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle('DescriptiveGeometry')
-        self.setFixedSize(1080, 740)
+        self.setMinimumSize(1080, 740)
 
-        self.centralwidget = QWidget(self)
-        self.centralwidget.setStyleSheet("background-color: #3C4048;")
+        central_widget = QWidget(self)
+        central_widget.setStyleSheet("background-color: #3C4048;")
 
-        self.plot = Plot(self.centralwidget)
+        main_layout = QHBoxLayout(central_widget)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
 
+        left_column = Column()
+        middle_column = Column()
+        right_column = Column()
+
+        # Plot
+        self.plot_bar = PlotBar(middle_column)
+        self.plot = self.plot_bar.painter_widget
+
+        # Draw bar
         draw_tools_names = ['Point', 'Segment', 'Line', 'Plane', 'Cylinder', 'PerpL', 'Plane3p', 'Spline', 'RS', 'Horizontal']
-        self.draw_bar = DrawBar(self.centralwidget, *draw_tools_names).set_on_click_listeners(
+        self.draw_bar = DrawBar(left_column, *draw_tools_names).set_on_click_listeners(
             *[
                 lambda: self.plot.draw('point'),
                 lambda: self.plot.draw('segment'),
@@ -39,10 +52,13 @@ class MainWindow(QMainWindow):
             ]
         )
 
-        self.cmd_bar = CmdBar(self.centralwidget).set_plot(self.plot)
-
+        # Cmd bar
+        self.cmd_bar = CmdBar(middle_column)
+        self.cmd_bar.add_object = self.plot.add_object
+        self.cmd_bar.clear_plot = self.plot.clear
         self.plot.printToCommandLine.connect(self.cmd_bar.set_text)
 
+        # Toolbar
         tools_info = [
             {
                 'name': 'Ruler',
@@ -61,23 +77,29 @@ class MainWindow(QMainWindow):
             },
         ]
 
-        self.tool_bar = ToolBar(self.centralwidget, *[tool_info['name'] for tool_info in tools_info]).set_images(
+        self.tool_bar = ToolBar(right_column, *[tool_info['name'] for tool_info in tools_info]).set_images(
             *[tool_info['image'] for tool_info in tools_info]).set_on_click_listeners(
             *[tool_info['func'] for tool_info in tools_info])
 
-        self.properties_bar = PropertiesBar(self.centralwidget)
+        # Properties bar
+        self.properties_bar = PropertiesBar(right_column)
         self.plot.show_object_properties = self.properties_bar.open_object
         self.properties_bar.save = self.plot.save_object_properties
 
-        self.inspector_bar = InspectorBar(self.centralwidget)
+        # Inspector bar
+        self.inspector_bar = InspectorBar(right_column)
+
+        # Layer window
         self.layer_window = LayerWindow(self.plot.layers, self.plot.current_layer)
         self.layer_window.selectLayer.connect(self.plot.set_current_layer)
         self.layer_window.addLayer.connect(lambda: (self.plot.add_layer(), self.layer_window.update_layer_list(
             self.plot.layers, self.plot.current_layer)))
         self.layer_window.setLayerHidden.connect(lambda ind, flag: self.plot.layers[ind].set_hidden(flag))
         self.layer_window.removeLayer.connect(self.plot.delete_layer)
+
         self.plot.layersModified.connect(self.layer_window.update_layer_list)
 
+        # Menubar
         self.menu_bar = MenuBar(
             {
                 'File':
@@ -110,7 +132,15 @@ class MainWindow(QMainWindow):
         )
         self.setMenuBar(self.menu_bar)
 
-        self.setCentralWidget(self.centralwidget)
+        left_column.add(self.draw_bar)
+        middle_column.add(self.plot_bar, 10).add(self.cmd_bar, 1)
+        right_column.add(self.tool_bar, 2).add(self.properties_bar, 6).add(self.inspector_bar, 5)
+
+        main_layout.addWidget(left_column, 2)
+        main_layout.addWidget(middle_column, 8)
+        main_layout.addWidget(right_column, 2)
+
+        self.setCentralWidget(central_widget)
 
     def keyPressEvent(self, a0) -> None:
         self.plot.keyPressEvent(a0)

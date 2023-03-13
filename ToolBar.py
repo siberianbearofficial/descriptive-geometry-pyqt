@@ -1,9 +1,10 @@
-from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout, QLayout
+from PyQt5.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout
 from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import Qt
+from widget import Widget
 
 
-class ToolBar(QWidget):
+class ToolBar(Widget):
     def __init__(self, parent, *names):
         super().__init__(parent)
 
@@ -16,61 +17,17 @@ class ToolBar(QWidget):
         font.setBold(True)
         font.setWeight(75)
 
-        self.setGeometry(890, 19, 171, 111)
         self.setStyleSheet("background-color: #EAEAEA; border-radius: 10px;")
 
-        self.strange_widget = QWidget(self)
-        self.strange_widget.setGeometry(0, 0, 171, 111)
-
         # Layout
-        self.tool_bar_layout = QVBoxLayout(self.strange_widget)
-        self.tool_bar_layout.setContentsMargins(15, 8, 15, 8)
-        self.tool_bar_layout.setSpacing(0)
+        self.layout = QVBoxLayout(self.central_widget)
+        self.layout.setContentsMargins(10, 0, 10, 0)
+        self.layout.setSpacing(0)
 
         for name in names:
-            tool = Tool(name, self.strange_widget)
+            tool = Tool(name, self.central_widget)
             self.tools.append(tool)
-            self.tool_bar_layout.addWidget(tool)
-
-        # self.tool_bar_tool_2 = QWidget(self.verticalLayoutWidget_5)
-        # self.widget2 = QWidget(self.tool_bar_tool_2)
-        # self.widget2.setGeometry(0, 0, 141, 32)
-        # self.tool_bar_tool_2_layout = QHBoxLayout(self.widget2)
-        # self.tool_bar_tool_2_layout.setSizeConstraint(QLayout.SetMinimumSize)
-        # self.tool_bar_tool_2_layout.setContentsMargins(0, 0, 0, 0)
-        # self.tool_bar_tool_2_layout.setSpacing(5)
-        # self.tool_bar_tool_2_icon = QLabel(self.widget2)
-        # self.tool_bar_tool_2_icon.setMaximumSize(30, 30)
-        # self.tool_bar_tool_2_icon.setText("")
-        # self.tool_bar_tool_2_icon.setPixmap(QPixmap(":/img/img/angle_icon.png"))
-        # self.tool_bar_tool_2_icon.setScaledContents(True)
-        # self.tool_bar_tool_2_layout.addWidget(self.tool_bar_tool_2_icon)
-        # self.tool_bar_tool_2_label = QLabel(self.widget2)
-        # self.tool_bar_tool_2_label.setMaximumSize(16777215, 50)
-        # self.tool_bar_tool_2_label.setFont(font)
-        # self.tool_bar_tool_2_label.setStyleSheet("color: #00ABB3;")
-        # self.tool_bar_tool_2_layout.addWidget(self.tool_bar_tool_2_label)
-        # self.tool_bar_layout.addWidget(self.tool_bar_tool_2)
-        # self.tool_bar_tool_1 = QWidget(self.verticalLayoutWidget_5)
-        # self.widget3 = QWidget(self.tool_bar_tool_1)
-        # self.widget3.setGeometry(0, 0, 141, 32)
-        # self.tool_bar_tool_1_layout = QHBoxLayout(self.widget3)
-        # self.tool_bar_tool_1_layout.setSizeConstraint(QLayout.SetMinimumSize)
-        # self.tool_bar_tool_1_layout.setContentsMargins(0, 0, 0, 0)
-        # self.tool_bar_tool_1_layout.setSpacing(5)
-        # self.tool_bar_tool_1_icon = QLabel(self.widget3)
-        # self.tool_bar_tool_1_icon.setEnabled(True)
-        # self.tool_bar_tool_1_icon.setMaximumSize(30, 30)
-        # self.tool_bar_tool_1_icon.setText("")
-        # self.tool_bar_tool_1_icon.setPixmap(QPixmap(":/img/img/ruler_icon.png"))
-        # self.tool_bar_tool_1_icon.setScaledContents(True)
-        # self.tool_bar_tool_1_layout.addWidget(self.tool_bar_tool_1_icon)
-        # self.tool_bar_tool_1_label = QLabel(self.widget3)
-        # self.tool_bar_tool_1_label.setMaximumSize(16777215, 50)
-        # self.tool_bar_tool_1_label.setFont(font)
-        # self.tool_bar_tool_1_label.setStyleSheet("color: #00ABB3;")
-        # self.tool_bar_tool_1_layout.addWidget(self.tool_bar_tool_1_label)
-        # self.tool_bar_layout.addWidget(self.tool_bar_tool_1)
+            self.layout.addWidget(tool)
 
     def set_images(self, *tool_images):
         for i in range(len(tool_images)):
@@ -80,14 +37,12 @@ class ToolBar(QWidget):
     def set_on_click_listeners(self, *funcs):
         for i in range(len(funcs)):
             self.tools[i].set_on_click_listener(funcs[i])
+        return self
 
 
-class Tool(QWidget):
+class Tool(Widget):
     def __init__(self, name, parent=None):
-        if parent:
-            super().__init__(parent)
-        else:
-            super().__init__()
+        super().__init__(parent)
 
         self.clicked = None
         self.name = name
@@ -99,21 +54,18 @@ class Tool(QWidget):
         font.setBold(True)
         font.setWeight(75)
 
-        self.strange_widget = QWidget(self)
-        self.strange_widget.setGeometry(0, 0, 141, 32)
-
-        self.layout = QHBoxLayout(self.strange_widget)
-        self.layout.setSizeConstraint(QLayout.SetMinimumSize)
+        self.layout = QHBoxLayout(self.central_widget)
+        # self.layout.setSizeConstraint(QLayout.SetMinimumSize)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(5)
+        # self.layout.setSpacing(5)
 
-        self.icon = QLabel(self.strange_widget)
+        self.icon = QLabel(self.central_widget)
         self.icon.setMaximumSize(30, 30)
         self.icon.setText('')
         self.icon.setScaledContents(True)
         self.layout.addWidget(self.icon)
 
-        self.label = QLabel(self.strange_widget)
+        self.label = QLabel(self.central_widget)
         self.label.setFont(font)
         self.label.setStyleSheet("color: #00ABB3;")
         self.label.setText(name)
