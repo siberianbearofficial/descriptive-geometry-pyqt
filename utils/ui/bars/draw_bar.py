@@ -5,7 +5,7 @@ from utils.ui.widgets.widget import Widget
 
 
 class DrawBar(Widget):
-    def __init__(self, parent, *names, font_manager):
+    def __init__(self, struct, parent, font_manager):
         super().__init__(parent)
 
         self.setMouseTracking(True)
@@ -19,8 +19,8 @@ class DrawBar(Widget):
 
         self.tools = list()
 
-        for name in names:
-            draw_tool = DrawTool(name, self.central_widget, font_manager=font_manager)
+        for name in struct:
+            draw_tool = DrawTool(name, self.central_widget, font_manager=font_manager).set_on_click_listener(struct[name][0])
 
             self.tools.append(draw_tool)
             self.layout.addWidget(draw_tool)

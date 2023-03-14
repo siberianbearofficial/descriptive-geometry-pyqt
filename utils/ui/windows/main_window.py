@@ -41,30 +41,34 @@ class MainWindow(QMainWindow):
         # Plot
         self.plot_bar = PlotBar(middle_column, font_manager=fm)
         self.plot = self.plot_bar.painter_widget
-        self.hm = HistoryManager(self.plot)
+
+        # Properties bar
+        self.properties_bar = PropertiesBar(right_column, font_manager=fm)
+        # self.plot.show_object_properties = self.properties_bar.open_object
+        # self.properties_bar.save = self.plot.save_object_properties
+        self.properties_bar.setMinimumHeight(150)
+
+        # History manager
         self.object_manager = ObjectManager(
-            self.plot.update, self.plot.modify_plot_object, self.plot.update_plot_objects, self.hm.add_record,
-            (self.plot.set_selected_object,))
+            self.plot.update, self.plot.modify_plot_object, self.plot.update_plot_objects, None,
+            (self.plot.set_selected_object, self.properties_bar.open_object))
         self.plot.add_object_func = self.object_manager.add_object
         self.plot.objectSelected.connect(self.object_manager.select_object)
 
         # Draw bar
-        draw_tools_names = ['Point', 'Segment', 'Line', 'Plane', 'Cylinder', 'PerpL', 'Plane3p', 'Spline', 'RS',
-                            'Horizontal']
-        self.draw_bar = DrawBar(left_column, *draw_tools_names, font_manager=fm).set_on_click_listeners(
-            *[
-                lambda: self.plot.draw('point'),
-                lambda: self.plot.draw('segment'),
-                lambda: self.plot.draw('line'),
-                lambda: self.plot.draw('plane'),
-                lambda: self.plot.draw('cylinder'),
-                lambda: self.plot.draw('perpendicular_line'),
-                lambda: self.plot.draw('plane_3p'),
-                lambda: self.plot.draw('spline'),
-                lambda: self.plot.draw('rotation_surface'),
-                lambda: self.plot.draw('horizontal')
-            ]
-        )
+        self.draw_bar = DrawBar(
+            {
+                'Point': (lambda: self.plot.draw('point'),),
+                'Segment': (lambda: self.plot.draw('segment'),),
+                'Line': (lambda: self.plot.draw('line'),),
+                'Plane': (lambda: self.plot.draw('plane'),),
+                'Cylinder': (lambda: self.plot.draw('cylinder'),),
+                'Perp': (lambda: self.plot.draw('perpendicular_line'),),
+                'Plane 3 points': (lambda: self.plot.draw('plane_3p'),),
+                'Spline': (lambda: self.plot.draw('spline'),),
+                'Rotation Surface': (lambda: self.plot.draw('rotation_surface'),),
+                'Horizontal': (lambda: self.plot.draw('horizontal'),),
+            }, parent=left_column, font_manager=fm)
 
         # Cmd bar
         self.cmd_bar = CmdBar(middle_column, font_manager=fm)
@@ -74,35 +78,13 @@ class MainWindow(QMainWindow):
         self.plot.printToCommandLine.connect(self.cmd_bar.set_text)
 
         # Toolbar
-        tools_info = [
+        self.tool_bar = ToolBar(
             {
-                'name': 'Ruler',
-                'image': 'ruler_icon.png',
-                'func': lambda: self.plot.draw('distance'),
-            },
-            {
-                'name': 'Angle',
-                'image': 'angle_icon.png',
-                'func': lambda: self.plot.draw('angle'),
-            },
-            {
-                'name': 'Intersection',
-                'image': 'intersection_icon.png',
-                'func': lambda: self.plot.draw('intersection'),
-            },
-        ]
-
-        self.tool_bar = ToolBar(right_column, *[tool_info['name'] for tool_info in tools_info],
-                                font_manager=fm).set_images(
-            *[tool_info['image'] for tool_info in tools_info]).set_on_click_listeners(
-            *[tool_info['func'] for tool_info in tools_info])
+                'Ruler': (lambda: self.plot.draw('distance'), 'ruler_icon.png'),
+                'Angle': (lambda: self.plot.draw('angle'), 'angle_icon.png'),
+                'Intersection': (lambda: self.plot.draw('intersection'), 'intersection_icon.png')
+            }, parent=right_column, font_manager=fm)
         self.tool_bar.setFixedHeight(120)
-
-        # Properties bar
-        self.properties_bar = PropertiesBar(right_column, font_manager=fm)
-        self.plot.show_object_properties = self.properties_bar.open_object
-        self.properties_bar.save = self.plot.save_object_properties
-        self.properties_bar.setMinimumHeight(150)
 
         # Inspector bar
         self.inspector_bar = InspectorBar(right_column, font_manager=fm)
@@ -124,7 +106,7 @@ class MainWindow(QMainWindow):
         # self.layer_window.setLayerHidden.connect(lambda ind, flag: self.plot.layers[ind].set_hidden(flag))
         # self.layer_window.removeLayer.connect(self.plot.delete_layer)
         # self.plot.layersModified.connect(self.layer_window.update_layer_list)
-        # self.plot.setCmdStatus.connect(self.cmd_bar.set_command_to_plot)
+        self.plot.setCmdStatus.connect(self.cmd_bar.set_command_to_plot)
 
         # Menubar
         self.menu_bar = MenuBar(
@@ -133,6 +115,11 @@ class MainWindow(QMainWindow):
                     {
                         'Save': (self.serialize, 'Ctrl+S'),
                         'Load': (self.deserialize, 'Ctrl+Alt+Y'),
+                        'Recent files':
+                            {
+                                'First file': (lambda: exit(100500), None),
+                                'Second file': (lambda: print('Good :)'), None),
+                            }
                     },
                 'Edit':
                     {

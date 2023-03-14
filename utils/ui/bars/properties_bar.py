@@ -182,6 +182,7 @@ class PropertiesBar(Widget):
         self.save(self.current_object, name=name)
 
     def open_object(self, obj):
+        return
         if obj:
             # print('Object:', obj)
             self.current_object = obj
