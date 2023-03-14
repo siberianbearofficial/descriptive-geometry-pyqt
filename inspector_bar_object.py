@@ -6,15 +6,8 @@ from random import randint
 
 
 class InspectorBarObject(Widget):
-    def __init__(self, parent):
+    def __init__(self, parent, font_manager):
         super().__init__(parent)
-
-        # self.setStyleSheet('background-color: #ff0000;')
-
-        # Font
-        font = QFont()
-        font.setFamily("Alegreya Sans SC ExtraBold")
-        font.setPointSize(7)
 
         # Layout
         self.layout = QHBoxLayout(self.central_widget)
@@ -31,7 +24,7 @@ class InspectorBarObject(Widget):
 
         # Label
         self.label = QLabel(self.central_widget)
-        self.label.setFont(font)
+        self.label.setFont(font_manager.bold())
         self.label.setStyleSheet("color: #00ABB3;")
         self.label.setText(f'A: Cylinder {randint(100,200)}')
         self.layout.addWidget(self.label)

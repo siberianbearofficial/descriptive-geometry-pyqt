@@ -5,8 +5,10 @@ from widget import Widget
 
 
 class DrawBar(Widget):
-    def __init__(self, parent, *names):
+    def __init__(self, parent, *names, font_manager):
         super().__init__(parent)
+
+        self.setMouseTracking(True)
 
         self.setStyleSheet("background-color: #EAEAEA;\n"
                            "border-radius: 10px;")
@@ -18,7 +20,8 @@ class DrawBar(Widget):
         self.tools = list()
 
         for name in names:
-            draw_tool = DrawTool(name, self.central_widget)
+            draw_tool = DrawTool(name, self.central_widget, font_manager=font_manager)
+
             self.tools.append(draw_tool)
             self.layout.addWidget(draw_tool)
 

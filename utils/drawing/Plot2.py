@@ -33,7 +33,7 @@ drawing_functions = {
 
 
 class PlotBar(Widget):
-    def __init__(self, parent):
+    def __init__(self, parent, font_manager):
         super().__init__(parent)
 
         self.setStyleSheet("background-color: #ffffff; border-radius: 10px;")
@@ -72,7 +72,6 @@ class Plot(QWidget):
         self.axis = Axis(self)
         self.pm = ProjectionManager(self)
         self.sm = snap.SnapManager(self)
-        self.hm = HistoryManager(self)
         self.lm = LabelManager(self)
 
         self.clear()

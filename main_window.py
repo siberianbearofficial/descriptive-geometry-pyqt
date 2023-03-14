@@ -11,6 +11,7 @@ from layer_window import LayerWindow
 from utils.drawing.object_manager import ObjectManager
 from utils.drawing.history import HistoryManager
 from column import Column
+from font_manager import FontManager
 
 import utils.history.serializer as srl
 
@@ -18,9 +19,11 @@ import utils.history.serializer as srl
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.resize(1180, 740)
+
+        fm = FontManager()
 
         self.setWindowTitle('DescriptiveGeometry')
-        self.setMinimumSize(1080, 740)
 
         central_widget = QWidget(self)
         central_widget.setStyleSheet("background-color: #3C4048;")
@@ -30,11 +33,15 @@ class MainWindow(QMainWindow):
         main_layout.setSpacing(10)
 
         left_column = Column()
+        left_column.setFixedWidth(200)
+
         middle_column = Column()
+
         right_column = Column()
+        right_column.setFixedWidth(250)
 
         # Plot
-        self.plot_bar = PlotBar(middle_column)
+        self.plot_bar = PlotBar(middle_column, font_manager=fm)
         self.plot = self.plot_bar.painter_widget
         self.hm = HistoryManager(self.plot)
         self.object_manager = ObjectManager(
@@ -44,8 +51,9 @@ class MainWindow(QMainWindow):
         self.plot.objectSelected.connect(self.object_manager.select_object)
 
         # Draw bar
-        draw_tools_names = ['Point', 'Segment', 'Line', 'Plane', 'Cylinder', 'PerpL', 'Plane3p', 'Spline', 'RS', 'Horizontal']
-        self.draw_bar = DrawBar(left_column, *draw_tools_names).set_on_click_listeners(
+        draw_tools_names = ['Point', 'Segment', 'Line', 'Plane', 'Cylinder', 'PerpL', 'Plane3p', 'Spline', 'RS',
+                            'Horizontal']
+        self.draw_bar = DrawBar(left_column, *draw_tools_names, font_manager=fm).set_on_click_listeners(
             *[
                 lambda: self.plot.draw('point'),
                 lambda: self.plot.draw('segment'),
@@ -61,7 +69,8 @@ class MainWindow(QMainWindow):
         )
 
         # Cmd bar
-        self.cmd_bar = CmdBar(middle_column)
+        self.cmd_bar = CmdBar(middle_column, font_manager=fm)
+        self.cmd_bar.setFixedHeight(80)
         self.cmd_bar.add_object = self.plot.add_object
         self.cmd_bar.clear_plot = self.plot.clear
         self.plot.printToCommandLine.connect(self.cmd_bar.set_text)
@@ -85,17 +94,21 @@ class MainWindow(QMainWindow):
             },
         ]
 
-        self.tool_bar = ToolBar(right_column, *[tool_info['name'] for tool_info in tools_info]).set_images(
+        self.tool_bar = ToolBar(right_column, *[tool_info['name'] for tool_info in tools_info],
+                                font_manager=fm).set_images(
             *[tool_info['image'] for tool_info in tools_info]).set_on_click_listeners(
             *[tool_info['func'] for tool_info in tools_info])
+        self.tool_bar.setFixedHeight(120)
 
         # Properties bar
-        self.properties_bar = PropertiesBar(right_column)
+        self.properties_bar = PropertiesBar(right_column, font_manager=fm)
         self.plot.show_object_properties = self.properties_bar.open_object
         self.properties_bar.save = self.plot.save_object_properties
+        self.properties_bar.setMinimumHeight(150)
 
         # Inspector bar
-        self.inspector_bar = InspectorBar(right_column)
+        self.inspector_bar = InspectorBar(right_column, font_manager=fm)
+        self.inspector_bar.setMinimumHeight(100)
 
         # Layer window
         # self.layer_window = LayerWindow(self.plot.layers, self.plot.current_layer)
@@ -149,18 +162,16 @@ class MainWindow(QMainWindow):
         self.setMenuBar(self.menu_bar)
 
         left_column.add(self.draw_bar)
-        middle_column.add(self.plot_bar, 10).add(self.cmd_bar, 1)
-        right_column.add(self.tool_bar, 2).add(self.properties_bar, 6).add(self.inspector_bar, 5)
+        middle_column.add(self.plot_bar).add(self.cmd_bar)
+        right_column.add(self.tool_bar).add(self.properties_bar).add(self.inspector_bar)
 
-        main_layout.addWidget(left_column, 2)
-        main_layout.addWidget(middle_column, 8)
-        main_layout.addWidget(right_column, 2)
+        main_layout.addWidget(left_column)
+        main_layout.addWidget(middle_column)
+        main_layout.addWidget(right_column)
 
         self.setCentralWidget(central_widget)
 
     def keyPressEvent(self, a0) -> None:
-        # if a0.key() == Qt.Key_Escape:
-        #     self.object_manager.delete_selected_object()
         self.plot.keyPressEvent(a0)
 
     def serialize(self):

@@ -6,14 +6,10 @@ from inspector_bar_object import InspectorBarObject
 
 
 class InspectorBar(Widget):
-    def __init__(self, parent):
+    def __init__(self, parent, font_manager):
         super().__init__(parent)
 
         self.setStyleSheet("background-color: #EAEAEA; border-radius: 10px;")
-
-        font = QFont()
-        font.setFamily("Alegreya Sans SC ExtraBold")
-        font.setPointSize(7)
 
         self.layout = QVBoxLayout(self.central_widget)
         self.layout.setAlignment(Qt.AlignTop)
@@ -21,5 +17,5 @@ class InspectorBar(Widget):
         self.layout.setSpacing(0)
 
         for i in range(3):
-            obj = InspectorBarObject(self.central_widget)
+            obj = InspectorBarObject(self.central_widget, font_manager=font_manager)
             self.layout.addWidget(obj)

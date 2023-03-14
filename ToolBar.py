@@ -5,27 +5,20 @@ from widget import Widget
 
 
 class ToolBar(Widget):
-    def __init__(self, parent, *names):
+    def __init__(self, parent, *names, font_manager):
         super().__init__(parent)
 
         self.tools = list()
-
-        # Font
-        font = QFont()
-        font.setFamily("Alegreya Sans SC ExtraBold")
-        font.setPointSize(7)
-        font.setBold(True)
-        font.setWeight(75)
 
         self.setStyleSheet("background-color: #EAEAEA; border-radius: 10px;")
 
         # Layout
         self.layout = QVBoxLayout(self.central_widget)
-        self.layout.setContentsMargins(10, 0, 10, 0)
+        self.layout.setContentsMargins(10, 10, 10, 10)
         self.layout.setSpacing(0)
 
         for name in names:
-            tool = Tool(name, self.central_widget)
+            tool = Tool(name, font_manager, self.central_widget)
             self.tools.append(tool)
             self.layout.addWidget(tool)
 
@@ -41,23 +34,14 @@ class ToolBar(Widget):
 
 
 class Tool(Widget):
-    def __init__(self, name, parent=None):
+    def __init__(self, name, font_manager, parent=None):
         super().__init__(parent)
 
         self.clicked = None
         self.name = name
 
-        # Font
-        font = QFont()
-        font.setFamily("Alegreya Sans SC ExtraBold")
-        font.setPointSize(7)
-        font.setBold(True)
-        font.setWeight(75)
-
         self.layout = QHBoxLayout(self.central_widget)
-        # self.layout.setSizeConstraint(QLayout.SetMinimumSize)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        # self.layout.setSpacing(5)
 
         self.icon = QLabel(self.central_widget)
         self.icon.setMaximumSize(30, 30)
@@ -66,7 +50,7 @@ class Tool(Widget):
         self.layout.addWidget(self.icon)
 
         self.label = QLabel(self.central_widget)
-        self.label.setFont(font)
+        self.label.setFont(font_manager.bold())
         self.label.setStyleSheet("color: #00ABB3;")
         self.label.setText(name)
         self.layout.addWidget(self.label)
@@ -81,5 +65,4 @@ class Tool(Widget):
 
     def mousePressEvent(self, a0) -> None:
         if a0.button() == Qt.MouseButton.LeftButton and self.clicked:
-            print('Click on tool:', self.name)
             self.clicked()

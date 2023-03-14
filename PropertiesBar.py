@@ -6,7 +6,7 @@ from widget import Widget
 
 
 class PropertiesBar(Widget):
-    def __init__(self, parent):
+    def __init__(self, parent, font_manager):
         super().__init__(parent)
 
         self.current_object = None
@@ -16,23 +16,19 @@ class PropertiesBar(Widget):
         self.layout.setAlignment(Qt.AlignTop)
         self.layout.setContentsMargins(15, 15, 15, 15)
 
-        font = QFont()
-        font.setFamily("Alegreya Sans SC ExtraBold")
-        font.setPointSize(7)
-
         # Name
         name = QVBoxLayout()
         name_label = QLabel(self.central_widget)
         name_label.setFixedHeight(20)
 
-        name_label.setFont(font)
+        name_label.setFont(font_manager.bold())
         name_label.setStyleSheet("color: #00ABB3;")
         name_label.setText('Name')
         name.addWidget(name_label)
 
         self.name_line_edit = QLineEdit(self.central_widget)
         self.name_line_edit.setFixedHeight(30)
-        self.name_line_edit.setFont(font)
+        self.name_line_edit.setFont(font_manager.bold())
         self.name_line_edit.setStyleSheet("color: #00ABB3;\n"
                                           "background-color: #EAEAEA;\n"
                                           "border: 2px solid #00ABB3;\n"
@@ -44,7 +40,8 @@ class PropertiesBar(Widget):
 
         # Color, Layer, Thickness
         self.clt = QHBoxLayout()
-        self.clt.setSpacing(5)
+        self.clt.setSpacing(10)
+        self.clt.setAlignment(Qt.AlignLeft)
 
         # Color
         color = QVBoxLayout()
@@ -52,7 +49,7 @@ class PropertiesBar(Widget):
 
         color_label = QLabel(self.central_widget)
         color_label.setFixedHeight(20)
-        color_label.setFont(font)
+        color_label.setFont(font_manager.bold())
         color_label.setStyleSheet("color: #00ABB3;")
         color_label.setText('Color')
         color.addWidget(color_label)
@@ -77,14 +74,14 @@ class PropertiesBar(Widget):
 
         layer_label = QLabel(self.central_widget)
         layer_label.setFixedHeight(20)
-        layer_label.setFont(font)
+        layer_label.setFont(font_manager.bold())
         layer_label.setStyleSheet("color: #00ABB3;")
         layer_label.setText('Layer')
         layer.addWidget(layer_label)
 
         self.layer_line_edit = QLineEdit(self.central_widget)
         self.layer_line_edit.setFixedSize(30, 30)
-        self.layer_line_edit.setFont(font)
+        self.layer_line_edit.setFont(font_manager.bold())
         self.layer_line_edit.setAcceptDrops(False)
         self.layer_line_edit.setStyleSheet("color: #00ABB3;\n"
                                            "background-color: #EAEAEA;\n"
@@ -101,14 +98,14 @@ class PropertiesBar(Widget):
 
         thickness_label = QLabel(self.central_widget)
         thickness_label.setFixedHeight(20)
-        thickness_label.setFont(font)
+        thickness_label.setFont(font_manager.bold())
         thickness_label.setStyleSheet("color: #00ABB3;")
         thickness_label.setText('Thickness')
         thickness.addWidget(thickness_label)
 
         self.thickness_combobox = QComboBox(self.central_widget)
         self.thickness_combobox.setFixedSize(70, 30)
-        self.thickness_combobox.setFont(font)
+        self.thickness_combobox.setFont(font_manager.bold())
         self.thickness_combobox.setLayoutDirection(Qt.RightToLeft)
         self.thickness_combobox.setStyleSheet("QComboBox {\n"
                                               "color: #00ABB3;\n"

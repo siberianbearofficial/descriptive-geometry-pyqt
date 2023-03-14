@@ -6,7 +6,7 @@ from widget import Widget
 
 
 class CmdBar(Widget):
-    def __init__(self, parent):
+    def __init__(self, parent, font_manager):
         super().__init__(parent)
 
         self.command = None
@@ -16,10 +16,6 @@ class CmdBar(Widget):
         self.setStyleSheet("background-color: #B2B2B2;\n"
                            "border-radius: 10px;")
 
-        font = QFont()
-        font.setFamily("Alegreya Sans SC Medium")
-        font.setPointSize(6)
-
         # Layout
         self.layout = QVBoxLayout(self.central_widget)
         self.layout.setContentsMargins(15, 10, 0, 10)
@@ -27,20 +23,19 @@ class CmdBar(Widget):
 
         # Past
         self.past = QLabel()
-        self.past.setFont(font)
+        self.past.setFont(font_manager.medium())
         self.past.setStyleSheet("color: rgba(60, 64, 72, 0.5);")
         self.layout.addWidget(self.past)
 
         # Present
         self.present = QLabel()
-        self.present.setFont(font)
+        self.present.setFont(font_manager.medium())
         self.present.setStyleSheet("color: rgba(60, 64, 72, 0.5);")
         self.layout.addWidget(self.present)
 
         # Future
         self.future = QLineEdit()
-        font.setPointSize(8)
-        self.future.setFont(font)
+        self.future.setFont(font_manager.bold(size=12))
         self.future.setStyleSheet("color: rgb(60, 64, 72);")
 
         self.future.returnPressed.connect(self.on_enter_pressed)
@@ -67,7 +62,8 @@ class CmdBar(Widget):
     def on_enter_pressed(self):
         self.set_text(self.future.text())
         if self.command_to_plot:
-            self.plot.cmd_command(self.future.text())
+            # self.plot.cmd_command(self.future.text())  # TODO: fix points with cmd
+            pass
         else:
             self.process_command(self.future.text())
         self.future.setText('')

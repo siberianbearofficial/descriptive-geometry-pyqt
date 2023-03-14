@@ -17,5 +17,11 @@ class Widget(QWidget):
 
         layout.addWidget(self.central_widget)
 
+    def setMouseTracking(self, enable: bool) -> None:
+        return self.central_widget.setMouseTracking(enable)
+
+    def mouseMoveEvent(self, a0) -> None:
+        return self.central_widget.mouseMoveEvent(a0)
+
     def setStyleSheet(self, stylesheet: str) -> None:
         self.central_widget.setStyleSheet(stylesheet)
