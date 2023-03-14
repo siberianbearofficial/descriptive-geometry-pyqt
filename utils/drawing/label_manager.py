@@ -26,6 +26,7 @@ class LabelManager:
                 self.labels.pop(pos)
 
     def draw(self):
+        # TODO: Стилизовать
         for pos, label in self.labels.items():
             self.plot.draw_text((pos[0] + self.pos[0] + 10, pos[1] + self.pos[1] - 10), " = ".join(set(label.text)))
 
@@ -64,7 +65,7 @@ class LabelManager:
                 name = obj.name.split(SEP)
                 return name[0] + "'", name[1] + "'", name[0] + "''", name[1] + "''"
             return obj.name + "'", obj.name + "''"
-        if isinstance(obj.ag_object, ag.Plane) and obj.config.get('draw_3p', False):
+        if isinstance(obj.ag_object, ag.Plane) and obj.general_object.config.get('draw_3p', False):
             if obj.name.count(SEP) == 2:
                 name = obj.name.split(SEP)
                 return name[0] + "'", name[1] + "'", name[2] + "'", name[0] + "''", name[1] + "''", name[2] + "''"
@@ -85,7 +86,7 @@ class LabelManager:
                     (obj.xy_projection[0].p1[1] + obj.xy_projection[0].p2[1]) // 2), \
                    ((obj.xz_projection[0].p1[0] + obj.xz_projection[0].p2[0]) // 2,
                     (obj.xz_projection[0].p1[1] + obj.xz_projection[0].p2[1]) // 2)
-        elif isinstance(obj.ag_object, ag.Plane) and obj.config.get('draw_3p', False):
+        elif isinstance(obj.ag_object, ag.Plane) and obj.general_object.config.get('draw_3p', False):
             return obj.xy_projection[3].tuple(), obj.xy_projection[4].tuple(), obj.xy_projection[5].tuple(), \
                    obj.xz_projection[3].tuple(), obj.xz_projection[4].tuple(), obj.xz_projection[5].tuple()
 

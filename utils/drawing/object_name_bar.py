@@ -52,7 +52,6 @@ def get_name_bar_pos(obj):
         return (obj.xy_projection[0].tuple(), True), (obj.xz_projection[0].tuple(), True)
 
     if isinstance(obj.ag_object, ag.Segment):
-        # TODO: Предусмотреть изменение имени
         if obj.name.count(SEP) == 1:
             if obj.xy_projection[0].k is None:
                 return (tuple(obj.xy_projection[0].p1), True), (tuple(obj.xy_projection[0].p2), False), \

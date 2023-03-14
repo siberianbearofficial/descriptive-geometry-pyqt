@@ -10,6 +10,9 @@ class CmdBar(Widget):
         super().__init__(parent)
 
         self.command = None
+        self.command_to_plot = False
+
+        self.setGeometry(160, 640, 711, 61)
         self.setStyleSheet("background-color: #B2B2B2;\n"
                            "border-radius: 10px;")
 
@@ -58,9 +61,15 @@ class CmdBar(Widget):
         self.past.setText(self.present.text())
         self.present.setText(str(text))
 
+    def set_command_to_plot(self, flag):
+        self.command_to_plot = flag
+
     def on_enter_pressed(self):
         self.set_text(self.future.text())
-        self.process_command(self.future.text())
+        if self.command_to_plot:
+            self.plot.cmd_command(self.future.text())
+        else:
+            self.process_command(self.future.text())
         self.future.setText('')
 
     def set_command(self, command):

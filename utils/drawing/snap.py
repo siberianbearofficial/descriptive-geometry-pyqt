@@ -90,18 +90,15 @@ class SnapManager:
         if snap_type_xy == self.snaps[3]:
             if isinstance(obj, ag.Line) or isinstance(obj, ag.Segment):
                 line = obj if isinstance(obj, ag.Line) else ag.Line(obj.p1, obj.p2)
-                n_point = ag.Line(ag.Point(*point), ag.Plane(ag.Point(*point), line).normal & line.vector)\
+                n_point = ag.Line(ag.Point(*point), ag.Plane(ag.Point(*point), line).normal & line.vector) \
                     .intersection(line)
                 return n_point.x, n_point.y, n_point.z
         return point
 
     def get_screen_objects(self, plane):
-        for layer in self.plot.layers:
-            if layer.hidden:
-                continue
-            for obj in layer.objects:
-                for el in obj.xy_projection if plane == 'xy' else obj.xz_projection:
-                    yield el, obj
+        for obj in self.plot.objects:
+            for el in obj.xy_projection if plane == 'xy' else obj.xz_projection:
+                yield el, obj
 
     def snap_point(self, pos):
         for obj, ag_obj in self.get_screen_objects(self.plane):
@@ -183,7 +180,6 @@ class SnapManager:
                             min(obj2[0].p1[0], obj2[0].p2[0]) <= x <= max(obj2[0].p1[0], obj2[0].p2[0]):
                         self.intersections_xz.append((x, y))
                 lst.append((obj1, k, b))
-        print(self.intersections_xy, self.intersections_xz)
 
 
 class Snap:

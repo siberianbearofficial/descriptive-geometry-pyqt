@@ -8,6 +8,8 @@ from InspectorBar import InspectorBar
 from ToolBar import ToolBar
 from MenuBar import MenuBar
 from layer_window import LayerWindow
+from utils.drawing.object_manager import ObjectManager
+from utils.drawing.history import HistoryManager
 from column import Column
 
 import utils.history.serializer as srl
@@ -34,6 +36,12 @@ class MainWindow(QMainWindow):
         # Plot
         self.plot_bar = PlotBar(middle_column)
         self.plot = self.plot_bar.painter_widget
+        self.hm = HistoryManager(self.plot)
+        self.object_manager = ObjectManager(
+            self.plot.update, self.plot.modify_plot_object, self.plot.update_plot_objects, self.hm.add_record,
+            (self.plot.set_selected_object,))
+        self.plot.add_object_func = self.object_manager.add_object
+        self.plot.objectSelected.connect(self.object_manager.select_object)
 
         # Draw bar
         draw_tools_names = ['Point', 'Segment', 'Line', 'Plane', 'Cylinder', 'PerpL', 'Plane3p', 'Spline', 'RS', 'Horizontal']
@@ -90,14 +98,22 @@ class MainWindow(QMainWindow):
         self.inspector_bar = InspectorBar(right_column)
 
         # Layer window
-        self.layer_window = LayerWindow(self.plot.layers, self.plot.current_layer)
-        self.layer_window.selectLayer.connect(self.plot.set_current_layer)
-        self.layer_window.addLayer.connect(lambda: (self.plot.add_layer(), self.layer_window.update_layer_list(
-            self.plot.layers, self.plot.current_layer)))
-        self.layer_window.setLayerHidden.connect(lambda ind, flag: self.plot.layers[ind].set_hidden(flag))
-        self.layer_window.removeLayer.connect(self.plot.delete_layer)
+        # self.layer_window = LayerWindow(self.plot.layers, self.plot.current_layer)
+        # self.layer_window.selectLayer.connect(self.plot.set_current_layer)
+        # self.layer_window.addLayer.connect(lambda: (self.plot.add_layer(), self.layer_window.update_layer_list(
+        #     self.plot.layers, self.plot.current_layer)))
+        # self.layer_window.setLayerHidden.connect(lambda ind, flag: self.plot.layers[ind].set_hidden(flag))
+        # self.layer_window.removeLayer.connect(self.plot.delete_layer)
 
-        self.plot.layersModified.connect(self.layer_window.update_layer_list)
+        # self.plot.layersModified.connect(self.layer_window.update_layer_list)
+        # self.layer_window = LayerWindow(self.plot.layers, self.plot.current_layer)
+        # self.layer_window.selectLayer.connect(self.plot.set_current_layer)
+        # self.layer_window.addLayer.connect(lambda: (self.plot.add_layer(), self.layer_window.update_layer_list(
+        #     self.plot.layers, self.plot.current_layer)))
+        # self.layer_window.setLayerHidden.connect(lambda ind, flag: self.plot.layers[ind].set_hidden(flag))
+        # self.layer_window.removeLayer.connect(self.plot.delete_layer)
+        # self.plot.layersModified.connect(self.layer_window.update_layer_list)
+        # self.plot.setCmdStatus.connect(self.cmd_bar.set_command_to_plot)
 
         # Menubar
         self.menu_bar = MenuBar(
@@ -111,7 +127,7 @@ class MainWindow(QMainWindow):
                     {
                         'Undo': (lambda: self.plot.hm.undo(), 'Alt+Z'),
                         'Redo': (lambda: self.plot.hm.undo(redo=True), 'Alt+Shift+Z'),
-                        'Delete': (self.plot.delete_selected, None),
+                        'Delete': (self.object_manager.delete_selected_object, 'Alt+Delete'),
                         'Copy': (lambda: print('copy'), 'Ctrl+C'),
                         'Paste': (lambda: print('paste'), 'Ctrl+V'),
                     },
@@ -143,6 +159,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
     def keyPressEvent(self, a0) -> None:
+        # if a0.key() == Qt.Key_Escape:
+        #     self.object_manager.delete_selected_object()
         self.plot.keyPressEvent(a0)
 
     def serialize(self):

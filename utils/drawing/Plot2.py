@@ -14,10 +14,12 @@ import utils.drawing.snap as snap
 from utils.drawing.layer import Layer
 from utils.drawing.general_object import GeneralObject
 import utils.drawing.drawing_on_plot as drw
+import utils.drawing.names_to_object as names
 
 from widget import Widget
 
 from random import randint
+from utils.drawing.plot_object import PlotObject
 
 drawing_functions = {
     'point': drw.create_point, 'segment': drw.create_segment, 'line': drw.create_line, 'plane': drw.create_plane,
@@ -46,6 +48,7 @@ class Plot(QWidget):
     objectSelected = pyqtSignal(object)
     printToCommandLine = pyqtSignal(str)
     layersModified = pyqtSignal(object, int)
+    setCmdStatus = pyqtSignal(bool)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -61,10 +64,10 @@ class Plot(QWidget):
         self.zoom_step = 1.5
         self.camera_pos = (0, 0)
 
-        self.layers = [Layer(self, 'Layer 1')]
-        self.current_layer = 0
+        self.objects = []
+        self.add_object_func = None
         self.selected_object = None
-        self.selected_object_index = None
+        self.selected_object_index = 0
 
         self.axis = Axis(self)
         self.pm = ProjectionManager(self)
@@ -87,20 +90,21 @@ class Plot(QWidget):
         self.mouse_right = None
         self.enter = None
         self.esc = None
+        self.cmd_command = None
 
     def paintEvent(self, e):
         self.painter.begin(self)
 
-        self.axis.draw_qt()
-        for layer in self.layers:
-            layer.draw_qt()
+        self.axis.draw()
+        for obj in self.objects:
+            obj.draw()
         for obj in self.extra_objects:
-            if isinstance(obj, GeneralObject):
-                obj.draw_qt(selected=self.selected_mode)
+            if isinstance(obj, PlotObject):
+                obj.draw(selected=self.selected_mode)
             else:
-                obj.draw_qt()
-        if self.selected_object is not None:
-            self.selected_object.draw_qt(selected=1)
+                obj.draw()
+        if self.selected_object_index:
+            self.selected_object.draw(selected=1)
 
         self.set_pen((0, 0, 0), 4)
         self.lm.draw()
@@ -115,10 +119,6 @@ class Plot(QWidget):
             print('Enter')
             if self.enter is not None:
                 self.enter(a0)
-        elif key == Qt.Key_Delete and self.selected_object is not None:
-            self.layers[self.selected_object_index[0]].delete_object(self.selected_object_index[1])
-            self.selected_object_index, self.selected_object = None, None
-            self.update()
         elif key == Qt.Key_C:
             self.draw('cylinder')
         elif key == Qt.Key_P:
@@ -195,12 +195,7 @@ class Plot(QWidget):
         self.painter.setPen(QPen(QColor(*color), thickness, line_type))
 
     def clear(self, index=-1):
-        if index == -1:
-            for layer in self.layers:
-                layer.clear()
-        else:
-            self.layers[index].clear()
-            self.sm.update_intersections()
+        self.objects.clear()
         self.update()
 
     def draw(self, figure):
@@ -216,8 +211,8 @@ class Plot(QWidget):
         self.tlp = 0, 0
         self.brp = self.size().width(), self.size().height()
         self.axis.update(self)
-        for layer in self.layers:
-            layer.update_projections()
+        for obj in self.objects:
+            obj.update_projections()
         self.update()
 
     def move_camera(self, x, y, update=True):
@@ -227,34 +222,36 @@ class Plot(QWidget):
         self.camera_pos = self.camera_pos[0] + x, self.camera_pos[1] + y
         self.pm.camera_pos = self.camera_pos
         if update:
-            for layer in self.layers:
-                layer.move_objects(x, y)
+            for obj in self.objects:
+                obj.move(x, y)
             self.lm.move(x, y)
             self.sm.update_intersections()
             self.update()
 
-    def add_object(self, ag_object, color=None, end=False, **config):
+    def add_object(self, ag_object, name=None, color=None, end=False, **config):
         if color is None:
             color = self.random_color()
-        self.layers[self.current_layer].add_object(ag_object, color, history_record=True, **config)
+        if name is None:
+            name = names.generate_name(self, ag_object, config)
+        self.add_object_func(ag_object, name, color, history_record=True, **config)
         self.update()
         if end:
             self.end()
 
-    def delete_selected(self, history_record=True):
-        if self.selected_object is None:
-            return
-        self.layers[self.selected_object_index[0]].delete_object(self.selected_object_index[1])
-        self.selected_object = None
-        self.update()
+    def modify_plot_object(self, id, general_object):
+        if general_object:
+            for obj in self.objects:
+                if obj.id == id:
+                    obj.replace_general_object(general_object)
+                    return
+            self.objects.append(PlotObject(self, general_object))
+        else:
+            self.objects.remove(self.find_by_id(id))
 
-    def delete_layer(self, index, history_record=True):
-        if history_record:
-            self.hm.add_record('delete_layer', self.layers[index].to_dict(), index)
-        self.layers[index].clear()
-        self.layers.pop(index)
-        if self.current_layer >= index:
-            self.current_layer -= 1
+    def update_plot_objects(self, object_list):
+        self.objects.clear()
+        for obj in object_list:
+            self.objects.append(PlotObject(self, obj))
 
     def mousePressEvent(self, a0) -> None:
         if a0.button() == 1:
@@ -291,52 +288,53 @@ class Plot(QWidget):
             self.zoom_out((a0.x(), a0.y()))
 
     def select_object(self, pos):
-        old_obj = self.selected_object
-        self.selected_object, self.selected_object_index = None, None
-        for i in range(len(self.layers)):
-            if self.layers[i].hidden:
-                continue
-            for j in range(len(self.layers[i].objects)):
-                obj = self.layers[i].objects[j]
-                # TODO: избавиться от копипаста
-                for el in obj.xy_projection:
-                    if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 7:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                    if isinstance(el, ScreenPoint2) and snap.distance(pos, el.tuple()) <= 3:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                    if isinstance(el, ScreenSegment) and snap.distance(pos, snap.nearest_point(pos, el)) <= 3:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                    if isinstance(el, ScreenCircle) and abs(snap.distance(pos, el.center) - el.radius) <= 3:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                for el in obj.xz_projection:
-                    if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 7:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                    if isinstance(el, ScreenPoint2) and snap.distance(pos, el.tuple()) <= 2:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                    if isinstance(el, ScreenSegment) and snap.distance(pos, snap.nearest_point(pos, el)) <= 2:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                    if isinstance(el, ScreenCircle) and abs(snap.distance(pos, el.center) - el.radius) <= 3:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-        if self.selected_object is not None:
-            self.objectSelected.emit(self.selected_object)
-        self.show_object_properties(self.selected_object)
+        selected_object = None
+        for obj in self.objects:
+            for el in obj.xy_projection:
+                if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 7:
+                    selected_object = obj
+                    break
+                if isinstance(el, ScreenPoint2) and snap.distance(pos, el.tuple()) <= 3:
+                    selected_object = obj
+                    break
+                if isinstance(el, ScreenSegment) and snap.distance(pos, snap.nearest_point(pos, el)) <= 3:
+                    selected_object = obj
+                    break
+                if isinstance(el, ScreenCircle) and abs(snap.distance(pos, el.center) - el.radius) <= 3:
+                    selected_object = obj
+                    break
+            for el in obj.xz_projection:
+                if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 7:
+                    selected_object = obj
+                    break
+                if isinstance(el, ScreenPoint2) and snap.distance(pos, el.tuple()) <= 2:
+                    selected_object = obj
+                    break
+                if isinstance(el, ScreenSegment) and snap.distance(pos, snap.nearest_point(pos, el)) <= 2:
+                    selected_object = obj
+                    break
+                if isinstance(el, ScreenCircle) and abs(snap.distance(pos, el.center) - el.radius) <= 3:
+                    selected_object = obj
+                    break
+        if selected_object:
+            if selected_object.id != self.selected_object_index:
+                self.objectSelected.emit(selected_object.id)
+        else:
+            self.objectSelected.emit(0)
+
+    def set_selected_object(self, id):
+        self.selected_object_index = id
+        if id:
+            self.selected_object = self.find_by_id(id)
+        else:
+            self.selected_object = None
         self.update()
+
+    def find_by_id(self, id):
+        for obj in self.objects:
+            if obj.id == id:
+                return obj
+        raise IndexError(f"Object {id} not found")
 
     def zoom_in(self, pos=None):
         if pos is None:
@@ -345,8 +343,8 @@ class Plot(QWidget):
         self.pm.zoom *= self.zoom_step
         self.move_camera((self.zoom_step - 1) * ((self.axis.rp[0] - pos[0]) + self.camera_pos[0]),
                          (self.zoom_step - 1) * (self.axis.rp[1] - pos[1]), update=False)
-        for layer in self.layers:
-            layer.update_projections()
+        for obj in self.objects:
+            obj.update_projections()
         self.sm.update_intersections()
         self.update()
 
@@ -358,8 +356,8 @@ class Plot(QWidget):
         new_camera_x = (self.camera_pos[0] + self.axis.rp[0] - pos[0]) / self.zoom_step - self.axis.rp[0] + pos[0]
         new_axis_y = pos[1] - (pos[1] - self.axis.lp[1]) / self.zoom_step
         self.move_camera(new_camera_x - self.camera_pos[0], new_axis_y - self.axis.lp[1], update=False)
-        for layer in self.layers:
-            layer.update_projections()
+        for obj in self.objects:
+            obj.update_projections()
         self.sm.update_intersections()
         self.update()
 
@@ -368,6 +366,8 @@ class Plot(QWidget):
         self.mouse_left = None
         self.mouse_right = None
         self.setMouseTracking(False)
+        self.cmd_command = None
+        self.setCmdStatus.emit(False)
         self.update()
 
     def print(self, s):

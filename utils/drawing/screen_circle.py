@@ -16,10 +16,7 @@ class ScreenCircle:
     def tuple(self):
         return self.center, self.radius
 
-    def draw(self):
-        self.plot.draw_circle(self, self.color)
-
-    def draw_qt(self, color=None, thickness=-1):
+    def draw(self, color=None, thickness=-1):
         if thickness == -1:
             thickness = self.thickness
         if color is None:

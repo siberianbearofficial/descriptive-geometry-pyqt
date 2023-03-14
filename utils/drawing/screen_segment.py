@@ -65,11 +65,7 @@ class ScreenSegment:
             else:
                 self.drawing = False
 
-    def draw(self):
-        if self.drawing:
-            self.plot.draw_segment(self, self.color)
-
-    def draw_qt(self, color=None, thickness=-1):
+    def draw(self, color=None, thickness=-1):
         if thickness == -1:
             thickness = self.thickness
         if color is None:

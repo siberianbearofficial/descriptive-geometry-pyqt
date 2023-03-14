@@ -24,9 +24,6 @@ class Axis:
     def draw(self):
         self.segment.draw()
 
-    def draw_qt(self):
-        self.segment.draw_qt()
-
     def move(self, x, y):
         self.lp[1] += y
         self.rp[1] += y

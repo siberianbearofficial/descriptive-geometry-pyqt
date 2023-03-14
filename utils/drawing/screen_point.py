@@ -12,10 +12,7 @@ class ScreenPoint:
     def list(self):
         return [self.x, self.y]
 
-    def draw(self):
-        self.plot.draw_point(self, self.color)
-
-    def draw_qt(self, color=None, thickness=-1):
+    def draw(self, color=None, thickness=-1):
         if thickness == -1:
             thickness = self.thickness
         if color is None:
@@ -38,10 +35,7 @@ class ScreenPoint2:
     def tuple(self):
         return self.x, self.y
 
-    def draw(self):
-        self.plot.draw_point2(self, self.color)
-
-    def draw_qt(self, color=None, thickness=-1):
+    def draw(self, color=None, thickness=-1):
         if thickness == -1:
             thickness = self.thickness
         if color is None:

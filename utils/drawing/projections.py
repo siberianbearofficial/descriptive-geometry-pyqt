@@ -340,6 +340,15 @@ class ProjectionManager:
             return self.axis.rp[0] + self.camera_pos[0] - x * self.zoom, self.axis.lp[1] + y * self.zoom
         return self.axis.rp[0] + self.camera_pos[0] - x * self.zoom, self.axis.lp[1] - z * self.zoom
 
+    def ag_x_to_screen_x(self, x):
+        return self.axis.rp[0] + self.camera_pos[0] - x * self.zoom
+
+    def ag_y_to_screen_y(self, y):
+        return self.axis.lp[1] + y * self.zoom
+
+    def ag_z_to_screen_y(self, z):
+        return self.axis.lp[1] - z * self.zoom
+
     def convert_screen_x_to_ag_x(self, x):
         return (self.camera_pos[0] + self.axis.rp[0] - x) / self.zoom
 

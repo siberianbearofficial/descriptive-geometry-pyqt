@@ -2,8 +2,7 @@ from utils.drawing.general_object import GeneralObject
 
 
 class Layer:
-    def __init__(self, plot, name='', hidden=False, color=None, thickness=2):
-        self.plot = plot
+    def __init__(self, name='', hidden=False, color=None, thickness=2):
         self.hidden = hidden
         self.color = color
         self.thickness = thickness
@@ -12,22 +11,19 @@ class Layer:
 
         self.serializable = ['hidden', 'objects', 'name']
 
-    def add_object(self, ag_object, color, history_record=True, **config):
-        self.objects.append(GeneralObject(self.plot, ag_object, color, name='GENERATE', **config))
-        self.plot.sm.update_intersections()
-        if history_record:
-            self.plot.hm.add_record('add_object')
+    def add_object(self, general_object):
+        self.objects.append(general_object)
 
     def add_object_from_dict(self, dct):
-        self.objects.append(GeneralObject.from_dict(self.plot, dct))
-        self.plot.sm.update_intersections()
+        self.objects.append(GeneralObject.from_dict(dct))
+        # self.plot.sm.update_intersections()
 
     def delete_object(self, index, history_record=True):
-        if history_record:
-            self.plot.hm.add_record('delete_object', self.objects[-1].to_dict())
+        # if history_record:
+        #     self.plot.hm.add_record('delete_object', self.objects[-1].to_dict())
         self.objects[index].delete()
         self.objects.pop(index)
-        self.plot.sm.update_intersections()
+        # self.plot.sm.update_intersections()
 
     def draw(self):
         if not self.hidden:
@@ -58,7 +54,7 @@ class Layer:
     @staticmethod
     def from_dict(dct, plot):
         layer = Layer(plot, dct['name'], dct['hidden'])
-        layer.objects = [GeneralObject.from_dict(plot, el) for el in dct['objects']]
+        layer.objects = [GeneralObject.from_dict(el) for el in dct['objects']]
         return layer
 
     def set_name(self, name):
@@ -72,9 +68,9 @@ class Layer:
         else:
             for el in self.objects:
                 el.show_name_bars()
-        self.plot.update()
+        # self.plot.update()
 
     def replace_object(self, index, dct):
         self.objects[index].destroy_name_bars()
-        self.objects[index] = GeneralObject.from_dict(self.plot, dct)
-        self.plot.sm.update_intersections()
+        self.objects[index] = GeneralObject.from_dict(dct)
+        # self.plot.sm.update_intersections()
