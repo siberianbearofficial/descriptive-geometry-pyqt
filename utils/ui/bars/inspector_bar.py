@@ -1,8 +1,7 @@
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy
-from PyQt5.QtGui import QFont, QPixmap
+from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtCore import Qt
-from widget import Widget
-from inspector_bar_object import InspectorBarObject
+from utils.ui.widgets.widget import Widget
+from utils.ui.bars.inspector_bar_object import InspectorBarObject
 
 
 class InspectorBar(Widget):

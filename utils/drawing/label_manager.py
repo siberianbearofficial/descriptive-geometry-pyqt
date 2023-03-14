@@ -1,5 +1,5 @@
-import utils.maths.angem as ag
-from utils.drawing.screen_point import ScreenPoint
+import core.angem as ag
+from utils.drawing.projections.projection_manager import ScreenPoint
 
 SEP = '-'
 

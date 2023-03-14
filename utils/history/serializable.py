@@ -1,4 +1,4 @@
-import utils.maths.angem as ag
+import core.angem as ag
 
 angem_objects = {
     ag.Point: ['x', 'y', 'z'],

@@ -1,17 +1,15 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel, QSizePolicy
-from PyQt5.QtCore import Qt
-from utils.drawing.Plot2 import PlotBar
-from DrawBar import DrawBar
-from CmdBar import CmdBar
-from PropertiesBar import PropertiesBar
-from InspectorBar import InspectorBar
-from ToolBar import ToolBar
-from MenuBar import MenuBar
-from layer_window import LayerWindow
-from utils.drawing.object_manager import ObjectManager
-from utils.drawing.history import HistoryManager
-from column import Column
-from font_manager import FontManager
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout
+from utils.ui.bars.plot_bar import PlotBar
+from utils.ui.bars.draw_bar import DrawBar
+from utils.ui.bars.cmd_bar import CmdBar
+from utils.ui.bars.properties_bar import PropertiesBar
+from utils.ui.bars.inspector_bar import InspectorBar
+from utils.ui.bars.tool_bar import ToolBar
+from utils.ui.bars.menu_bar import MenuBar
+from utils.objects.object_manager import ObjectManager
+from utils.history.history import HistoryManager
+from utils.ui.widgets.column import Column
+from utils.fonts.font_manager import FontManager
 
 import utils.history.serializer as srl
 

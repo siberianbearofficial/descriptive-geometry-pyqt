@@ -1,6 +1,6 @@
-from utils.drawing.layer import Layer
+from utils.objects.layer import Layer
 from random import randint
-from utils.drawing.general_object import GeneralObject
+from utils.objects.general_object import GeneralObject
 
 
 class ObjectManager:

@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QLayout, QComboBox, \
     QColorDialog
-from PyQt5.QtGui import QFont, QColor
+from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt
-from widget import Widget
+from utils.ui.widgets.widget import Widget
 
 
 class PropertiesBar(Widget):

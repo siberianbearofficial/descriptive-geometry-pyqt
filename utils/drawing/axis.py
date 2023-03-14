@@ -1,5 +1,4 @@
-from utils.drawing.screen_point import ScreenPoint
-from utils.drawing.screen_segment import ScreenSegment
+from utils.drawing.projections.projection_manager import ScreenSegment
 
 
 class Axis:

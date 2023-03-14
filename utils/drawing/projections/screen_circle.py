@@ -1,4 +1,4 @@
-from utils.drawing.screen_point import ScreenPoint
+from utils.drawing.projections.projection_manager import ScreenPoint
 
 
 class ScreenCircle:

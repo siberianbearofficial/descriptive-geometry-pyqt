@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout
-from PyQt5.QtGui import QFont, QPixmap
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
-from widget import Widget
+from utils.ui.widgets.widget import Widget
 
 
 class ToolBar(Widget):

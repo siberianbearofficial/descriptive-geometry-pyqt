@@ -24,7 +24,7 @@ class ScreenPoint:
         self.y += y
 
 
-class ScreenPoint2:
+class ThinScreenPoint:
     def __init__(self, plot, x, y, color=(0, 0, 0), thickness=2):
         self.x = x
         self.y = y

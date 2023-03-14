@@ -1,9 +1,9 @@
-from utils.drawing.screen_point import ScreenPoint, ScreenPoint2
-from utils.drawing.screen_segment import ScreenSegment
-from utils.drawing.screen_circle import ScreenCircle
-from utils.drawing.plot_object import TempObject
+from utils.drawing.projections.projection_manager import ScreenPoint, ThinScreenPoint
+from utils.drawing.projections.projection_manager import ScreenSegment
+from utils.drawing.projections.projection_manager import ScreenCircle
+from utils.drawing.projections.plot_object import TempObject
 from utils.drawing.snap import distance, nearest_point
-import utils.maths.angem as ag
+import core.angem as ag
 from PyQt5.QtCore import Qt
 
 COLOR1 = (0, 162, 232)
@@ -69,7 +69,7 @@ def select_object(plot, func, step, kwargs, types=None, final_func=None):
             for el in obj.xy_projection:
                 if isinstance(el, ScreenPoint) and distance(pos, el.tuple()) <= 7:
                     selected_object = obj
-                if isinstance(el, ScreenPoint2) and distance(pos, el.tuple()) <= 3:
+                if isinstance(el, ThinScreenPoint) and distance(pos, el.tuple()) <= 3:
                     selected_object = obj
                 if isinstance(el, ScreenSegment) and distance(pos, nearest_point(pos, el)) <= 3:
                     selected_object = obj
@@ -78,7 +78,7 @@ def select_object(plot, func, step, kwargs, types=None, final_func=None):
             for el in obj.xz_projection:
                 if isinstance(el, ScreenPoint) and distance(pos, el.tuple()) <= 7:
                     selected_object = obj
-                if isinstance(el, ScreenPoint2) and distance(pos, el.tuple()) <= 3:
+                if isinstance(el, ThinScreenPoint) and distance(pos, el.tuple()) <= 3:
                     selected_object = obj
                 if isinstance(el, ScreenSegment) and distance(pos, nearest_point(pos, el)) <= 3:
                     selected_object = obj
@@ -96,7 +96,7 @@ def select_object(plot, func, step, kwargs, types=None, final_func=None):
             for el in obj.xy_projection:
                 if isinstance(el, ScreenPoint) and distance(pos, el.tuple()) <= 7:
                     selected_object = obj
-                if isinstance(el, ScreenPoint2) and distance(pos, el.tuple()) <= 3:
+                if isinstance(el, ThinScreenPoint) and distance(pos, el.tuple()) <= 3:
                     selected_object = obj
                 if isinstance(el, ScreenSegment) and distance(pos, nearest_point(pos, el)) <= 3:
                     selected_object = obj
@@ -105,7 +105,7 @@ def select_object(plot, func, step, kwargs, types=None, final_func=None):
             for el in obj.xz_projection:
                 if isinstance(el, ScreenPoint) and distance(pos, el.tuple()) <= 7:
                     selected_object = obj
-                if isinstance(el, ScreenPoint2) and distance(pos, el.tuple()) <= 3:
+                if isinstance(el, ThinScreenPoint) and distance(pos, el.tuple()) <= 3:
                     selected_object = obj
                 if isinstance(el, ScreenSegment) and distance(pos, nearest_point(pos, el)) <= 3:
                     selected_object = obj

@@ -1,4 +1,4 @@
-from utils.drawing.general_object import GeneralObject
+from utils.objects.general_object import GeneralObject
 
 
 class Layer:

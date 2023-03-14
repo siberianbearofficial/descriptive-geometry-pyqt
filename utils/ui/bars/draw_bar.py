@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtCore import Qt
-from DrawTool import DrawTool
-from widget import Widget
+from utils.ui.bars.draw_tool import DrawTool
+from utils.ui.widgets.widget import Widget
 
 
 class DrawBar(Widget):

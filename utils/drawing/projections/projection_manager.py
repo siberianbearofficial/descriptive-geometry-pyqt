@@ -1,7 +1,7 @@
-import utils.maths.angem as ag
-from utils.drawing.screen_point import ScreenPoint, ScreenPoint2
-from utils.drawing.screen_segment import ScreenSegment
-from utils.drawing.screen_circle import ScreenCircle
+import core.angem as ag
+from utils.drawing.projections.screen_point import ScreenPoint, ThinScreenPoint
+from utils.drawing.projections.screen_segment import ScreenSegment
+from utils.drawing.projections.screen_circle import ScreenCircle
 import math
 from PyQt5.QtCore import Qt
 
@@ -332,8 +332,8 @@ class ProjectionManager:
         return unpack_inner_tuples(res1), unpack_inner_tuples(res2)
 
     def get_point(self, obj, plane, color):
-        return ScreenPoint2(self.plot, *self.convert_ag_coordinate_to_screen_coordinate(obj.x, obj.y, obj.z, plane),
-                            color)
+        return ThinScreenPoint(self.plot, *self.convert_ag_coordinate_to_screen_coordinate(obj.x, obj.y, obj.z, plane),
+                               color)
 
     def convert_ag_coordinate_to_screen_coordinate(self, x, y=None, z=None, plane='xy'):
         if plane == 'xy':

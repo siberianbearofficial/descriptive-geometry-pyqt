@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QHBoxLayout, QLabel
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
-from widget import Widget
+from utils.ui.widgets.widget import Widget
 
 
 class DrawTool(Widget):

@@ -1,6 +1,6 @@
-from utils.drawing.screen_point import ScreenPoint, ScreenPoint2
-from utils.drawing.screen_segment import ScreenSegment
-import utils.maths.angem as ag
+from utils.drawing.projections.projection_manager import ScreenPoint, ThinScreenPoint
+from utils.drawing.projections.projection_manager import ScreenSegment
+import core.angem as ag
 
 
 class SnapManager:
@@ -136,7 +136,7 @@ class SnapManager:
     def snap_nearest_point_2(self, pos):
         point, dist, ag_obj_res = pos, 10000, None
         for obj, ag_obj in self.get_screen_objects(self.plane):
-            if isinstance(obj, ScreenPoint2) and (d := distance(pos, obj.tuple())) < dist and (
+            if isinstance(obj, ThinScreenPoint) and (d := distance(pos, obj.tuple())) < dist and (
                     self.x is None or (obj.x - self.x) <= 1):
                 point = obj.tuple()
                 dist = d

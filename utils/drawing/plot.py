@@ -1,25 +1,22 @@
-from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QApplication
 from PyQt5.QtGui import QColor, QPainter, QPen
 from PyQt5.QtCore import Qt, pyqtSignal
 
-from utils.drawing.screen_point import ScreenPoint, ScreenPoint2
-from utils.drawing.screen_segment import ScreenSegment
-from utils.drawing.screen_circle import ScreenCircle
+from utils.drawing.projections.projection_manager import ScreenPoint, ThinScreenPoint
+from utils.drawing.projections.projection_manager import ScreenSegment
+from utils.drawing.projections.projection_manager import ScreenCircle
 
 from utils.drawing.axis import Axis
-from utils.drawing.projections import ProjectionManager
-from utils.drawing.history import HistoryManager
+from utils.drawing.projections.projection_manager import ProjectionManager
 from utils.drawing.label_manager import LabelManager
 import utils.drawing.snap as snap
-from utils.drawing.layer import Layer
-from utils.drawing.general_object import GeneralObject
+from utils.objects.layer import Layer
+from utils.objects.general_object import GeneralObject
 import utils.drawing.drawing_on_plot as drw
-import utils.drawing.names_to_object as names
-
-from widget import Widget
+import utils.drawing.names as names
 
 from random import randint
-from utils.drawing.plot_object import PlotObject
+from utils.drawing.projections.plot_object import PlotObject
 
 drawing_functions = {
     'point': drw.create_point, 'segment': drw.create_segment, 'line': drw.create_line, 'plane': drw.create_plane,
@@ -30,18 +27,6 @@ drawing_functions = {
     'distance': drw.get_distance, 'angle': drw.get_angle, 'circle': drw.create_circle, 'sphere': drw.create_sphere,
     'cylinder': drw.create_cylinder, 'cone': drw.create_cone, 'tor': drw.create_point, 'spline': drw.create_spline,
     'rotation_surface': drw.create_rotation_surface, 'intersection': drw.get_intersection}
-
-
-class PlotBar(Widget):
-    def __init__(self, parent, font_manager):
-        super().__init__(parent)
-
-        self.setStyleSheet("background-color: #ffffff; border-radius: 10px;")
-
-        self.layout = QVBoxLayout(self.central_widget)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.painter_widget = Plot(self.central_widget)
-        self.layout.addWidget(self.painter_widget)
 
 
 class Plot(QWidget):
@@ -293,7 +278,7 @@ class Plot(QWidget):
                 if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 7:
                     selected_object = obj
                     break
-                if isinstance(el, ScreenPoint2) and snap.distance(pos, el.tuple()) <= 3:
+                if isinstance(el, ThinScreenPoint) and snap.distance(pos, el.tuple()) <= 3:
                     selected_object = obj
                     break
                 if isinstance(el, ScreenSegment) and snap.distance(pos, snap.nearest_point(pos, el)) <= 3:
@@ -306,7 +291,7 @@ class Plot(QWidget):
                 if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 7:
                     selected_object = obj
                     break
-                if isinstance(el, ScreenPoint2) and snap.distance(pos, el.tuple()) <= 2:
+                if isinstance(el, ThinScreenPoint) and snap.distance(pos, el.tuple()) <= 2:
                     selected_object = obj
                     break
                 if isinstance(el, ScreenSegment) and snap.distance(pos, snap.nearest_point(pos, el)) <= 2:

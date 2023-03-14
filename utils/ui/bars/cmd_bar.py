@@ -1,8 +1,7 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit
-from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QVBoxLayout, QLabel, QLineEdit
 
-import utils.maths.angem as ag
-from widget import Widget
+import core.angem as ag
+from utils.ui.widgets.widget import Widget
 
 
 class CmdBar(Widget):

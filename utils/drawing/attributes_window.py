@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtGui
-from utils.drawing.general_object import GeneralObject
+from utils.objects.general_object import GeneralObject
 
 
 ONLY_POSITIVE_ATTRIBUTES = ['radius', 'radius1', 'radius2', 'tube_radius']

@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QHBoxLayout, QLabel
-from PyQt5.QtGui import QFont, QPixmap
-from widget import Widget
+from PyQt5.QtGui import QPixmap
+from utils.ui.widgets.widget import Widget
 
 from random import randint
 
