@@ -1,6 +1,6 @@
 class HistoryManager:
-    def __init__(self, plot):
-        self.plot = plot
+    def __init__(self, object_manager):
+        self.object_manager = object_manager
         self.records = []
         self.redo_records = []
         self.max_count = 20
@@ -31,41 +31,41 @@ class HistoryManager:
             record = self.records[-1]
             add_action = self.add_redo_record
         if record.action_type == 'add_object':
-            add_action('delete_object', self.plot.layers[self.plot.current_layer].objects[-1].to_dict(),
+            add_action('delete_object', self.object_manager.layers[self.object_manager.current_layer].objects[-1].to_dict(),
                        clear_redo=False)
-            self.plot.layers[self.plot.current_layer].delete_object(-1, history_record=False)
-            self.plot.selected_object = None
-            self.plot.update()
+            self.object_manager.layers[self.object_manager.current_layer].delete_object(-1, history_record=False)
+            self.object_manager.selected_object = None
+            self.object_manager.update()
         elif record.action_type == 'delete_object':
             add_action('add_object', -1, clear_redo=False)
-            self.plot.layers[self.plot.current_layer].add_object_from_dict(*record.action_info)
-            self.plot.update()
+            self.object_manager.layers[self.object_manager.current_layer].add_object_from_dict(*record.action_info)
+            self.object_manager.update()
         elif record.action_type == 'object_modified':
             obj = record.action_info[0]
             attribute = record.action_info[1]
             if attribute == 'name':
                 add_action('object_modified', obj, 'name', obj.name, clear_redo=False)
-                self.plot.save_object_properties(obj, name=record.action_info[2], history_record=False)
+                self.object_manager.save_object_properties(obj, name=record.action_info[2], history_record=False)
         elif record.action_type == 'change_layer':
-            add_action('change_layer', self.plot.current_layer, clear_redo=False)
-            self.plot.set_current_layer(record.action_info[0], history_record=False)
-            self.plot.update_layer_list()
+            add_action('change_layer', self.object_manager.current_layer, clear_redo=False)
+            self.object_manager.set_current_layer(record.action_info[0], history_record=False)
+            self.object_manager.update_layer_list()
         elif record.action_type == 'add_layer':
-            self.add_redo_record('delete_layer', self.plot.layers[record.action_info[0]].to_dict(),
+            self.add_redo_record('delete_layer', self.object_manager.layers[record.action_info[0]].to_dict(),
                                  record.action_info[1], clear_redo=False)
-            self.plot.delete_layer(record.action_info[0], history_record=False)
-            self.plot.update_layer_list()
-            self.plot.update()
+            self.object_manager.delete_layer(record.action_info[0], history_record=False)
+            self.object_manager.update_layer_list()
+            self.object_manager.update()
         elif record.action_type == 'delete_layer':
             add_action('add_layer', record.action_info[1], clear_redo=False)
-            self.plot.insert_layer_from_dict(record.action_info[0], record.action_info[1])
-            self.plot.update_layer_list()
-            self.plot.update()
+            self.object_manager.insert_layer_from_dict(record.action_info[0], record.action_info[1])
+            self.object_manager.update_layer_list()
+            self.object_manager.update()
         elif record.action_type == 'hide_layer':
             add_action('hide_layer', record.action_info[1], clear_redo=False)
-            self.plot.layers[record.action_info[0]].hidden = not record.action_info[1]
-            self.plot.update_layer_list()
-            self.plot.update()
+            self.object_manager.layers[record.action_info[0]].hidden = not record.action_info[1]
+            self.object_manager.update_layer_list()
+            self.object_manager.update()
         else:
             print('unknown history record type')
         if redo:

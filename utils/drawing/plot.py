@@ -218,6 +218,7 @@ class Plot(QWidget):
         if name is None:
             name = names.generate_name(self, ag_object, config)
         self.add_object_func(ag_object, name, color, history_record=True, **config)
+        self.sm.update_intersections()
         self.update()
         if end:
             self.end()
@@ -231,6 +232,7 @@ class Plot(QWidget):
             self.objects.append(PlotObject(self, general_object))
         else:
             self.objects.remove(self.find_by_id(id))
+        self.sm.update_intersections()
 
     def update_plot_objects(self, object_list):
         self.objects.clear()
@@ -306,11 +308,12 @@ class Plot(QWidget):
         else:
             self.objectSelected.emit(0)
 
-    def set_selected_object(self, id):
-        self.selected_object_index = id
-        if id:
-            self.selected_object = self.find_by_id(id)
+    def set_selected_object(self, obj):
+        if obj:
+            self.selected_object_index = obj.id
+            self.selected_object = self.find_by_id(obj.id)
         else:
+            self.selected_object_index = 0
             self.selected_object = None
         self.update()
 
@@ -370,17 +373,6 @@ class Plot(QWidget):
             blue = randint(20, 570 - red - green)
             if 300 < red + green + blue < 570:
                 return red, green, blue
-
-    def serialize(self):
-        ready = {'current_layer': self.current_layer, 'layers': [layer.to_dict() for layer in self.layers]}
-        # print(ready)
-        return ready
-
-    def deserialize(self, dct):
-        self.clear()
-        self.layers = [Layer.from_dict(el, self) for el in dct['layers']]
-        self.current_layer = dct['current_layer']
-        self.update()
 
     def set_current_layer(self, ind, history_record=True):
         if ind == self.current_layer:

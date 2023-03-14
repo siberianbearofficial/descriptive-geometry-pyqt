@@ -1,10 +1,11 @@
 from utils.objects.layer import Layer
 from random import randint
 from utils.objects.general_object import GeneralObject
+from utils.history.history_manager import HistoryManager
 
 
 class ObjectManager:
-    def __init__(self, func_plot_update, func_plot_obj, plot_full_update, func_history_record, func_object_selected):
+    def __init__(self, func_plot_update, func_plot_obj, plot_full_update, func_object_selected):
         self.layers = [Layer("Layer 1")]
         self.current_layer = 0
         self.selected_object = None
@@ -12,8 +13,8 @@ class ObjectManager:
         self.func_plot_update = func_plot_update
         self.func_plot_obj = func_plot_obj
         self.plot_full_update = plot_full_update
-        self.func_history_record = func_history_record
         self.func_object_selected = func_object_selected
+        self.hm = HistoryManager(self)
 
     def add_object(self, ag_object, name='', color=None, history_record=True, **config):
         if color is None:
@@ -30,17 +31,21 @@ class ObjectManager:
                     return i, j
 
     def delete_selected_object(self, history_record=True):
+        if history_record:
+            self.hm.add_record('delete_object', self.selected_object.to_dict(), self.selected_object_index)
         if self.selected_object is None:
             return
         self.layers[self.selected_object_index[0]].delete_object(
-            self.selected_object_index[1], history_record=history_record)
+            self.selected_object_index[1])
         self.func_plot_obj(self.selected_object.id, None)
         self.selected_object = None
         for func in self.func_object_selected:
             func(0)
         self.func_plot_update()
 
-    def add_layer(self, name, hidden=False):
+    def add_layer(self, name, hidden=False, history_record=True):
+        if history_record:
+            self.hm.add_record('add_layer', self.layers[-1].to_dict(), -1)
         self.layers.append(Layer(name, hidden))
 
     def select_object(self, id):
@@ -53,15 +58,15 @@ class ObjectManager:
             self.selected_object_index = self.find_by_id(id)
             self.selected_object = self.layers[self.selected_object_index[0]].objects[self.selected_object_index[1]]
             for func in self.func_object_selected:
-                func(self.selected_object.id)
+                func(self.selected_object)
 
-    def sel_layer_hidden(self, ind, hidden):
+    def set_layer_hidden(self, ind, hidden, history_record=True):
         self.layers[ind].hidden = hidden
         self.plot_full_update(self.get_all_objects())
 
     def delete_layer(self, index, history_record=True):
         if history_record:
-            self.func_history_record('delete_layer', self.layers[index].to_dict(), index)
+            self.hm.add_record('delete_layer', self.layers[index].to_dict(), index)
         self.layers[index].clear()
         self.layers.pop(index)
         if self.current_layer >= index:
@@ -127,3 +132,18 @@ class ObjectManager:
         if index is None:
             index = self.selected_object_index
         self.layers[index[0]].objects[index[1]].config = config
+
+    def serialize(self):
+        ready = {'current_layer': self.current_layer, 'layers': [layer.to_dict() for layer in self.layers]}
+        # print(ready)
+        return ready
+
+    def clear(self):
+        self.layers.clear()
+        self.plot_full_update(self.get_all_objects())
+
+    def deserialize(self, dct):
+        self.clear()
+        self.layers = [Layer.from_dict(el, self) for el in dct['layers']]
+        self.current_layer = dct['current_layer']
+        self.plot_full_update(self.get_all_objects())

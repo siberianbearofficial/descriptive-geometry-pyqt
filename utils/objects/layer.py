@@ -16,14 +16,10 @@ class Layer:
 
     def add_object_from_dict(self, dct):
         self.objects.append(GeneralObject.from_dict(dct))
-        # self.plot.sm.update_intersections()
 
-    def delete_object(self, index, history_record=True):
-        # if history_record:
-        #     self.plot.hm.add_record('delete_object', self.objects[-1].to_dict())
+    def delete_object(self, index):
         self.objects[index].delete()
         self.objects.pop(index)
-        # self.plot.sm.update_intersections()
 
     def draw(self):
         if not self.hidden:
@@ -49,11 +45,12 @@ class Layer:
             obj.move(x, y)
 
     def to_dict(self):
-        return {'name': self.name, 'hidden': self.hidden, 'objects': [obj.to_dict(True) for obj in self.objects]}
+        return {'name': self.name, 'hidden': self.hidden, 'color': self.color, 'thickness': self.thickness,
+                'objects': [obj.to_dict(True) for obj in self.objects]}
 
     @staticmethod
     def from_dict(dct, plot):
-        layer = Layer(plot, dct['name'], dct['hidden'])
+        layer = Layer(dct['name'], dct['hidden'], dct['color'], dct['thickness'])
         layer.objects = [GeneralObject.from_dict(el) for el in dct['objects']]
         return layer
 
@@ -68,9 +65,7 @@ class Layer:
         else:
             for el in self.objects:
                 el.show_name_bars()
-        # self.plot.update()
 
     def replace_object(self, index, dct):
         self.objects[index].destroy_name_bars()
         self.objects[index] = GeneralObject.from_dict(dct)
-        # self.plot.sm.update_intersections()

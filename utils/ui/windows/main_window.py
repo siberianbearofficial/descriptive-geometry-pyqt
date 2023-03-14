@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QFileDialog
 from utils.ui.bars.plot_bar import PlotBar
 from utils.ui.bars.draw_bar import DrawBar
 from utils.ui.bars.cmd_bar import CmdBar
@@ -7,9 +7,9 @@ from utils.ui.bars.inspector_bar import InspectorBar
 from utils.ui.bars.tool_bar import ToolBar
 from utils.ui.bars.menu_bar import MenuBar
 from utils.objects.object_manager import ObjectManager
-from utils.history.history import HistoryManager
 from utils.ui.widgets.column import Column
 from utils.fonts.font_manager import FontManager
+from utils.history.settings_manager import SettingsManager
 
 import utils.history.serializer as srl
 
@@ -44,13 +44,13 @@ class MainWindow(QMainWindow):
 
         # Properties bar
         self.properties_bar = PropertiesBar(right_column, font_manager=fm)
-        # self.plot.show_object_properties = self.properties_bar.open_object
-        # self.properties_bar.save = self.plot.save_object_properties
+        self.plot.show_object_properties = self.properties_bar.open_object
+        self.properties_bar.save = self.plot.save_object_properties
         self.properties_bar.setMinimumHeight(150)
 
         # History manager
         self.object_manager = ObjectManager(
-            self.plot.update, self.plot.modify_plot_object, self.plot.update_plot_objects, None,
+            self.plot.update, self.plot.modify_plot_object, self.plot.update_plot_objects,
             (self.plot.set_selected_object, self.properties_bar.open_object))
         self.plot.add_object_func = self.object_manager.add_object
         self.plot.objectSelected.connect(self.object_manager.select_object)
@@ -113,13 +113,20 @@ class MainWindow(QMainWindow):
             {
                 'File':
                     {
+                        'Load': (lambda: self.deserialize(-1), 'Ctrl+Alt+Y'),
                         'Save': (self.serialize, 'Ctrl+S'),
-                        'Load': (self.deserialize, 'Ctrl+Alt+Y'),
+                        'Save as': (self.serialize_as, 'Ctrl+Shift+S'),
                         'Recent files':
                             {
-                                'First file': (lambda: exit(100500), None),
-                                'Second file': (lambda: print('Good :)'), None),
-                            }
+                                '0': (lambda: self.deserialize(0), None),
+                                '1': (lambda: self.deserialize(1), None),
+                                '2': (lambda: self.deserialize(2), None),
+                                '3': (lambda: self.deserialize(3), None),
+                                '4': (lambda: self.deserialize(4), None),
+                                '5': (lambda: self.deserialize(5), None),
+                                '6': (lambda: self.deserialize(6), None),
+                                '7': (lambda: self.deserialize(7), None)
+                            },
                     },
                 'Edit':
                     {
@@ -146,6 +153,10 @@ class MainWindow(QMainWindow):
         )
         self.setMenuBar(self.menu_bar)
 
+        self.settings_manager = SettingsManager()
+        self.current_file = None
+        self.update_recent_files_menu()
+
         left_column.add(self.draw_bar)
         middle_column.add(self.plot_bar).add(self.cmd_bar)
         right_column.add(self.tool_bar).add(self.properties_bar).add(self.inspector_bar)
@@ -160,11 +171,48 @@ class MainWindow(QMainWindow):
         self.plot.keyPressEvent(a0)
 
     def serialize(self):
-        srl.serialize(self.plot.serialize())
+        try:
+            srl.serialize(self.object_manager.serialize(), path=self.current_file)
+        except Exception:
+            self.serialize_as()
 
-    def deserialize(self):
-        self.plot.deserialize(srl.deserialize())
-        self.layer_window.update_layer_list(self.plot.layers, self.plot.current_layer)
+    def serialize_as(self):
+        path = QFileDialog.getSaveFileName(self, "Select File Name", "", "(*.txt)")[0]
+        if path:
+            srl.serialize(self.object_manager.serialize(), path=path)
+            self.current_file = path
+            self.settings_manager.add_to_recent_files(path)
+            self.update_recent_files_menu()
+
+    def deserialize(self, recent_file=-1):
+        if recent_file == -1:
+            path = QFileDialog.getOpenFileName(self, "Open File", "", "(*.txt)")[0]
+        elif 0 <= recent_file < len(self.settings_manager.recent_files):
+            path = self.settings_manager.recent_files[recent_file]
+        else:
+            return
+        if not path:
+            return
+        try:
+            self.object_manager.deserialize(srl.deserialize(path=path))
+            # self.layer_window.update_layer_list(self.plot.layers, self.plot.current_layer)
+            self.settings_manager.add_to_recent_files(path)
+            self.current_file = path
+            self.update_recent_files_menu()
+            self.plot.update()
+        except Exception:
+            pass
+
+    def update_recent_files_menu(self):
+        i = -1
+        for i, path in enumerate(self.settings_manager.recent_files):
+            self.menu_bar.action_dict['File']['Recent files'][str(i)].setText(path)
+        for i in range(i + 1, 8):
+            self.menu_bar.action_dict['File']['Recent files'][str(i)].setText('')
+
+    def closeEvent(self, a0) -> None:
+        self.settings_manager.serialize()
+        super(MainWindow, self).closeEvent(a0)
 
 
 import resources_rc
