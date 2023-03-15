@@ -164,7 +164,7 @@ class PropertiesBar(Widget):
 
     def on_color_change(self, color):
         # print('Color:', color)
-        color = QColorDialog(QColor(*self.current_object.color), self).getColor()
+        color = QColorDialog.getColor(QColor(*self.current_object.color))
         self.change_stylesheet(self.color_button, f'background-color: rgba{color.getRgb()};')
         self.save(self.current_object, color=color.getRgb())
 

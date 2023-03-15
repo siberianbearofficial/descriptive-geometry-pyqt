@@ -705,7 +705,8 @@ def get_intersection(plot, step, **kwargs):
                 return
         if res is not None:
             if isinstance(res, tuple):
-                plot.add_object(ag.IntersectionObject(kwargs['obj'], kwargs['obj1'], *res))
+                plot.add_object(ag.IntersectionObject(kwargs['obj'].general_object.ag_object,
+                                                      kwargs['obj1'].general_object.ag_object, res))
                 plot.end()
             else:
                 plot.add_object(res, end=True)

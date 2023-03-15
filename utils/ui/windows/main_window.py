@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QFileDialog
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QFileDialog, QMessageBox
 from utils.ui.bars.plot_bar import PlotBar
 from utils.ui.bars.draw_bar import DrawBar
 from utils.ui.bars.cmd_bar import CmdBar
@@ -10,6 +10,7 @@ from utils.objects.object_manager import ObjectManager
 from utils.ui.widgets.column import Column
 from utils.fonts.font_manager import FontManager
 from utils.history.settings_manager import SettingsManager
+import os
 
 import utils.history.serializer as srl
 
@@ -113,7 +114,8 @@ class MainWindow(QMainWindow):
             {
                 'File':
                     {
-                        'Load': (lambda: self.deserialize(-1), 'Ctrl+Alt+Y'),
+                        'New': (lambda: self.new_file(), 'Ctrl+Alt+T'),
+                        'Open': (lambda: self.deserialize(-1), 'Ctrl+Alt+Y'),
                         'Save': (self.serialize, 'Ctrl+S'),
                         'Save as': (self.serialize_as, 'Ctrl+Shift+S'),
                         'Recent files':
@@ -177,21 +179,25 @@ class MainWindow(QMainWindow):
             self.serialize_as()
 
     def serialize_as(self):
-        path = QFileDialog.getSaveFileName(self, "Select File Name", "", "(*.txt)")[0]
+        path = QFileDialog.getSaveFileName(self, "Select File Name", self.settings_manager.recent_directory,
+                                           "Text files (*.txt)")[0]
         if path:
             srl.serialize(self.object_manager.serialize(), path=path)
             self.current_file = path
             self.settings_manager.add_to_recent_files(path)
             self.update_recent_files_menu()
+            self.settings_manager.set_recent_directory(path)
 
     def deserialize(self, recent_file=-1):
         if recent_file == -1:
-            path = QFileDialog.getOpenFileName(self, "Open File", "", "(*.txt)")[0]
+            path = QFileDialog.getOpenFileName(self, "Open File", self.settings_manager.recent_directory,
+                                               "Text files (*.txt)")[0]
         elif 0 <= recent_file < len(self.settings_manager.recent_files):
             path = self.settings_manager.recent_files[recent_file]
         else:
             return
-        if not path:
+        if not os.path.isfile(path):
+            QMessageBox.warning(self, "Error", "File not found")
             return
         try:
             self.object_manager.deserialize(srl.deserialize(path=path))
@@ -200,8 +206,14 @@ class MainWindow(QMainWindow):
             self.current_file = path
             self.update_recent_files_menu()
             self.plot.update()
+            self.settings_manager.set_recent_directory(path)
         except Exception:
-            pass
+            QMessageBox.warning(self, "Error", "Invalid file")
+
+    def new_file(self):
+        self.object_manager.clear()
+        self.current_file = None
+        self.plot.update()
 
     def update_recent_files_menu(self):
         i = -1

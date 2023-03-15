@@ -1111,6 +1111,7 @@ def intersection_rotation_surface_and_rotation_surface(self, other):
     res = Spline3D.convert_points_to_splines(lst, 4 * abs(v))
     return tuple(res)
 
+
 class IntersectionObject:
     def __init__(self, p1, p2, objects=None):
         self.object1 = p1

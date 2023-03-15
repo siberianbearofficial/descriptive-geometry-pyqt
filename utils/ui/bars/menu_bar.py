@@ -5,7 +5,6 @@ class MenuBar(QMenuBar):
     def __init__(self, struct):
         super().__init__()
         _, self.action_dict = self.unpack(struct)
-        self.action_dict['File']['Load'].setText('Open')
 
     def unpack(self, struct, parent=None, name=None):
         if not isinstance(struct, dict):

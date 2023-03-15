@@ -139,7 +139,7 @@ class ObjectManager:
         return ready
 
     def clear(self):
-        self.layers.clear()
+        self.layers = [Layer("Layer 1")]
         self.plot_full_update(self.get_all_objects())
 
     def deserialize(self, dct):

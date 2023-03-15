@@ -1,4 +1,5 @@
 import utils.history.serializer as srl
+import os
 
 
 class SettingsManager:
@@ -7,10 +8,12 @@ class SettingsManager:
             dct = srl.deserialize(path='settings.txt')
         except Exception:
             dct = dict()
-        print(dct)
         self.recent_files = dct.get('recent_files', [])
         if not isinstance(self.recent_files, list):
             self.recent_files = []
+        self.recent_directory = dct.get('recent_directory')
+        if not isinstance(self.recent_directory, str) or not os.path.isdir(self.recent_directory):
+            self.recent_directory = os.getcwd()
 
     def add_to_recent_files(self, path):
         if path in self.recent_files:
@@ -19,6 +22,9 @@ class SettingsManager:
         if len(self.recent_files) > 8:
             self.recent_files = self.recent_files[:8]
 
+    def set_recent_directory(self, path):
+        self.recent_directory = os.path.dirname(path)
+
     def serialize(self):
-        dct = {'recent_files': self.recent_files}
+        dct = {'recent_files': self.recent_files, 'recent_directory': self.recent_directory}
         srl.serialize(dct, path='settings.txt')
