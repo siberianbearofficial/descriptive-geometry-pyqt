@@ -1,3 +1,4 @@
+from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtCore import Qt
 from utils.ui.bars.draw_tool import DrawTool
@@ -32,3 +33,9 @@ class DrawBar(Widget):
         for i in range(len(funcs)):
             self.tools[i].set_on_click_listener(funcs[i])
         return self
+
+    def eventFilter(self, a0, a1) -> bool:
+        super().eventFilter(a0, a1)
+        if isinstance(a1, QMouseEvent):
+            DrawTool.tool_hovered(None)
+        return False
