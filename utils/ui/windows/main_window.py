@@ -10,6 +10,7 @@ from utils.objects.object_manager import ObjectManager
 from utils.ui.widgets.column import Column
 from utils.fonts.font_manager import FontManager
 from utils.history.settings_manager import SettingsManager
+from utils.ui.windows.layer_window import LayerWindow
 import os
 
 import utils.history.serializer as srl
@@ -92,21 +93,15 @@ class MainWindow(QMainWindow):
         self.inspector_bar.setMinimumHeight(100)
 
         # Layer window
-        # self.layer_window = LayerWindow(self.plot.layers, self.plot.current_layer)
-        # self.layer_window.selectLayer.connect(self.plot.set_current_layer)
-        # self.layer_window.addLayer.connect(lambda: (self.plot.add_layer(), self.layer_window.update_layer_list(
-        #     self.plot.layers, self.plot.current_layer)))
-        # self.layer_window.setLayerHidden.connect(lambda ind, flag: self.plot.layers[ind].set_hidden(flag))
-        # self.layer_window.removeLayer.connect(self.plot.delete_layer)
-
-        # self.plot.layersModified.connect(self.layer_window.update_layer_list)
-        # self.layer_window = LayerWindow(self.plot.layers, self.plot.current_layer)
-        # self.layer_window.selectLayer.connect(self.plot.set_current_layer)
-        # self.layer_window.addLayer.connect(lambda: (self.plot.add_layer(), self.layer_window.update_layer_list(
-        #     self.plot.layers, self.plot.current_layer)))
-        # self.layer_window.setLayerHidden.connect(lambda ind, flag: self.plot.layers[ind].set_hidden(flag))
-        # self.layer_window.removeLayer.connect(self.plot.delete_layer)
-        # self.plot.layersModified.connect(self.layer_window.update_layer_list)
+        self.layer_window = LayerWindow(
+            self.object_manager.add_layer, self.object_manager.delete_layer, self.object_manager.select_layer,
+            self.object_manager.set_layer_name, self.object_manager.set_layer_hidden,
+            self.object_manager.set_layer_color, self.object_manager.set_layer_thickness)
+        self.layer_window.update_layer_list(self.object_manager.layers, self.object_manager.current_layer)
+        self.object_manager.set_layers_func(
+            (self.layer_window.add_layer,), (self.layer_window.delete_layer,), (self.layer_window.hide_layer,),
+            (self.layer_window.select_layer,), (self.layer_window.rename_layer,), (self.layer_window.set_layer_color,),
+            (self.layer_window.set_layer_thickness,))
         self.plot.setCmdStatus.connect(self.cmd_bar.set_command_to_plot)
 
         # Menubar
@@ -201,7 +196,7 @@ class MainWindow(QMainWindow):
             return
         try:
             self.object_manager.deserialize(srl.deserialize(path=path))
-            # self.layer_window.update_layer_list(self.plot.layers, self.plot.current_layer)
+            self.layer_window.update_layer_list(self.object_manager.layers, self.object_manager.current_layer)
             self.settings_manager.add_to_recent_files(path)
             self.current_file = path
             self.update_recent_files_menu()

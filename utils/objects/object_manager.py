@@ -16,6 +16,24 @@ class ObjectManager:
         self.func_object_selected = func_object_selected
         self.hm = HistoryManager(self)
 
+        self.func_layer_add = None
+        self.func_layer_delete = None
+        self.func_layer_hide = None
+        self.func_layer_select = None
+        self.func_layer_rename = None
+        self.func_layer_color = None
+        self.func_layer_thickness = None
+
+    def set_layers_func(self, func_layer_add, func_layer_delete, func_layer_hide, func_layer_select, func_layer_rename,
+                        func_layer_color, func_layer_thickness):
+        self.func_layer_add = func_layer_add
+        self.func_layer_delete = func_layer_delete
+        self.func_layer_hide = func_layer_hide
+        self.func_layer_select = func_layer_select
+        self.func_layer_rename = func_layer_rename
+        self.func_layer_color = func_layer_color
+        self.func_layer_thickness = func_layer_thickness
+
     def add_object(self, ag_object, name='', color=None, history_record=True, **config):
         if color is None:
             color = self.random_color()
@@ -43,10 +61,28 @@ class ObjectManager:
             func(0)
         self.func_plot_update()
 
-    def add_layer(self, name, hidden=False, history_record=True):
+    def add_layer(self, name=None, hidden=False, history_record=True):
+        if not name:
+            i = 1
+            while True:
+                name = f'Layer {i}'
+                for layer in self.layers:
+                    if layer.name == name:
+                        break
+                else:
+                    break
+                i += 1
         if history_record:
             self.hm.add_record('add_layer', self.layers[-1].to_dict(), -1)
         self.layers.append(Layer(name, hidden))
+        for func in self.func_layer_add:
+            func(self.layers[-1])
+
+    def select_layer(self, index):
+        if 0 <= index < len(self.layers):
+            self.current_layer = index
+        for func in self.func_layer_select:
+            func(index)
 
     def select_object(self, id):
         if id == 0:
@@ -65,9 +101,12 @@ class ObjectManager:
         self.plot_full_update(self.get_all_objects())
 
     def delete_layer(self, index, history_record=True):
+        if index == self.current_layer:
+            return
         if history_record:
             self.hm.add_record('delete_layer', self.layers[index].to_dict(), index)
-        self.layers[index].clear()
+        for func in self.func_layer_delete:
+            func(index)
         self.layers.pop(index)
         if self.current_layer >= index:
             self.current_layer -= 1
@@ -97,16 +136,22 @@ class ObjectManager:
         if layer is None:
             layer = self.current_layer
         self.layers[layer].color = color
+        for func in self.func_layer_color:
+            func(layer, color)
 
     def set_layer_name(self, name, layer=None):
         if layer is None:
             layer = self.current_layer
         self.layers[layer].name = name
+        for func in self.func_layer_rename:
+            func(layer, name)
 
     def set_layer_thickness(self, thickness, layer=None):
         if layer is None:
             layer = self.current_layer
         self.layers[layer].thickness = thickness
+        for func in self.func_layer_thickness:
+            func(layer, thickness)
 
     def set_object_name(self, name, index=None):
         if index is None:

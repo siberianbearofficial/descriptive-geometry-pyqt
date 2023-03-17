@@ -1,25 +1,26 @@
-from PyQt5.QtWidgets import QWidget, QMainWindow, QMenuBar, QLineEdit, QLabel, QCheckBox, QVBoxLayout, QScrollArea, QAction
+from PyQt5.QtWidgets import QWidget, QMainWindow, QMenuBar, QLineEdit, QLabel, QCheckBox, QVBoxLayout, QScrollArea, \
+    QColorDialog, QComboBox
 from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import pyqtSignal, Qt
 
 
 class LayerWindow(QMainWindow):
-    addLayer = pyqtSignal()
-    removeLayer = pyqtSignal(int)
-    selectLayer = pyqtSignal(int)
-    renameLayer = pyqtSignal(str)
-    setLayerColor = pyqtSignal(int, tuple)
-    setLayerHidden = pyqtSignal(int, bool)
-    setLayerLineStyle = pyqtSignal(int, int)
-
-    def __init__(self, layers, current_layer):
+    def __init__(self, func_add_layer, func_delete_layer, func_select_layer, func_rename_layer, func_layer_hidden,
+                 func_layer_color, func_layer_thickness):
         super(LayerWindow, self).__init__()
         self.setFixedSize(640, 480)
         self.setWindowTitle('DescriptiveGeometry - Layers')
+        self.func_add_layer = func_add_layer
+        self.func_delete_layer = func_delete_layer
+        self.func_select_layer = func_select_layer
+        self.func_rename_layer = func_rename_layer
+        self.func_layer_hidden = func_layer_hidden
+        self.func_layer_color = func_layer_color
+        self.func_layer_thickness = func_layer_thickness
 
         self.menu_bar = QMenuBar()
         self.menu_bar.addAction('New layer')
-        self.menu_bar.actions()[0].triggered.connect(lambda *args: self.addLayer.emit())
+        self.menu_bar.actions()[0].triggered.connect(lambda *args: self.func_add_layer())
         font = QFont()
         font.setFamily("Alegreya Sans SC ExtraBold")
         font.setPointSize(16)
@@ -41,9 +42,6 @@ class LayerWindow(QMainWindow):
         self.layout.setSpacing(5)
 
         self.layer_bars = []
-        self.update_layer_list(layers, current_layer)
-
-        self.select_layer(current_layer)
 
         self.setMenuBar(self.menu_bar)
         self.scroll_area.setWidget(self.layers_widget)
@@ -56,17 +54,30 @@ class LayerWindow(QMainWindow):
         self.layers_widget.setFixedSize(620, 5)
         self.layer_bars = []
         for i in range(len(layers)):
-            widget = LayerBar(self, i, name=layers[i].name, color=layers[i].color, hidden=layers[i].hidden)
+            widget = LayerBar(
+                self, i, self.func_select_layer, self.func_rename_layer, self.func_layer_hidden, self.func_delete_layer,
+                self.func_layer_color, self.func_layer_thickness,
+                name=layers[i].name, color=layers[i].color, hidden=layers[i].hidden)
             self.layer_bars.append(widget)
             self.layout.addWidget(widget)
-            widget.select.connect(lambda index: self.select_layer(index))
-            widget.show_hide.connect(lambda ind, flag: self.setLayerHidden.emit(ind, flag))
-            widget.delete.connect(self.delete_layer)
 
         self.layers_widget.setFixedSize(620, 5 + len(self.layer_bars) * 45)
         self.select_layer(current_layer)
 
+    def add_layer(self, layer, index=None):
+        if index:
+            i = index
+        else:
+            i = len(self.layer_bars)
+        widget = LayerBar(
+            self, i, self.func_select_layer, self.func_rename_layer, self.func_layer_hidden, self.func_delete_layer,
+            self.func_layer_color, self.func_layer_thickness, name=layer.name, color=layer.color, hidden=layer.hidden)
+        self.layer_bars.append(widget)
+        self.layout.insertWidget(i, widget)
+        self.layers_widget.setFixedSize(620, 5 + len(self.layer_bars) * 45)
+
     def delete_layer(self, index):
+        print('delete', index)
         if len(self.layer_bars) <= 1:
             return
         flag = self.layer_bars[index].selection_bar.isChecked()
@@ -79,26 +90,43 @@ class LayerWindow(QMainWindow):
         self.layer_bars.pop(index)
         for i in range(len(self.layer_bars)):
             self.layer_bars[i].index = i
-        self.removeLayer.emit(index)
         self.layers_widget.setFixedSize(620, 5 + len(self.layer_bars) * 45)
 
+    def hide_layer(self, index, hidden):
+        if hidden:
+            self.layer_bars[index].button_show.show()
+            self.layer_bars[index].button_hide.hide()
+        else:
+            self.layer_bars[index].button_show.hide()
+            self.layer_bars[index].button_hide.show()
+
+    def rename_layer(self, index, name):
+        self.layer_bars[index].name_bar.setText(name)
+
     def select_layer(self, index):
-        self.selectLayer.emit(index)
         for layer in self.layer_bars:
             layer.selection_bar.setChecked(False)
         self.layer_bars[index].selection_bar.setChecked(True)
 
+    def set_layer_color(self, index, color):
+        self.layer_bars[index].button_color.set_color(color)
+
+    def set_layer_thickness(self, index, thickness):
+        self.layer_bars[index].thickness_combobox.setCurrentIndex(thickness)
+
 
 class LayerBar(QWidget):
-    select = pyqtSignal(int)
-    rename = pyqtSignal(str)
-    show_hide = pyqtSignal(int, bool)
-    delete = pyqtSignal(int)
-
-    def __init__(self, parent, index, **kwargs):
+    def __init__(self, parent, index, func_select, func_rename, func_hide, func_delete, func_color, func_thickness,
+                 **kwargs):
         super(LayerBar, self).__init__(parent)
         self.setStyleSheet("background-color: #EAEAEA; border-radius: 10px")
         self.index = index
+        self.func_select = func_select
+        self.func_rename = func_rename
+        self.func_hide = func_hide
+        self.func_delete = func_delete
+        self.func_color = func_color
+        self.func_thickness = func_thickness
 
         self.strange_widget = QWidget(self)
         self.strange_widget.setFixedSize(600, 40)
@@ -106,16 +134,17 @@ class LayerBar(QWidget):
         self.selection_bar = QCheckBox(self)
         self.selection_bar.setGeometry(5, 5, 20, 30)
         self.selection_bar.clicked.connect(
-            lambda flag: self.select.emit(self.index) if flag else self.selection_bar.setChecked(True))
+            lambda flag: self.func_select(self.index) if flag else self.selection_bar.setChecked(True))
 
-        self.name_bar = QLineEdit(self.strange_widget)
+        self.name_bar = LineEdit(self.strange_widget)
         self.name_bar.setText(kwargs.get('name', ''))
         self.name_bar.setStyleSheet("color: #00ABB3;\n"
                                     "background-color: #EAEAEA;\n"
                                     "border: 2px solid #00ABB3;\n"
                                     "padding-left: 3px;")
         self.name_bar.setGeometry(25, 5, 230, 30)
-        self.name_bar.editingFinished.connect(lambda: self.rename.emit(self.name_bar.text()))
+        self.name_bar.editingFinished.connect(lambda: (self.name_bar.setReadOnly(True),
+                                                       self.func_rename(self.name_bar.text(), self.index)))
 
         self.button_show = Button(self, 'S')
         self.button_show.move(260, 5)
@@ -131,13 +160,32 @@ class LayerBar(QWidget):
 
         self.button_color = Button(self, color=kwargs.get('color', None))
         self.button_color.move(295, 5)
+        self.button_color.clicked.connect(lambda: self.func_color(QColorDialog.getColor(), self.index))
+
+        self.thickness_combobox = QComboBox(self)
+        self.thickness_combobox.setGeometry(330, 5, 70, 30)
+        # self.thickness_combobox.setFont(font_manager.bold())
+        self.thickness_combobox.setStyleSheet("QComboBox {\n"
+                                              "color: #00ABB3;\n"
+                                              "background-color: #EAEAEA;\n"
+                                              "border: 2px solid #00ABB3;\n"
+                                              "padding-right: 1px;\n"
+                                              "}\n"
+                                              "QComboBox::drop-down:button {\n"
+                                              "border-radius: 5px;\n"
+                                              "}")
+        self.thickness_combobox.setMaxVisibleItems(3)
+        self.thickness_combobox.addItem("light")
+        self.thickness_combobox.addItem("medium")
+        self.thickness_combobox.addItem("bold")
+        self.thickness_combobox.currentIndexChanged.connect(lambda t: self.func_thickness(t, self.index))
 
         self.button_delete = Button(self, 'D')
-        self.button_delete.move(330, 5)
-        self.button_delete.clicked.connect(lambda: self.delete.emit(self.index))
+        self.button_delete.move(405, 5)
+        self.button_delete.clicked.connect(lambda: self.func_delete(self.index))
 
     def show_hide_func(self, flag):
-        self.show_hide.emit(self.index, flag)
+        self.func_hide(self.index, flag)
         if flag:
             self.button_show.show()
             self.button_hide.hide()
@@ -167,3 +215,17 @@ class Button(QWidget):
     def mousePressEvent(self, a0):
         if a0.button() == 1:
             self.clicked.emit()
+
+    def set_color(self, color):
+        self.setStyleSheet("border: 2px solid #00ABB3;\n"
+                           "border-radius: 10px;\n"
+                           f"background-color: rgb({str(color.red())},{str(color.green())},{str(color.blue())});")
+
+
+class LineEdit(QLineEdit):
+    def __init__(self, parent):
+        super(LineEdit, self).__init__(parent)
+        self.setReadOnly(True)
+
+    def mouseDoubleClickEvent(self, a0) -> None:
+        self.setReadOnly(False)

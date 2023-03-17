@@ -36,8 +36,6 @@ class Layer:
             obj.update_projections()
 
     def clear(self):
-        for obj in self.objects:
-            obj.destroy_name_bars()
         self.objects = []
 
     def move_objects(self, x, y):

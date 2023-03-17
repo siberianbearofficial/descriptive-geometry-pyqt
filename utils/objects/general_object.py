@@ -1,10 +1,10 @@
 import core.angem as ag
 import utils.history.serializable as serializable
 
-indexU, indexL = 0, 0
 ALPH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 alph = ALPH.lower()
 used_names = set()
+used_points = set()
 
 SEP = '-'
 
@@ -36,6 +36,55 @@ class GeneralObject:
                     used_names.add(self.name)
                     break
                 i += 1
+        else:
+            while '__UPPER__' in self.name:
+                self.name = self.name.replace('__UPPER__', GeneralObject.get_alpha(), 1)
+            while '__lower__' in self.name:
+                self.name = self.name.replace('__lower__', GeneralObject.get_alpha(lower=True), 1)
+        if isinstance(self.ag_object, ag.Point):
+            used_points.add(self.name)
+        elif isinstance(self.ag_object, ag.Segment) and self.name.count(SEP) == 1:
+            for el in self.name.split(SEP):
+                used_points.add(el)
+        elif isinstance(self.ag_object, ag.Plane) and self.config.get('draw_3p', False) and self.name.count(SEP) == 2:
+            for el in self.name.split(SEP):
+                used_points.add(el)
+                
+    def __setattr__(self, key, value):
+        if key == 'name' and 'name' in self.__dict__:
+            if isinstance(self.ag_object, ag.Point):
+                used_points.discard(self.name)
+                used_points.add(value)
+            elif isinstance(self.ag_object, ag.Segment):
+                if self.name.count(SEP) == 1:
+                    for el in self.name.split(SEP):
+                        used_points.discard(el)
+                if value.count(SEP) == 1:
+                    for el in value.split(SEP):
+                        used_points.add(el)
+            elif isinstance(self.ag_object, ag.Plane) and self.config.get('draw_3p', False):
+                if self.name.count(SEP) == 2:
+                    for el in self.name.split(SEP):
+                        used_points.discard(el)
+                if value.count(SEP) == 2:
+                    for el in value.split(SEP):
+                        used_points.add(el)
+            used_names.discard(self.name)
+            used_names.add(value)
+        super(GeneralObject, self).__setattr__(key, value)
+
+    def __del__(self):
+        if isinstance(self.ag_object, ag.Point):
+            used_points.discard(self.name)
+        elif isinstance(self.ag_object, ag.Segment):
+            if self.name.count(SEP) == 1:
+                for el in self.name.split(SEP):
+                    used_points.discard(el)
+        elif isinstance(self.ag_object, ag.Plane) and self.config.get('draw_3p', False):
+            if self.name.count(SEP) == 2:
+                for el in self.name.split(SEP):
+                    used_points.discard(el)
+        used_names.discard(self.name)
 
     @staticmethod
     def get_alpha(lower=False):
@@ -54,23 +103,17 @@ class GeneralObject:
                 s = str(i)
         else:
             for symbol in ALPH:
-                if symbol not in used_names:
+                if symbol not in used_points:
                     used_names.add(symbol)
                     return symbol
             i, s = 1, '1'
             while True:
                 for symbol in ALPH:
-                    if symbol + s not in used_names:
+                    if symbol + s not in used_points:
                         used_names.add(symbol + s)
                         return symbol + s
                 i += 1
                 s = str(i)
-
-    def name_to_point(self, pos):
-        # name = self.plot.lm.get_name_to_new_obj(pos)
-        # if name:
-        #     return name
-        return GeneralObject.get_alpha()
 
     def to_dict(self, class_names=False):
         def convert(obj):
