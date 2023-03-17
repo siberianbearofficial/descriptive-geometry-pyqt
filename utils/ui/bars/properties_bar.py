@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushBu
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt
 
+from utils.ui.bars.properties_bar_object import PropertiesBarObject
 from utils.ui.widgets.LineEditWidget import LineEditWidget
 from utils.ui.widgets.widget import Widget
 
@@ -19,6 +20,7 @@ class PropertiesBar(Widget):
         self.set_obj_ag_object = None
         self.set_obj_config = None
         self.layers_list = []
+        self.font_manager = font_manager
 
         self.setStyleSheet("background-color: #FFFFFF; border-radius: 10px;")
         self.layout = QVBoxLayout(self.central_widget)
@@ -133,40 +135,13 @@ class PropertiesBar(Widget):
         self.thickness_combobox.currentIndexChanged.connect(
             lambda: self.on_thickness_change(self.thickness_combobox.currentIndex() + 1))
         thickness.addWidget(self.thickness_combobox)
-
         self.clt.addLayout(thickness)
-
         self.layout.addLayout(self.clt)
 
-        # self.properties_bar_objects = QtWidgets.QVBoxLayout()
-        # self.properties_bar_objects.setObjectName("properties_bar_objects")
-        # self.properties_bar_object_1 = QtWidgets.QWidget(self.strange_widget)
-        # self.properties_bar_object_1.setObjectName("properties_bar_object_1")
-        # self.widget4 = QtWidgets.QWidget(self.properties_bar_object_1)
-        # self.widget4.setGeometry(QtCore.QRect(0, 0, 139, 23))
-        # self.widget4.setObjectName("widget4")
-        # self.properties_bar_object_1_layout = QtWidgets.QHBoxLayout(self.widget4)
-        # self.properties_bar_object_1_layout.setContentsMargins(0, 0, 0, 0)
-        # self.properties_bar_object_1_layout.setSpacing(5)
-        # self.properties_bar_object_1_layout.setObjectName("properties_bar_object_1_layout")
-        # self.properties_bar_object_1_icon = QtWidgets.QLabel(self.widget4)
-        # self.properties_bar_object_1_icon.setMaximumSize(QtCore.QSize(20, 20))
-        # self.properties_bar_object_1_icon.setText("")
-        # self.properties_bar_object_1_icon.setPixmap(QtGui.QPixmap(":/img/img/inspector_bar_object_icon.png"))
-        # self.properties_bar_object_1_icon.setScaledContents(True)
-        # self.properties_bar_object_1_icon.setObjectName("properties_bar_object_1_icon")
-        # self.properties_bar_object_1_layout.addWidget(self.properties_bar_object_1_icon)
-        # self.properties_bar_object_1_label = QtWidgets.QLabel(self.widget4)
-        # self.properties_bar_object_1_label.setMaximumSize(QtCore.QSize(16777215, 20))
-        # font = QtGui.QFont()
-        # font.setFamily("Alegreya Sans SC ExtraBold")
-        # font.setPointSize(7)
-        # self.properties_bar_object_1_label.setFont(font)
-        # self.properties_bar_object_1_label.setStyleSheet("color: #00ABB3;")
-        # self.properties_bar_object_1_label.setObjectName("properties_bar_object_1_label")
-        # self.properties_bar_object_1_layout.addWidget(self.properties_bar_object_1_label)
-        # self.properties_bar_objects.addWidget(self.properties_bar_object_1)
-        # self.properties_bar_layout.addLayout(self.properties_bar_objects)
+        self.obj_layout = QVBoxLayout()
+        self.layout.addLayout(self.obj_layout)
+
+        self.obj = None
 
     def set_obj_name_func(self, func):
         self.set_obj_name = func
@@ -229,17 +204,30 @@ class PropertiesBar(Widget):
             self.show_object()
             self.show()
         elif self.current_object:
-            # self.save(self.current_object, name=self.current_object.name, color=None,
-            #           thickness=self.current_object.thickness, layer=None)
-            # self.clear()
+            self.clear_objects()
             self.hide()
+
+    def clear_objects(self):
+        for i in range(self.obj_layout.count() - 1, -1, -1):
+            self.obj_layout.itemAt(i).widget().deleteLater()
+
+    def show_objects(self, struct):
+        self.clear_objects()
+        self.obj = PropertiesBarObject(struct=struct['ag_object'], parent=self.central_widget,
+                                       font_manager=self.font_manager, name='Objects')
+        self.obj_layout.addWidget(self.obj)
 
     def show_object(self):
         self.name_line_edit.setText(self.current_object.name)
         self.change_stylesheet(self.color_button, f'background-color: rgb{self.current_object.color};')
-        # self.layer_line_edit.setText(self.current_object.layer)
         self.thickness_combobox.setCurrentIndex(self.current_object.thickness - 1)
         self.thickness_combobox.setDisabled(False)
+
+        self.show_objects(self.current_object.to_dict())
+
+    def hide(self):
+        super().hide()
+        return self
 
     def clear(self):
         self.current_object = None
@@ -247,4 +235,3 @@ class PropertiesBar(Widget):
         self.thickness_combobox.setCurrentIndex(0)
         self.thickness_combobox.setDisabled(True)
         self.layer_line_edit.clear()
-        # self.color_button.clear()

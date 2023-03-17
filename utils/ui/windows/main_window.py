@@ -58,7 +58,7 @@ class MainWindow(QMainWindow):
         self.plot.objectSelected.connect(self.object_manager.select_object)
         self.properties_bar.set_obj_name_func(self.object_manager.set_object_name).set_obj_color_func(
             self.object_manager.set_object_color).set_obj_thickness_func(
-            self.object_manager.set_object_thickness).set_layers_list(self.object_manager.layers)
+            self.object_manager.set_object_thickness).set_layers_list(self.object_manager.layers).hide()
 
         # Draw bar
         self.draw_bar = DrawBar(
@@ -149,9 +149,7 @@ class MainWindow(QMainWindow):
                         'PerpL': (lambda: self.plot.draw('perpendicular_line'), None),
                         'Plane3p': (lambda: self.plot.draw('plane_3p'), 'Shift+Alt+P'),
                     },
-                'Layers': (lambda: self.layer_window.show(), 'Ctrl+L'),
-                'Hide props': (self.properties_bar.hide, None),
-                'Show props': (self.properties_bar.show, None),
+                'Layers': (self.layer_window.show, 'Ctrl+L'),
             }
         )
         self.setMenuBar(self.menu_bar)
