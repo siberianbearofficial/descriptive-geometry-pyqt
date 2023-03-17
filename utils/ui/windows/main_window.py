@@ -50,12 +50,15 @@ class MainWindow(QMainWindow):
         self.properties_bar.save = self.plot.save_object_properties
         self.properties_bar.setMinimumHeight(150)
 
-        # History manager
+        # Object manager
         self.object_manager = ObjectManager(
             self.plot.update, self.plot.modify_plot_object, self.plot.update_plot_objects,
             (self.plot.set_selected_object, self.properties_bar.open_object))
         self.plot.add_object_func = self.object_manager.add_object
         self.plot.objectSelected.connect(self.object_manager.select_object)
+        self.properties_bar.set_obj_name_func(self.object_manager.set_object_name).set_obj_color_func(
+            self.object_manager.set_object_color).set_obj_thickness_func(
+            self.object_manager.set_object_thickness).set_layers_list(self.object_manager.layers)
 
         # Draw bar
         self.draw_bar = DrawBar(
@@ -99,8 +102,11 @@ class MainWindow(QMainWindow):
             self.object_manager.set_layer_color, self.object_manager.set_layer_thickness)
         self.layer_window.update_layer_list(self.object_manager.layers, self.object_manager.current_layer)
         self.object_manager.set_layers_func(
-            (self.layer_window.add_layer,), (self.layer_window.delete_layer,), (self.layer_window.hide_layer,),
-            (self.layer_window.select_layer,), (self.layer_window.rename_layer,), (self.layer_window.set_layer_color,),
+            (self.layer_window.add_layer, self.properties_bar.update_layers_widget),
+            (self.layer_window.delete_layer, self.properties_bar.update_layers_widget), (self.layer_window.hide_layer,),
+            (self.layer_window.select_layer,),
+            (self.layer_window.rename_layer, self.properties_bar.update_layers_widget),
+            (self.layer_window.set_layer_color,),
             (self.layer_window.set_layer_thickness,))
         self.plot.setCmdStatus.connect(self.cmd_bar.set_command_to_plot)
 

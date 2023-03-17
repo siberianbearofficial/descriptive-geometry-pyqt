@@ -228,11 +228,13 @@ class Plot(QWidget):
             for obj in self.objects:
                 if obj.id == id:
                     obj.replace_general_object(general_object)
-                    return
-            self.objects.append(PlotObject(self, general_object))
+                    break
+            else:
+                self.objects.append(PlotObject(self, general_object))
         else:
             self.objects.remove(self.find_by_id(id))
         self.sm.update_intersections()
+        self.update()
 
     def update_plot_objects(self, object_list):
         self.objects.clear()

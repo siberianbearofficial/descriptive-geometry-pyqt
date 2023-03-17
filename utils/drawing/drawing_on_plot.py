@@ -64,7 +64,7 @@ def select_object(plot, func, step, kwargs, types=None, final_func=None):
         selected_object = None
         pos = pos.x(), pos.y()
         for obj in plot.objects:
-            if types and obj.ag_object.__class__ not in types:
+            if types and obj.general_object.ag_object.__class__ not in types:
                 continue
             for el in obj.xy_projection:
                 if isinstance(el, ScreenPoint) and distance(pos, el.tuple()) <= 7:
@@ -294,7 +294,7 @@ def create_perpendicular_segment(plot, step, **kwargs):
         plot.print('Select segment, line or plane')
         select_object(plot, create_perpendicular_segment, 1, kwargs, (ag.Line, ag.Plane, ag.Segment))
     elif step == 2:
-        select_screen_point(plot, create_perpendicular_segment, 2, {'obj': kwargs['obj'].ag_object}, 'xy')
+        select_screen_point(plot, create_perpendicular_segment, 2, {'obj': kwargs['obj'].general_object.ag_object}, 'xy')
     elif step == 3:
         if isinstance(kwargs['obj'], ag.Segment):
             kwargs['obj'] = ag.Line(kwargs['obj'].p1, kwargs['obj'].p2)
@@ -335,7 +335,7 @@ def create_parallel_segment(plot, step, **kwargs):
         plot.print('Select segment or line')
         select_object(plot, create_parallel_segment, 1, kwargs, (ag.Line, ag.Segment))
     elif step == 2:
-        select_screen_point(plot, create_parallel_segment, 2, {'obj': kwargs['obj'].ag_object}, 'xy')
+        select_screen_point(plot, create_parallel_segment, 2, {'obj': kwargs['obj'].general_object.ag_object}, 'xy')
     elif step == 3:
         a1 = ScreenPoint(plot, kwargs['x'], kwargs['c'], color=COLOR1)
         select_screen_point(
@@ -368,7 +368,7 @@ def create_perpendicular_line(plot, step, **kwargs):
         plot.print('Select segment, line or plane')
         select_object(plot, create_perpendicular_line, 1, kwargs, (ag.Line, ag.Plane, ag.Segment))
     elif step == 2:
-        select_screen_point(plot, create_perpendicular_line, 2, {'obj': kwargs['obj'].ag_object}, 'xy')
+        select_screen_point(plot, create_perpendicular_line, 2, {'obj': kwargs['obj'].general_object.ag_object}, 'xy')
     elif step == 3:
         if isinstance(kwargs['obj'], ag.Segment):
             kwargs['obj'] = ag.Line(kwargs['obj'].p1, kwargs['obj'].p2)
@@ -397,7 +397,7 @@ def create_parallel_line(plot, step, **kwargs):
         plot.print('Select segment or line')
         select_object(plot, create_parallel_line, 1, kwargs, (ag.Line, ag.Segment))
     elif step == 2:
-        select_screen_point(plot, create_parallel_line, 2, {'obj': kwargs['obj'].ag_object}, 'xy')
+        select_screen_point(plot, create_parallel_line, 2, {'obj': kwargs['obj'].general_object.ag_object}, 'xy')
     elif step == 3:
         a = ScreenPoint(plot, kwargs['x'], kwargs['c'], color=COLOR1)
         if isinstance(kwargs['obj'], ag.Segment):
@@ -493,7 +493,7 @@ def create_parallel_plane(plot, step, **kwargs):
         plot.print('Select plane')
         select_object(plot, create_parallel_plane, 1, kwargs, (ag.Plane,))
     elif step == 2:
-        select_screen_point(plot, create_parallel_plane, 2, {'obj': kwargs['obj'].ag_object}, 'xy')
+        select_screen_point(plot, create_parallel_plane, 2, {'obj': kwargs['obj'].general_object.ag_object}, 'xy')
     elif step == 3:
         a = ScreenPoint(plot, kwargs['x'], kwargs['c'], color=COLOR1)
         select_screen_point(
@@ -518,15 +518,15 @@ def create_horizontal(plot, step, **kwargs):
             object_func=lambda pos: (TempObject(plot, ag.Line(ag.Point(
                 plot.pm.convert_screen_x_to_ag_x(pos[0]),
                 plot.pm.convert_screen_y_to_ag_y(pos[1]),
-                kwargs['obj'].ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                kwargs['obj'].general_object.ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
                                           plot.pm.convert_screen_y_to_ag_y(pos[1]))),
-                kwargs['obj'].ag_object.normal & ag.Vector(0, 0, 1)), color=COLOR1),),
+                kwargs['obj'].general_object.ag_object.normal & ag.Vector(0, 0, 1)), color=COLOR1),),
             final_func=lambda pos: plot.add_object(ag.Line(ag.Point(
                 plot.pm.convert_screen_x_to_ag_x(pos[0]),
                 plot.pm.convert_screen_y_to_ag_y(pos[1]),
-                kwargs['obj'].ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                kwargs['obj'].general_object.ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
                                           plot.pm.convert_screen_y_to_ag_y(pos[1]))),
-                kwargs['obj'].ag_object.normal & ag.Vector(0, 0, 1)), end=True))
+                kwargs['obj'].general_object.ag_object.normal & ag.Vector(0, 0, 1)), end=True))
 
 
 def create_frontal(plot, step, **kwargs):
@@ -539,15 +539,15 @@ def create_frontal(plot, step, **kwargs):
             object_func=lambda pos: (TempObject(plot, ag.Line(ag.Point(
                 plot.pm.convert_screen_x_to_ag_x(pos[0]),
                 plot.pm.convert_screen_y_to_ag_y(pos[1]),
-                kwargs['obj'].ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                kwargs['obj'].general_object.ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
                                           plot.pm.convert_screen_y_to_ag_y(pos[1]))),
-                kwargs['obj'].ag_object.normal & ag.Vector(0, 1, 0)), color=COLOR1),),
+                kwargs['obj'].general_object.ag_object.normal & ag.Vector(0, 1, 0)), color=COLOR1),),
             final_func=lambda pos: plot.add_object(ag.Line(ag.Point(
                 plot.pm.convert_screen_x_to_ag_x(pos[0]),
                 plot.pm.convert_screen_y_to_ag_y(pos[1]),
-                kwargs['obj'].ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                kwargs['obj'].general_object.ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
                                           plot.pm.convert_screen_y_to_ag_y(pos[1]))),
-                kwargs['obj'].ag_object.normal & ag.Vector(0, 1, 0)), end=True))
+                kwargs['obj'].general_object.ag_object.normal & ag.Vector(0, 1, 0)), end=True))
 
 
 def get_distance(plot, step, **kwargs):
@@ -559,10 +559,10 @@ def get_distance(plot, step, **kwargs):
         select_object(plot, get_distance, 2, {'obj1': kwargs['obj']}, (ag.Point, ag.Line, ag.Plane))
     elif step == 3:
         try:
-            plot.print('Distance: {}'.format(ag.distance(kwargs['obj1'].ag_object, kwargs['obj'].ag_object)))
+            plot.print('Distance: {}'.format(ag.distance(kwargs['obj1'].general_object.ag_object, kwargs['obj'].general_object.ag_object)))
         except Exception:
             try:
-                plot.print('Distance: {}'.format(ag.distance(kwargs['obj1'].ag_object, kwargs['obj'].ag_object)))
+                plot.print('Distance: {}'.format(ag.distance(kwargs['obj1'].general_object.ag_object, kwargs['obj'].general_object.ag_object)))
             except Exception:
                 plot.print('Error')
 
@@ -576,10 +576,10 @@ def get_angle(plot, step, **kwargs):
         select_object(plot, get_angle, 2, {'obj1': kwargs['obj']}, (ag.Point, ag.Line, ag.Plane))
     elif step == 3:
         try:
-            plot.print('Angle: {}'.format(ag.angle(kwargs['obj1'].ag_object, kwargs['obj'].ag_object)))
+            plot.print('Angle: {}'.format(ag.angle(kwargs['obj1'].general_object.ag_object, kwargs['obj'].general_object.ag_object)))
         except Exception:
             try:
-                plot.print('Angle: {}'.format(ag.angle(kwargs['obj1'].ag_object, kwargs['obj'].ag_object)))
+                plot.print('Angle: {}'.format(ag.angle(kwargs['obj1'].general_object.ag_object, kwargs['obj'].general_object.ag_object)))
             except Exception:
                 plot.print('Error')
 
@@ -592,27 +592,27 @@ def create_circle(plot, step, **kwargs):
         select_screen_point(plot, create_circle, 2, kwargs, 'xy', object_func=lambda pos: (
             TempObject(plot, ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]),
                                          plot.pm.convert_screen_y_to_ag_y(pos[1]),
-                                         kwargs['obj'].ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                         kwargs['obj'].general_object.ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
                                                                    plot.pm.convert_screen_y_to_ag_y(pos[1]))),
                           color=COLOR1),))
     elif step == 3:
         center = ag.Point(plot.pm.convert_screen_x_to_ag_x(kwargs['x']),
                           plot.pm.convert_screen_y_to_ag_y(kwargs['c']),
-                          kwargs['obj'].ag_object.z(plot.pm.convert_screen_x_to_ag_x(kwargs['x']),
+                          kwargs['obj'].general_object.ag_object.z(plot.pm.convert_screen_x_to_ag_x(kwargs['x']),
                                                     plot.pm.convert_screen_y_to_ag_y(kwargs['c'])))
         select_screen_point(
             plot, create_circle, 3, kwargs, 'xy',
             object_func=lambda pos: (TempObject(plot, ag.Circle(center, ag.distance(center, ag.Point(
                 plot.pm.convert_screen_x_to_ag_x(pos[0]),
                 plot.pm.convert_screen_y_to_ag_y(pos[1]),
-                kwargs['obj'].ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
-                                          plot.pm.convert_screen_y_to_ag_y(pos[1])))), kwargs['obj'].ag_object.normal),
+                kwargs['obj'].general_object.ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                          plot.pm.convert_screen_y_to_ag_y(pos[1])))), kwargs['obj'].general_object.ag_object.normal),
                                                    color=COLOR1),),
             final_func=lambda pos: plot.add_object(ag.Circle(center, ag.distance(center, ag.Point(
                 plot.pm.convert_screen_x_to_ag_x(pos[0]),
                 plot.pm.convert_screen_y_to_ag_y(pos[1]),
-                kwargs['obj'].ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
-                                          plot.pm.convert_screen_y_to_ag_y(pos[1])))), kwargs['obj'].ag_object.normal),
+                kwargs['obj'].general_object.ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                                          plot.pm.convert_screen_y_to_ag_y(pos[1])))), kwargs['obj'].general_object.ag_object.normal),
                                                    end=True))
 
 
@@ -696,10 +696,10 @@ def get_intersection(plot, step, **kwargs):
         select_object(plot, get_intersection, 2, {'obj1': kwargs['obj']})
     elif step == 3:
         try:
-            res = kwargs['obj1'].ag_object.intersection(kwargs['obj'].ag_object)
+            res = kwargs['obj1'].general_object.ag_object.intersection(kwargs['obj'].general_object.ag_object)
         except Exception:
             try:
-                res = kwargs['obj'].ag_object.intersection(kwargs['obj1'].ag_object)
+                res = kwargs['obj'].general_object.ag_object.intersection(kwargs['obj1'].general_object.ag_object)
             except Exception:
                 plot.print('Error')
                 return
@@ -723,24 +723,24 @@ def create_spline(plot, step, **kwargs):
         def mouse_move(pos):
             pos = plot.sm.get_snap((pos.x(), pos.y()), 'xy')
             point = ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]), plot.pm.convert_screen_y_to_ag_y(pos[1]),
-                             kwargs['obj'].ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                             kwargs['obj'].general_object.ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
                                                        plot.pm.convert_screen_y_to_ag_y(pos[1])))
             spline = point
             if len(kwargs['points']) == 1:
                 spline = ag.Segment(kwargs['points'][0], point)
             elif len(kwargs['points']) > 1:
-                spline = ag.Spline(kwargs['obj'].ag_object, *kwargs['points'], point)
+                spline = ag.Spline(kwargs['obj'].general_object.ag_object, *kwargs['points'], point)
             plot.update(TempObject(plot, point, color=COLOR1), TempObject(plot, spline, color=COLOR1))
 
         def mouse_left(pos):
             pos = plot.sm.get_snap((pos.x(), pos.y()), 'xy')
             point = ag.Point(plot.pm.convert_screen_x_to_ag_x(pos[0]), plot.pm.convert_screen_y_to_ag_y(pos[1]),
-                             kwargs['obj'].ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
+                             kwargs['obj'].general_object.ag_object.z(plot.pm.convert_screen_x_to_ag_x(pos[0]),
                                                        plot.pm.convert_screen_y_to_ag_y(pos[1])))
             create_spline(plot, 2, obj=kwargs['obj'], points=kwargs['points'] + [point])
 
         def enter_pressed(pos):
-            plot.add_object(ag.Spline(kwargs['obj'].ag_object, kwargs['points']), end=True)
+            plot.add_object(ag.Spline(kwargs['obj'].general_object.ag_object, kwargs['points']), end=True)
 
         plot.mouse_move = mouse_move
         plot.mouse_left = mouse_left

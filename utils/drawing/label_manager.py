@@ -58,49 +58,49 @@ class LabelManager:
 
     @staticmethod
     def get_label_text(obj):
-        if isinstance(obj.ag_object, ag.Point):
-            return obj.name + "'", obj.name + "''"
-        if isinstance(obj.ag_object, ag.Segment):
-            if obj.name.count(SEP) == 1:
-                name = obj.name.split(SEP)
+        if isinstance(obj.general_object.ag_object, ag.Point):
+            return obj.general_object.name + "'", obj.general_object.name + "''"
+        if isinstance(obj.general_object.ag_object, ag.Segment):
+            if obj.general_object.name.count(SEP) == 1:
+                name = obj.general_object.name.split(SEP)
                 return name[0] + "'", name[1] + "'", name[0] + "''", name[1] + "''"
-            return obj.name + "'", obj.name + "''"
-        if isinstance(obj.ag_object, ag.Plane) and obj.general_object.config.get('draw_3p', False):
-            if obj.name.count(SEP) == 2:
-                name = obj.name.split(SEP)
+            return obj.general_object.name + "'", obj.general_object.name + "''"
+        if isinstance(obj.general_object.ag_object, ag.Plane) and obj.general_object.config.get('draw_3p', False):
+            if obj.general_object.name.count(SEP) == 2:
+                name = obj.general_object.name.split(SEP)
                 return name[0] + "'", name[1] + "'", name[2] + "'", name[0] + "''", name[1] + "''", name[2] + "''"
-            return obj.name + "'", obj.name + "'", obj.name + "'", obj.name + "''", obj.name + "''", obj.name + "''"
-        if isinstance(obj.ag_object, ag.Line) or isinstance(obj.ag_object, ag.Plane):
-            return obj.name + "'", obj.name + "''"
+            return obj.general_object.name + "'", obj.general_object.name + "'", obj.general_object.name + "'", \
+                   obj.general_object.name + "''", obj.general_object.name + "''", obj.general_object.name + "''"
+        if isinstance(obj.general_object.ag_object, ag.Line) or isinstance(obj.general_object.ag_object, ag.Plane):
+            return obj.general_object.name + "'", obj.general_object.name + "''"
         return tuple()
 
     @staticmethod
     def get_label_pos(obj):
-        if isinstance(obj.ag_object, ag.Point):
+        if isinstance(obj.general_object.ag_object, ag.Point):
             return obj.xy_projection[0].tuple(), obj.xz_projection[0].tuple()
-        elif isinstance(obj.ag_object, ag.Segment):
-            if obj.name.count(SEP) == 1:
+        elif isinstance(obj.general_object.ag_object, ag.Segment):
+            if obj.general_object.name.count(SEP) == 1:
                 return obj.xy_projection[0].p1, obj.xy_projection[0].p2, obj.xz_projection[0].p1, obj.xz_projection[
                     0].p2
             return ((obj.xy_projection[0].p1[0] + obj.xy_projection[0].p2[0]) // 2,
                     (obj.xy_projection[0].p1[1] + obj.xy_projection[0].p2[1]) // 2), \
                    ((obj.xz_projection[0].p1[0] + obj.xz_projection[0].p2[0]) // 2,
                     (obj.xz_projection[0].p1[1] + obj.xz_projection[0].p2[1]) // 2)
-        elif isinstance(obj.ag_object, ag.Plane) and obj.general_object.config.get('draw_3p', False):
+        elif isinstance(obj.general_object.ag_object, ag.Plane) and obj.general_object.config.get(
+                'draw_3p', False):
             return obj.xy_projection[3].tuple(), obj.xy_projection[4].tuple(), obj.xy_projection[5].tuple(), \
                    obj.xz_projection[3].tuple(), obj.xz_projection[4].tuple(), obj.xz_projection[5].tuple()
 
-        if isinstance(obj.ag_object, ag.Line) or isinstance(obj.ag_object, ag.Plane):
+        if isinstance(obj.general_object.ag_object, ag.Line) or isinstance(obj.general_object.ag_object, ag.Plane):
             if isinstance(obj.xy_projection[0], ScreenPoint):
                 res_p1 = obj.xy_projection[0].tuple()
             elif not obj.xy_projection[0].drawing:
                 res_p1 = 0, obj.plot.brp[0] + 10
             else:
                 if obj.xy_projection[0].point1[1] > obj.xy_projection[0].point2[1]:
-                    p1 = obj.xy_projection[0].point1
                     p1_by_y = obj.xy_projection[0].p1_by_y
                 else:
-                    p1 = obj.xy_projection[0].point2
                     p1_by_y = obj.xy_projection[0].p2_by_y
                 if obj.xy_projection[0].k is None:
                     res_p1 = obj.xy_projection[0].x(obj.plot.brp[1] - 10), obj.plot.brp[1] - 10
@@ -109,18 +109,14 @@ class LabelManager:
                     res_p1 = x, obj.xy_projection[0].y(x)
                 else:
                     res_p1 = obj.xy_projection[0].x(obj.plot.brp[1] - 10), obj.plot.brp[1] - 10
-                    # res_p1 = (get_point((obj.xy_projection[0].x(p1[1] - d), p1[1] - d),
-                    #                     obj.xy_projection[0].k, DIST1, True, True), obj.xy_projection[0].k > 0)
             if isinstance(obj.xz_projection[0], ScreenPoint):
                 res_p2 = obj.xz_projection[0].tuple()
             elif not obj.xz_projection[0].drawing:
                 res_p2 = 0, obj.plot.tlp[1] - 10
             else:
                 if obj.xz_projection[0].point1[1] < obj.xz_projection[0].point2[1]:
-                    p2 = obj.xz_projection[0].point1
                     p2_by_y = obj.xz_projection[0].p1_by_y
                 else:
-                    p2 = obj.xz_projection[0].point2
                     p2_by_y = obj.xz_projection[0].p2_by_y
                 if obj.xz_projection[0].k is None:
                     res_p2 = obj.xz_projection[0].x(obj.plot.tlp[1] + 10), obj.plot.tlp[1] + 10

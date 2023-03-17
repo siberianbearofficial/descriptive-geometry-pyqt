@@ -58,11 +58,11 @@ class DrawTool(Widget):
         return self
 
     def hover(self):
-        print('Hover:', self.label.text())
+        # print('Hover:', self.label.text())
         self.label.setStyleSheet('color: #3C4048;')
 
     def unhover(self):
-        print('Unhover:', self.label.text())
+        # print('Unhover:', self.label.text())
         self.label.setStyleSheet('color: #00ABB3;')
 
     @staticmethod

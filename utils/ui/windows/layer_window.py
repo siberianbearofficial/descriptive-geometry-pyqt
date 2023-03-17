@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import QWidget, QMainWindow, QMenuBar, QLineEdit, QLabel, Q
 from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import pyqtSignal, Qt
 
+from utils.ui.widgets.LineEditWidget import LineEditWidget
+
 
 class LayerWindow(QMainWindow):
     def __init__(self, func_add_layer, func_delete_layer, func_select_layer, func_rename_layer, func_layer_hidden,
@@ -136,15 +138,14 @@ class LayerBar(QWidget):
         self.selection_bar.clicked.connect(
             lambda flag: self.func_select(self.index) if flag else self.selection_bar.setChecked(True))
 
-        self.name_bar = LineEdit(self.strange_widget)
+        self.name_bar = LineEditWidget(self.strange_widget)
         self.name_bar.setText(kwargs.get('name', ''))
         self.name_bar.setStyleSheet("color: #00ABB3;\n"
                                     "background-color: #EAEAEA;\n"
                                     "border: 2px solid #00ABB3;\n"
                                     "padding-left: 3px;")
         self.name_bar.setGeometry(25, 5, 230, 30)
-        self.name_bar.editingFinished.connect(lambda: (self.name_bar.setReadOnly(True),
-                                                       self.func_rename(self.name_bar.text(), self.index)))
+        self.name_bar.connect(lambda: self.func_rename(self.name_bar.text(), self.index))
 
         self.button_show = Button(self, 'S')
         self.button_show.move(260, 5)
@@ -220,12 +221,3 @@ class Button(QWidget):
         self.setStyleSheet("border: 2px solid #00ABB3;\n"
                            "border-radius: 10px;\n"
                            f"background-color: rgb({str(color.red())},{str(color.green())},{str(color.blue())});")
-
-
-class LineEdit(QLineEdit):
-    def __init__(self, parent):
-        super(LineEdit, self).__init__(parent)
-        self.setReadOnly(True)
-
-    def mouseDoubleClickEvent(self, a0) -> None:
-        self.setReadOnly(False)

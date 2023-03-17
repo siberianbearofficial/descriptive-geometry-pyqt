@@ -10,6 +10,7 @@ class ObjectManager:
         self.current_layer = 0
         self.selected_object = None
         self.selected_object_index = None
+        self.last_selected_object_index = None
         self.func_plot_update = func_plot_update
         self.func_plot_obj = func_plot_obj
         self.plot_full_update = plot_full_update
@@ -85,6 +86,7 @@ class ObjectManager:
             func(index)
 
     def select_object(self, id):
+        self.last_selected_object_index = self.selected_object_index
         if id == 0:
             self.selected_object = None
             self.selected_object_index = None
@@ -155,28 +157,38 @@ class ObjectManager:
 
     def set_object_name(self, name, index=None):
         if index is None:
-            index = self.selected_object_index
-        self.layers[index[0]].objects[index[1]].name = name
+            index = self.selected_object_index or self.last_selected_object_index
+        obj = self.layers[index[0]].objects[index[1]]
+        obj.set_name(name)
+        self.func_plot_obj(obj.id, obj)
 
     def set_object_color(self, color, index=None):
         if index is None:
-            index = self.selected_object_index
-        self.layers[index[0]].objects[index[1]].color = color
+            index = self.selected_object_index or self.last_selected_object_index
+        obj = self.layers[index[0]].objects[index[1]]
+        obj.set_color(color)
+        self.func_plot_obj(obj.id, obj)
 
     def set_object_thickness(self, thickness, index=None):
         if index is None:
-            index = self.selected_object_index
-        self.layers[index[0]].objects[index[1]].thickness = thickness
+            index = self.selected_object_index or self.last_selected_object_index
+        obj = self.layers[index[0]].objects[index[1]]
+        obj.set_thickness(thickness)
+        self.func_plot_obj(obj.id, obj)
 
     def set_object_ag_obj(self, dct, index=None):
         if index is None:
-            index = self.selected_object_index
-        self.layers[index[0]].objects[index[1]].ag_object = GeneralObject.from_dict(dct)
+            index = self.selected_object_index or self.last_selected_object_index
+        obj = self.layers[index[0]].objects[index[1]]
+        obj.set_ag_object(dct)
+        self.func_plot_obj(obj.id, obj)
 
     def set_object_config(self, config, index=None):
         if index is None:
-            index = self.selected_object_index
-        self.layers[index[0]].objects[index[1]].config = config
+            index = self.selected_object_index or self.last_selected_object_index
+        obj = self.layers[index[0]].objects[index[1]]
+        obj.set_config(config)
+        self.func_plot_obj(obj.id, obj)
 
     def serialize(self):
         ready = {'current_layer': self.current_layer, 'layers': [layer.to_dict() for layer in self.layers]}

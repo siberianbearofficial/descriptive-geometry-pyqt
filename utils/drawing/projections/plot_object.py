@@ -6,8 +6,6 @@ class PlotObject:
         self.general_object = general_object
         self.id = general_object.id
         self.plot = plot
-        self.ag_object = general_object.ag_object
-        self.name = general_object.name
         self.xy_projection, self.xz_projection, self.connection_lines = self.projections()
         if self.general_object.name:
             self.labels = self.plot.lm.add_labels_to_obj(self)
@@ -61,9 +59,7 @@ class PlotObject:
 
     def replace_general_object(self, general_object):
         self.general_object = general_object
-        self.xy_projection, self.xz_projection, self.connection_lines = self.projections()
-        if self.general_object.name:
-            self.labels = self.plot.lm.add_labels_to_obj(self)
+        self.update_projections()
 
     def move(self, x, y):
         if isinstance(self.general_object.ag_object, ag.Line) or \
@@ -77,44 +73,6 @@ class PlotObject:
             el.move(x, y)
         for el in self.connection_lines:
             el.move(x, y)
-
-    def delete(self):
-        self.destroy_name_bars()
-
-    # @staticmethod
-    # def get_alpha(lower=False):
-    #     if lower:
-    #         for symbol in alph:
-    #             if symbol not in used_names:
-    #                 used_names.add(symbol)
-    #                 return symbol
-    #         i, s = 1, '1'
-    #         while True:
-    #             for symbol in alph:
-    #                 if symbol + s not in used_names:
-    #                     used_names.add(symbol + s)
-    #                     return symbol + s
-    #             i += 1
-    #             s = str(i)
-    #     else:
-    #         for symbol in ALPH:
-    #             if symbol not in used_names:
-    #                 used_names.add(symbol)
-    #                 return symbol
-    #         i, s = 1, '1'
-    #         while True:
-    #             for symbol in ALPH:
-    #                 if symbol + s not in used_names:
-    #                     used_names.add(symbol + s)
-    #                     return symbol + s
-    #             i += 1
-    #             s = str(i)
-    #
-    # def name_to_point(self, pos):
-    #     name = self.plot.lm.get_name_to_new_obj(pos)
-    #     if name:
-    #         return name
-    #     return GeneralObject.get_alpha()
 
     def set_name_bars(self):
         self.labels = self.plot.lm.add_labels_to_obj(self)

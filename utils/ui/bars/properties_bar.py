@@ -2,6 +2,8 @@ from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushBu
     QColorDialog
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt
+
+from utils.ui.widgets.LineEditWidget import LineEditWidget
 from utils.ui.widgets.widget import Widget
 
 
@@ -10,8 +12,15 @@ class PropertiesBar(Widget):
         super().__init__(parent)
 
         self.current_object = None
-        self.setStyleSheet("background-color: #FFFFFF; border-radius: 10px;")
+        self.set_obj_name = None
+        self.set_obj_color = None
+        self.set_obj_thickness = None
+        self.set_obj_layer = None
+        self.set_obj_ag_object = None
+        self.set_obj_config = None
+        self.layers_list = []
 
+        self.setStyleSheet("background-color: #FFFFFF; border-radius: 10px;")
         self.layout = QVBoxLayout(self.central_widget)
         self.layout.setAlignment(Qt.AlignTop)
         self.layout.setContentsMargins(15, 15, 15, 15)
@@ -26,14 +35,14 @@ class PropertiesBar(Widget):
         name_label.setText('Name')
         name.addWidget(name_label)
 
-        self.name_line_edit = QLineEdit(self.central_widget)
+        self.name_line_edit = LineEditWidget(self.central_widget)
         self.name_line_edit.setFixedHeight(30)
         self.name_line_edit.setFont(font_manager.bold())
         self.name_line_edit.setStyleSheet("color: #00ABB3;\n"
                                           "background-color: #EAEAEA;\n"
                                           "border: 2px solid #00ABB3;\n"
                                           "padding-left: 3px;")
-        self.name_line_edit.editingFinished.connect(lambda: self.on_name_change(self.name_line_edit.text()))
+        self.name_line_edit.connect(lambda: self.on_name_change(self.name_line_edit.text()))
         name.addWidget(self.name_line_edit)
 
         self.layout.addLayout(name)
@@ -62,7 +71,8 @@ class PropertiesBar(Widget):
                                         "padding-top: 3px;")
         self.color_button_stylesheet = self.color_button.styleSheet().split('\n')
         self.color_button.setText("")
-        self.color_button.clicked.connect(lambda: self.on_color_change((0, 0, 255)))
+        self.color_button.clicked.connect(self.on_color_change)
+
         color.addWidget(self.color_button)
 
         self.clt.addLayout(color)
@@ -158,40 +168,70 @@ class PropertiesBar(Widget):
         # self.properties_bar_objects.addWidget(self.properties_bar_object_1)
         # self.properties_bar_layout.addLayout(self.properties_bar_objects)
 
-    def on_layer_change(self, layer):
-        # print('Layer:', layer)
-        self.save(self.current_object, layer=layer)
+    def set_obj_name_func(self, func):
+        self.set_obj_name = func
+        return self
 
-    def on_color_change(self, color):
-        # print('Color:', color)
-        color = QColorDialog.getColor(QColor(*self.current_object.color))
-        self.change_stylesheet(self.color_button, f'background-color: rgba{color.getRgb()};')
-        self.save(self.current_object, color=color.getRgb())
+    def set_obj_color_func(self, func):
+        self.set_obj_color = func
+        return self
+
+    def set_obj_layer_func(self, func):
+        self.set_obj_layer = func
+        return self
+
+    def set_obj_thickness_func(self, func):
+        self.set_obj_thickness = func
+        return self
+
+    def set_obj_ag_object_func(self, func):
+        self.set_obj_ag_object = func
+        return self
+
+    def set_obj_config_func(self, func):
+        self.set_obj_config = func
+        return self
+
+    def set_layers_list(self, layers_list):
+        self.layers_list = layers_list
+        return self
+
+    def on_layer_change(self, layer):
+        if self.set_obj_layer:
+            self.set_obj_layer(layer=layer)
+
+    def update_layers_widget(self, *args):
+        print(self.layers_list)
+
+    def on_color_change(self):
+        if self.set_obj_color:
+            color = QColorDialog.getColor(QColor(*self.current_object.color))
+            self.change_stylesheet(self.color_button, f'background-color: rgba{color.getRgb()};')
+            self.set_obj_color(color=color.getRgb())
 
     def change_stylesheet(self, obj=None, new_style_sheet=None):
         self.color_button_stylesheet[1] = new_style_sheet
         self.color_button.setStyleSheet('\n'.join(self.color_button_stylesheet))
-        print('\n'.join(self.color_button_stylesheet))
+        # print('\n'.join(self.color_button_stylesheet))
 
     def on_thickness_change(self, thickness):
-        # print('Thickness:', thickness)
-        self.save(self.current_object, thickness=thickness)
+        if self.set_obj_thickness:
+            self.set_obj_thickness(thickness=thickness)
 
     def on_name_change(self, name):
-        print('Name:', name)
-        self.save(self.current_object, name=name)
+        if self.set_obj_name:
+            self.set_obj_name(name=name)
 
     def open_object(self, obj):
-        return
         if obj:
             # print('Object:', obj)
             self.current_object = obj
             self.show_object()
             self.show()
         elif self.current_object:
-            self.save(self.current_object, name=self.current_object.name, color=None,
-                      thickness=self.current_object.thickness, layer=None)
-            self.clear()
+            # self.save(self.current_object, name=self.current_object.name, color=None,
+            #           thickness=self.current_object.thickness, layer=None)
+            # self.clear()
             self.hide()
 
     def show_object(self):
