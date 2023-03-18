@@ -59,7 +59,7 @@ class LayerWindow(QMainWindow):
             widget = LayerBar(
                 self, i, self.func_select_layer, self.func_rename_layer, self.func_layer_hidden, self.func_delete_layer,
                 self.func_layer_color, self.func_layer_thickness,
-                name=layers[i].name, color=layers[i].color, hidden=layers[i].hidden)
+                name=layers[i].name, color=layers[i].color, hidden=layers[i].hidden, thickness=layers[i].thickness)
             self.layer_bars.append(widget)
             self.layout.addWidget(widget)
 
@@ -67,19 +67,19 @@ class LayerWindow(QMainWindow):
         self.select_layer(current_layer)
 
     def add_layer(self, layer, index=None):
-        if index:
+        if index is not None:
             i = index
         else:
             i = len(self.layer_bars)
         widget = LayerBar(
             self, i, self.func_select_layer, self.func_rename_layer, self.func_layer_hidden, self.func_delete_layer,
-            self.func_layer_color, self.func_layer_thickness, name=layer.name, color=layer.color, hidden=layer.hidden)
-        self.layer_bars.append(widget)
+            self.func_layer_color, self.func_layer_thickness,
+            name=layer.name, color=layer.color, hidden=layer.hidden, thickness=layer.thickness)
+        self.layer_bars.insert(i, widget)
         self.layout.insertWidget(i, widget)
         self.layers_widget.setFixedSize(620, 5 + len(self.layer_bars) * 45)
 
     def delete_layer(self, index):
-        print('delete', index)
         if len(self.layer_bars) <= 1:
             return
         flag = self.layer_bars[index].selection_bar.isChecked()
@@ -179,6 +179,7 @@ class LayerBar(QWidget):
         self.thickness_combobox.addItem("light")
         self.thickness_combobox.addItem("medium")
         self.thickness_combobox.addItem("bold")
+        self.thickness_combobox.setCurrentIndex(kwargs.get('thickness', 0))
         self.thickness_combobox.currentIndexChanged.connect(lambda t: self.func_thickness(t, self.index))
 
         self.button_delete = Button(self, 'D')
@@ -218,6 +219,11 @@ class Button(QWidget):
             self.clicked.emit()
 
     def set_color(self, color):
-        self.setStyleSheet("border: 2px solid #00ABB3;\n"
-                           "border-radius: 10px;\n"
-                           f"background-color: rgb({str(color.red())},{str(color.green())},{str(color.blue())});")
+        if color is not None:
+            self.setStyleSheet("border: 2px solid #00ABB3;\n"
+                               "border-radius: 10px;\n"
+                               f"background-color: rgb({str(color.red())},{str(color.green())},{str(color.blue())});")
+        else:
+            self.setStyleSheet("border: 2px solid #00ABB3;\n"
+                               "border-radius: 10px;\n"
+                               f"background-color: white;")

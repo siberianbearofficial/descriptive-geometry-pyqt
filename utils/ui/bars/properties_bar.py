@@ -91,16 +91,33 @@ class PropertiesBar(Widget):
         layer_label.setText('Layer')
         layer.addWidget(layer_label)
 
-        self.layer_line_edit = QLineEdit(self.central_widget)
-        self.layer_line_edit.setFixedSize(30, 30)
-        self.layer_line_edit.setFont(font_manager.bold())
-        self.layer_line_edit.setAcceptDrops(False)
-        self.layer_line_edit.setStyleSheet("color: #00ABB3;\n"
-                                           "background-color: #EAEAEA;\n"
-                                           "border: 2px solid #00ABB3;")
-        self.layer_line_edit.setAlignment(Qt.AlignCenter)
-        self.layer_line_edit.editingFinished.connect(lambda: self.on_layer_change(self.layer_line_edit.text()))
-        layer.addWidget(self.layer_line_edit)
+        self.layer_combobox = QComboBox(self.central_widget)
+        self.layer_combobox.setFixedSize(70, 30)
+        self.layer_combobox.setFont(font_manager.bold())
+        self.layer_combobox.setLayoutDirection(Qt.RightToLeft)
+        self.layer_combobox.setStyleSheet("QComboBox {\n"
+                                              "color: #00ABB3;\n"
+                                              "background-color: #EAEAEA;\n"
+                                              "border: 2px solid #00ABB3;\n"
+                                              "padding-right: 1px;\n"
+                                              "}\n"
+                                              "QComboBox::drop-down:button {\n"
+                                              "border-radius: 5px;\n"
+                                              "}")
+        self.layer_combobox.setMaxVisibleItems(6)
+        self.layer_combobox.currentIndexChanged.connect(
+            lambda: self.on_layer_change(self.layer_combobox.currentIndex()))
+        layer.addWidget(self.layer_combobox)
+        # self.layer_line_edit = QLineEdit(self.central_widget)
+        # self.layer_line_edit.setFixedSize(30, 30)
+        # self.layer_line_edit.setFont(font_manager.bold())
+        # self.layer_line_edit.setAcceptDrops(False)
+        # self.layer_line_edit.setStyleSheet("color: #00ABB3;\n"
+        #                                    "background-color: #EAEAEA;\n"
+        #                                    "border: 2px solid #00ABB3;")
+        # self.layer_line_edit.setAlignment(Qt.AlignCenter)
+        # self.layer_line_edit.editingFinished.connect(lambda: self.on_layer_change(self.layer_line_edit.text()))
+        # layer.addWidget(self.layer_line_edit)
 
         self.clt.addLayout(layer)
 
@@ -171,12 +188,14 @@ class PropertiesBar(Widget):
         self.layers_list = layers_list
         return self
 
+    def update_layers_widget(self, *args):
+        self.layer_combobox.clear()
+        for layer in self.layers_list:
+            self.layer_combobox.addItem(layer.name)
+
     def on_layer_change(self, layer):
         if self.set_obj_layer:
-            self.set_obj_layer(layer=layer)
-
-    def update_layers_widget(self, *args):
-        print(self.layers_list)
+            self.set_obj_layer(int(layer))
 
     def on_color_change(self):
         if self.set_obj_color:

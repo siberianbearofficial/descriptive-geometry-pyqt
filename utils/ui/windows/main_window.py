@@ -58,7 +58,9 @@ class MainWindow(QMainWindow):
         self.plot.objectSelected.connect(self.object_manager.select_object)
         self.properties_bar.set_obj_name_func(self.object_manager.set_object_name).set_obj_color_func(
             self.object_manager.set_object_color).set_obj_thickness_func(
-            self.object_manager.set_object_thickness).set_layers_list(self.object_manager.layers).hide()
+            self.object_manager.set_object_thickness).set_layers_list(self.object_manager.layers).set_obj_layer_func(
+            self.object_manager.set_object_layer)
+        self.properties_bar.update_layers_widget()
 
         # Draw bar
         self.draw_bar = DrawBar(
@@ -133,9 +135,9 @@ class MainWindow(QMainWindow):
                     },
                 'Edit':
                     {
-                        'Undo': (lambda: self.plot.hm.undo(), 'Alt+Z'),
-                        'Redo': (lambda: self.plot.hm.undo(redo=True), 'Alt+Shift+Z'),
-                        'Delete': (self.object_manager.delete_selected_object, 'Alt+Delete'),
+                        'Undo': (lambda: self.object_manager.hm.undo(), 'Alt+Z'),
+                        'Redo': (lambda: self.object_manager.hm.undo(redo=True), 'Alt+Shift+Z'),
+                        'Delete': (lambda: self.object_manager.delete_selected_object(), 'Alt+Delete'),
                         'Copy': (lambda: print('copy'), 'Ctrl+C'),
                         'Paste': (lambda: print('paste'), 'Ctrl+V'),
                     },
@@ -201,6 +203,7 @@ class MainWindow(QMainWindow):
         try:
             self.object_manager.deserialize(srl.deserialize(path=path))
             self.layer_window.update_layer_list(self.object_manager.layers, self.object_manager.current_layer)
+            self.properties_bar.update_layers_widget()
             self.settings_manager.add_to_recent_files(path)
             self.current_file = path
             self.update_recent_files_menu()

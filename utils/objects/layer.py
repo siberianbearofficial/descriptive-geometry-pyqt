@@ -11,6 +11,9 @@ class Layer:
 
         self.serializable = ['hidden', 'objects', 'name']
 
+    def __getitem__(self, item):
+        return self.objects[item]
+
     def add_object(self, general_object):
         self.objects.append(general_object)
 
@@ -18,7 +21,6 @@ class Layer:
         self.objects.append(GeneralObject.from_dict(dct))
 
     def delete_object(self, index):
-        self.objects[index].delete()
         self.objects.pop(index)
 
     def draw(self):
@@ -47,7 +49,7 @@ class Layer:
                 'objects': [obj.to_dict(True) for obj in self.objects]}
 
     @staticmethod
-    def from_dict(dct, plot):
+    def from_dict(dct):
         layer = Layer(dct['name'], dct['hidden'], dct['color'], dct['thickness'])
         layer.objects = [GeneralObject.from_dict(el) for el in dct['objects']]
         return layer
