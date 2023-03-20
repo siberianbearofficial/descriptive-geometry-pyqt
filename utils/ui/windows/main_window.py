@@ -1,4 +1,6 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QFileDialog, QMessageBox
+
+from utils.render.render_window import RenderWindow
 from utils.ui.bars.plot_bar import PlotBar
 from utils.ui.bars.draw_bar import DrawBar
 from utils.ui.bars.cmd_bar import CmdBar
@@ -97,6 +99,8 @@ class MainWindow(QMainWindow):
         self.inspector_bar = InspectorBar(right_column, font_manager=fm)
         self.inspector_bar.setMinimumHeight(100)
 
+        self.render_window = RenderWindow()
+
         # Layer window
         self.layer_window = LayerWindow(
             self.object_manager.add_layer, self.object_manager.delete_layer, self.object_manager.select_layer,
@@ -152,6 +156,7 @@ class MainWindow(QMainWindow):
                         'Plane3p': (lambda: self.plot.draw('plane_3p'), 'Shift+Alt+P'),
                     },
                 'Layers': (self.layer_window.show, 'Ctrl+L'),
+                'Render': (self.start_render, None)
             }
         )
         self.setMenuBar(self.menu_bar)
@@ -216,6 +221,10 @@ class MainWindow(QMainWindow):
         self.object_manager.clear()
         self.current_file = None
         self.plot.update()
+
+    def start_render(self):
+        self.render_window.plot.update_plot_objects(self.object_manager.get_all_objects())
+        self.render_window.show()
 
     def update_recent_files_menu(self):
         i = -1

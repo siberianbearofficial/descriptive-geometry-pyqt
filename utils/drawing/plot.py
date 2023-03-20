@@ -65,9 +65,7 @@ class Plot(QWidget):
         self.extra_objects = tuple()
         self.selected_mode = 0
         self.i = 0
-
-        self.serializable = ['bg_color', 'layers', 'current_layer']
-        self.show()
+        self.scale = 1
 
         self.mouse_move = None
         self.mouse_left = None
@@ -145,29 +143,35 @@ class Plot(QWidget):
             self.draw('spline')
         elif key == Qt.Key_R:
             self.draw('rotation_surface')
-        elif key == Qt.Key_M:
-            self.serialize()
 
     def draw_segment(self, p1, p2, color=(0, 0, 0), thickness=1, line_type=1):
-        self.set_pen(color, thickness, line_type)
-        self.painter.drawLine(int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1]))
+        self.set_pen(color, thickness * self.scale, line_type)
+        self.painter.drawLine(int(p1[0]) * self.scale, int(p1[1]) * self.scale,
+                              int(p2[0]) * self.scale, int(p2[1]) * self.scale)
 
     def draw_point(self, point, color=(0, 0, 0), thickness=1):
-        if self.tlp[0] + 1 <= point[0] <= self.brp[0] - 1 and self.tlp[1] + 1 <= point[1] <= self.brp[1] - 1:
-            self.set_pen(color, thickness)
-            brush = self.painter.brush()
-            self.painter.setBrush(QColor(*self.bg_color))
-            self.painter.drawEllipse(int(point[0]) - 5, int(point[1]) - 5, 10, 10)
-            self.painter.setBrush(brush)
+        self.set_pen(color, thickness * self.scale)
+        brush = self.painter.brush()
+        self.painter.setBrush(QColor(*self.bg_color))
+        self.painter.drawEllipse((int(point[0]) - 5) * self.scale, (int(point[1]) - 5) * self.scale,
+                                 10 * self.scale, 10 * self.scale)
+        self.painter.setBrush(brush)
 
     def draw_point2(self, point, color=(0, 0, 0), thickness=1):
         if self.tlp[0] <= point[0] <= self.brp[0] and self.tlp[1] <= point[1] <= self.brp[1]:
-            self.set_pen(color, thickness)
-            self.painter.drawPoint(int(point[0]), int(point[1]))
+            self.set_pen(color, thickness * self.scale)
+            if self.scale != 1:
+                brush = self.painter.brush()
+                self.painter.setBrush(QColor(*color))
+                self.painter.drawEllipse(int(point[0] - 1) * self.scale, int(point[1] - 1) * self.scale,
+                                         2 * self.scale, 2 * self.scale)
+                self.painter.setBrush(brush)
+            self.painter.drawPoint(int(point[0]) * self.scale, int(point[1]) * self.scale)
 
     def draw_circle(self, center, radius, color=(0, 0, 0), thickness=2):
-        self.set_pen(color, thickness)
-        self.painter.drawEllipse(int(center[0]) - radius, int(center[1] - radius), int(radius * 2), int(radius * 2))
+        self.set_pen(color, thickness * self.scale)
+        self.painter.drawEllipse(int(center[0] - radius) * self.scale, int(center[1] - radius) * self.scale,
+                                 int(radius * 2) * self.scale, int(radius * 2) * self.scale)
 
     def draw_text(self, pos, text):
         self.painter.drawText(*pos, text)
