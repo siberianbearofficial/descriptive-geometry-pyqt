@@ -58,11 +58,15 @@ class MainWindow(QMainWindow):
             (self.plot.set_selected_object, self.properties_bar.open_object))
         self.plot.add_object_func = self.object_manager.add_object
         self.plot.objectSelected.connect(self.object_manager.select_object)
-        self.properties_bar.set_obj_name_func(self.object_manager.set_object_name).set_obj_color_func(
-            self.object_manager.set_object_color).set_obj_thickness_func(
-            self.object_manager.set_object_thickness).set_layers_list(self.object_manager.layers).set_obj_layer_func(
-            self.object_manager.set_object_layer)
+
+        self.properties_bar.set_obj_name_func(self.object_manager.set_object_name)
+        self.properties_bar.set_obj_color_func(self.object_manager.set_object_color)
+        self.properties_bar.set_obj_thickness_func(self.object_manager.set_object_thickness)
+        self.properties_bar.set_layers_list(self.object_manager.layers)
+        self.properties_bar.set_obj_ag_object_func(self.object_manager.set_object_ag_obj)
+        self.properties_bar.set_obj_layer_func(self.object_manager.set_object_layer)
         self.properties_bar.update_layers_widget()
+        self.properties_bar.hide()
 
         # Draw bar
         self.draw_bar = DrawBar(
@@ -99,6 +103,7 @@ class MainWindow(QMainWindow):
         self.inspector_bar = InspectorBar(right_column, font_manager=fm)
         self.inspector_bar.setMinimumHeight(100)
 
+        # Render window
         self.render_window = RenderWindow()
 
         # Layer window

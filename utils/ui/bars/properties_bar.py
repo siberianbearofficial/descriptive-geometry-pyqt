@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QLayout, QComboBox, \
-    QColorDialog
+    QColorDialog, QScrollArea, QWidget
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt
 
@@ -155,8 +155,19 @@ class PropertiesBar(Widget):
         self.clt.addLayout(thickness)
         self.layout.addLayout(self.clt)
 
-        self.obj_layout = QVBoxLayout()
-        self.layout.addLayout(self.obj_layout)
+        # Objects
+        self.objects_scroll_area = QScrollArea(self.central_widget)
+        self.objects_scroll_area.setWidgetResizable(True)
+        self.objects_scroll_area.verticalScrollBar().setStyleSheet('QScrollBar {height: 0px;}')
+
+        objects_central_widget = QWidget()
+        self.obj_layout = QVBoxLayout(objects_central_widget)
+        self.obj_layout.setContentsMargins(0, 0, 0, 0)
+        self.obj_layout.setAlignment(Qt.AlignTop)
+
+        self.objects_scroll_area.setWidget(objects_central_widget)
+
+        self.layout.addWidget(self.objects_scroll_area)
 
         self.obj = None
 
@@ -216,6 +227,16 @@ class PropertiesBar(Widget):
         if self.set_obj_name:
             self.set_obj_name(name=name)
 
+    def on_ag_object_change(self, path, value):
+        self.set_obj_ag_object(self.change_current_object_dict(path, value, self.current_object.to_dict()['ag_object']))
+
+    def change_current_object_dict(self, path, value, dct):
+        if len(path) == 1:
+            dct[path[0]] = value
+            return dct
+        dct.update({path[0]: self.change_current_object_dict(path[1:], value, dct[path[0]])})
+        return dct
+
     def open_object(self, obj):
         if obj:
             # print('Object:', obj)
@@ -231,9 +252,11 @@ class PropertiesBar(Widget):
             self.obj_layout.itemAt(i).widget().deleteLater()
 
     def show_objects(self, struct):
-        self.clear_objects()
+        # self.clear_objects()
         self.obj = PropertiesBarObject(struct=struct['ag_object'], parent=self.central_widget,
-                                       font_manager=self.font_manager, name='Objects')
+                                       font_manager=self.font_manager, name='Objects',
+                                       on_editing_finished=self.on_ag_object_change).set_margin(
+            0)
         self.obj_layout.addWidget(self.obj)
 
     def show_object(self):
