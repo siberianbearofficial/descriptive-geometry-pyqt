@@ -2,11 +2,9 @@ from PyQt5.QtWidgets import QHBoxLayout, QLabel
 from PyQt5.QtGui import QPixmap
 from utils.ui.widgets.widget import Widget
 
-from random import randint
-
 
 class InspectorBarObject(Widget):
-    def __init__(self, parent, font_manager):
+    def __init__(self, name, parent, font_manager):
         super().__init__(parent)
 
         # Layout
@@ -26,5 +24,5 @@ class InspectorBarObject(Widget):
         self.label = QLabel(self.central_widget)
         self.label.setFont(font_manager.bold())
         self.label.setStyleSheet("color: #00ABB3;")
-        self.label.setText(f'A: Cylinder {randint(100,200)}')
+        self.label.setText(f'{name}')  # TODO: show more detailed info
         self.layout.addWidget(self.label)

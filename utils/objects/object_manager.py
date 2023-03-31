@@ -24,6 +24,7 @@ class ObjectManager:
         self.func_layer_rename = None
         self.func_layer_color = None
         self.func_layer_thickness = None
+        self.objects_changed = None
 
     def set_layers_func(self, func_layer_add, func_layer_delete, func_layer_hide, func_layer_select, func_layer_rename,
                         func_layer_color, func_layer_thickness):
@@ -44,6 +45,8 @@ class ObjectManager:
         self.layers[self.current_layer].add_object(obj)
         self.func_plot_obj(obj.id, obj)
         self.func_plot_update()
+        if self.objects_changed:
+            self.objects_changed(self.layers[self.current_layer])
 
     def add_object_from_dict(self, dct, history_record=True):
         if history_record:
@@ -52,6 +55,8 @@ class ObjectManager:
         self.layers[self.current_layer].add_object(obj)
         self.func_plot_obj(obj.id, obj)
         self.func_plot_update()
+        if self.objects_changed:
+            self.objects_changed(self.layers[self.current_layer])
 
     def find_by_id(self, id):
         for i in range(len(self.layers)):
@@ -71,6 +76,8 @@ class ObjectManager:
         for func in self.func_object_selected:
             func(0)
         self.func_plot_update()
+        if self.objects_changed:
+            self.objects_changed(self.layers[self.current_layer])
 
     def delete_object(self, layer, index, history_record=True):
         obj = self.layers[layer].objects[index]
@@ -83,6 +90,8 @@ class ObjectManager:
         for func in self.func_object_selected:
             func(0)
         self.func_plot_update()
+        if self.objects_changed:
+            self.objects_changed(self.layers[self.current_layer])
 
     def add_layer(self, name=None, index=None, hidden=False, dct=None, history_record=True):
         if not name and not dct:
@@ -111,6 +120,8 @@ class ObjectManager:
             self.current_layer = index
         for func in self.func_layer_select:
             func(index)
+        if self.objects_changed:
+            self.objects_changed(self.layers[self.current_layer])
 
     def select_object(self, id):
         self.last_selected_object_index = self.selected_object_index
@@ -124,6 +135,7 @@ class ObjectManager:
             self.selected_object = self.layers[self.selected_object_index[0]].objects[self.selected_object_index[1]]
             for func in self.func_object_selected:
                 func(self.selected_object)
+        # TODO: change current object
 
     def set_layer_hidden(self, ind, hidden, history_record=True):
         if self[ind].hidden == hidden:
@@ -144,6 +156,8 @@ class ObjectManager:
         for func in self.func_layer_delete:
             func(index)
         self.plot_full_update(self.get_all_objects())
+        if self.objects_changed:
+            self.objects_changed(self.layers[self.current_layer])
 
     def get_all_objects(self):
         for layer in self.layers:

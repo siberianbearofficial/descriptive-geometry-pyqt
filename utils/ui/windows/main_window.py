@@ -102,6 +102,7 @@ class MainWindow(QMainWindow):
         # Inspector bar
         self.inspector_bar = InspectorBar(right_column, font_manager=fm)
         self.inspector_bar.setMinimumHeight(100)
+        self.object_manager.objects_changed = self.inspector_bar.set_objects
 
         # Render window
         self.render_window = RenderWindow()
