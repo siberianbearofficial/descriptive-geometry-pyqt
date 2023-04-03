@@ -1,10 +1,10 @@
-from utils.drawing.screen_point import ScreenPoint
-from utils.drawing.screen_segment import ScreenSegment
+from utils.drawing.projections.projection_manager import ScreenSegment
+from utils.color import *
 
 
 class Axis:
 
-    def __init__(self, plot, color=(0, 0, 0)):
+    def __init__(self, plot, color=BLACK_COLOR):
         self.plot = plot
         self.color = color
         self.lp = None
@@ -13,8 +13,8 @@ class Axis:
         self.dimensions()
 
     def dimensions(self):
-        self.lp = ScreenPoint(self.plot, self.plot.tlp[0], (self.plot.brp[1] + self.plot.tlp[1]) // 2, self.color)
-        self.rp = ScreenPoint(self.plot, self.plot.brp[0] - 1, (self.plot.brp[1] + self.plot.tlp[1]) // 2, self.color)
+        self.lp = [self.plot.tlp[0], (self.plot.brp[1] + self.plot.tlp[1]) // 2]
+        self.rp = [self.plot.brp[0] - 1, (self.plot.brp[1] + self.plot.tlp[1]) // 2]
         self.segment = ScreenSegment(self.plot, self.lp, self.rp, self.color)
 
     def update(self, plot):
@@ -25,4 +25,7 @@ class Axis:
         self.segment.draw()
 
     def move(self, x, y):
-        self.segment.move(x, y)
+        self.lp[1] += y
+        self.rp[1] += y
+        self.segment.point1 = self.segment.point1[0], self.segment.point1[1] + y
+        self.segment.point2 = self.segment.point2[0], self.segment.point2[1] + y

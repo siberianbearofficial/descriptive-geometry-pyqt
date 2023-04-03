@@ -1,1138 +1,340 @@
-import pygame as pg
-import utils.maths.angem as ag
+from PyQt5.QtWidgets import QWidget, QApplication
+from PyQt5.QtGui import QColor, QPainter, QPen
+from PyQt5.QtCore import Qt, pyqtSignal
+
+from utils.drawing.projections.projection_manager import ScreenPoint, ThinScreenPoint
+from utils.drawing.projections.projection_manager import ScreenSegment
+from utils.drawing.projections.projection_manager import ScreenCircle
+
 from utils.drawing.axis import Axis
-from utils.drawing.projections import ProjectionManager
-from utils.drawing.history import HistoryManager
+from utils.drawing.projections.projection_manager import ProjectionManager
+from utils.drawing.label_manager import LabelManager
 import utils.drawing.snap as snap
-from utils.drawing.layer import Layer
-from utils.drawing.screen_point import ScreenPoint, ScreenPoint2
-from utils.drawing.screen_segment import ScreenSegment
-from utils.drawing.screen_circle import ScreenCircle
-from utils.drawing.general_object import GeneralObject
-from utils.drawing.attributes_window import AttributesWindow
-from utils.drawing.attributes_window_pyqt import open_attribute_window
-import random
+from utils.objects.layer import Layer
+from utils.objects.general_object import GeneralObject
+import utils.drawing.drawing_on_plot as drw
+import utils.drawing.names as names
+from utils.color import *
+
+from random import randint
+from utils.drawing.projections.plot_object import PlotObject
+
+drawing_functions = {
+    'point': drw.create_point, 'segment': drw.create_segment, 'line': drw.create_line, 'plane': drw.create_plane,
+    'perpendicular_segment': drw.create_perpendicular_segment, 'parallel_segment': drw.create_parallel_segment,
+    'perpendicular_line': drw.create_perpendicular_line, 'parallel_line': drw.create_parallel_line,
+    'plane_3p': drw.create_plane_3p, 'parallel_plane': drw.create_parallel_plane,
+    'horizontal': drw.create_horizontal, 'frontal': drw.create_frontal,
+    'distance': drw.get_distance, 'angle': drw.get_angle, 'circle': drw.create_circle, 'sphere': drw.create_sphere,
+    'cylinder': drw.create_cylinder, 'cone': drw.create_cone, 'tor': drw.create_point, 'spline': drw.create_spline,
+    'rotation_surface': drw.create_rotation_surface, 'intersection': drw.get_intersection}
 
 
-class Plot:
-    POINT_SELECTION = 0
-    SEGMENT_SELECTION = 1
+class Plot(QWidget):
+    objectSelected = pyqtSignal(object)
+    printToCommandLine = pyqtSignal(str)
+    layersModified = pyqtSignal(object, int)
+    setCmdStatus = pyqtSignal(bool)
 
-    def __init__(self, screen, tlp, brp):
-        self.screen = screen
-        self.click_listening = False
-        self.action = None
+    def __init__(self, parent):
+        super().__init__(parent)
 
-        self.tlp = tlp
-        self.brp = brp
+        self.screen = parent
+        self.painter = QPainter()
+
+        self.bg_color = WHITE_COLOR
+
+        self.tlp = 0, 0
+        self.brp = self.width(), self.height()
         self.zoom = 1
         self.zoom_step = 1.5
         self.camera_pos = (0, 0)
-        self.clock = pg.time.Clock()
+        self.min_zoom = 1/20
+        self.max_zoom = 20
 
-        self.bg_color = (255, 255, 255)
-
-        self.layers = [Layer(self, 'Слой 1')]
-        self.current_layer = 0
+        self.objects = []
+        self.add_object_func = None
         self.selected_object = None
-        self.selected_object_index = None
+        self.selected_object_index = 0
 
         self.axis = Axis(self)
         self.pm = ProjectionManager(self)
         self.sm = snap.SnapManager(self)
-        self.hm = HistoryManager(self)
+        self.lm = LabelManager(self)
 
         self.clear()
+        self.moving_camera = False
+        self.mouse_pos = 0, 0
+        self.extra_objects = tuple()
+        self.selected_mode = 0
+        self.i = 0
+        self.scale1 = 1
+        self.scale2 = 1
+
+        self.mouse_move = None
+        self.mouse_left = None
+        self.mouse_right = None
+        self.enter = None
+        self.esc = None
+        self.cmd_command = None
+
+    def paintEvent(self, e):
+        self.painter.begin(self)
+
         self.axis.draw()
-        self.screen.update()
+        for obj in self.objects:
+            obj.draw()
+        for obj in self.extra_objects:
+            if isinstance(obj, PlotObject):
+                obj.draw(selected=self.selected_mode)
+            else:
+                obj.draw()
+        if self.selected_object_index:
+            self.selected_object.draw(selected=1)
 
-        # TODO: Remove this after implementing the point selection normally
-        self.point_position_x = None
-        self.point_position_y = None
-        self.point_position_z = None
+        self.set_pen(BLACK_COLOR, 4)
+        self.lm.draw()
+        self.painter.end()
 
-        self.serializable = ['bg_color', 'layers', 'current_layer']
+    def keyPressEvent(self, a0):
+        key = a0.key()
+        if key == Qt.Key_Escape:
+            if self.esc is not None:
+                self.esc(a0)
+        if key == Qt.Key_Space:
+            if self.enter is not None:
+                self.enter(a0)
 
-    def clear(self, index=-1):
-        if index == -1:
-            for layer in self.layers:
-                layer.clear()
-        else:
-            self.layers[index].clear()
-            self.sm.update_intersections()
-        self.full_update()
-        self.screen.update()
+    def draw_segment(self, p1, p2, color=BLACK_COLOR, thickness=1, line_type=1):
+        self.set_pen(color, thickness * self.scale2, line_type)
+        self.painter.drawLine(int(p1[0] * self.scale1), int(p1[1] * self.scale1),
+                              int(p2[0] * self.scale1), int(p2[1] * self.scale1))
 
-    def update(self, bg_color, layers):
-        self.bg_color = bg_color
-        self.layers = layers
-        self.full_update()
+    def draw_point(self, point, color=BLACK_COLOR, thickness=1):
+        self.set_pen(color, thickness * self.scale2)
+        brush = self.painter.brush()
+        self.painter.setBrush(self.bg_color)
+        self.painter.drawEllipse(
+            int(point[0] * self.scale1 - 5 * self.scale2), int(point[1] * self.scale1 - 5 * self.scale2),
+            int(10 * self.scale2), int(10 * self.scale2))
+        self.painter.setBrush(brush)
 
-    def resize(self, tlp, brp):
-        self.tlp = tlp
-        self.brp = brp
-        pg.draw.rect(self.screen.screen, self.bg_color,
-                     (self.tlp[0], self.tlp[1] - 2, self.brp[0] - self.tlp[0], self.brp[1] - self.tlp[1] + 4))
+    def draw_point2(self, point, color=BLACK_COLOR, thickness=1):
+        if self.tlp[0] <= point[0] <= self.brp[0] and self.tlp[1] <= point[1] <= self.brp[1]:
+            self.set_pen(color, thickness * self.scale2)
+            self.painter.drawPoint(int(point[0] * self.scale1), int(point[1] * self.scale1))
+
+    def draw_circle(self, center, radius, color=BLACK_COLOR, thickness=2):
+        self.set_pen(color, thickness * self.scale2)
+        self.painter.drawEllipse(int((center[0] - radius) * self.scale1), int((center[1] - radius) * self.scale1),
+                                 int(radius * 2 * self.scale1), int(radius * 2 * self.scale1))
+
+    def draw_text(self, pos, text):
+        self.painter.drawText(int(pos[0] * self.scale1), int(pos[1] * self.scale1), text)
+
+    def draw_text2(self, rect, text, option):
+        self.painter.drawText(rect, text, option)
+
+    def set_pen(self, color, thickness, line_type=1):
+        self.painter.setPen(QPen(color, int(thickness), line_type))
+
+    def clear(self):
+        self.objects.clear()
+        self.update()
+
+    def draw(self, figure):
+        self.setMouseTracking(True)
+        drawing_functions[figure](self, 1)
+
+    def update(self, *objects, selected=0) -> None:
+        self.extra_objects = objects
+        self.selected_mode = selected
+        super(Plot, self).update()
+
+    def resizeEvent(self, a0) -> None:
+        self.tlp = 0, 0
+        self.brp = self.size().width(), self.size().height()
         self.axis.update(self)
-        self.axis.draw()
-        for layer in self.layers:
-            layer.update_projections()
-            layer.draw()
-        self.screen.update()
-
-    def draw_segment(self, segment, color=(0, 0, 0)):
-        # if self.tlp[0] <= segment.p1.x <= self.brp[0] and self.tlp[1] <= segment.p1.y <= self.brp[1] \
-        #         or self.tlp[0] <= segment.p2.x <= self.brp[0] and self.tlp[1] <= segment.p2.y <= self.brp[1]:
-        pg.draw.line(self.screen.screen, color, segment.point1.tuple(), segment.point2.tuple(), 2)
-
-    def draw_point(self, point, color=(0, 0, 0)):
-        if self.tlp[0] + 3 <= point.x <= self.brp[0] - 3 and self.tlp[1] + 3 <= point.y <= self.brp[1] - 3:
-            pg.draw.circle(self.screen.screen, color, point.tuple(), 3)
-
-    def draw_point2(self, point, color=(0, 0, 0)):
-        if self.tlp[0] + 1 <= point.x <= self.brp[0] - 1 and self.tlp[1] + 1 <= point.y <= self.brp[1] - 1:
-            pg.draw.circle(self.screen.screen, color, point.tuple(), 1)
-
-    def draw_circle(self, circle, color=(0, 0, 0)):
-        if self.tlp[0] + circle.radius + 1 <= circle.center.x <= self.brp[0] - circle.radius - 1 \
-                and self.tlp[1] + circle.radius + 1 <= circle.center.y <= self.brp[1] - circle.radius - 1:
-            pg.draw.circle(self.screen.screen, color, circle.center.tuple(), circle.radius, 2)
-
-    def draw_object(self, obj, color=(0, 0, 0)):
-        print('Drawing object: {}'.format(obj))
-        obj_xy = self.pm.get_projection(obj, 'xy', color)
-        obj_xz = self.pm.get_projection(obj, 'xz', color)
-        print('Obj_xy:', obj_xy)
-        print('Obj_xz:', obj_xz)
-        obj_xy.draw()
-        obj_xz.draw()
-        self.screen.update()
+        for obj in self.objects:
+            obj.update_projections()
+        self.update()
 
     def move_camera(self, x, y, update=True):
+        x = int(x)
+        y = int(y)
         self.axis.move(0, y)
         self.camera_pos = self.camera_pos[0] + x, self.camera_pos[1] + y
         self.pm.camera_pos = self.camera_pos
         if update:
-            for layer in self.layers:
-                layer.move_objects(x, y)
-                # layer.update_projections()
+            for obj in self.objects:
+                obj.move(x, y)
+            self.lm.move(x, y)
             self.sm.update_intersections()
-            self.full_update()
-            self.screen.update()
+            self.update()
 
-    def moving_camera(self):
-        pos = pg.mouse.get_pos()
-        while True:
-            events = pg.event.get()
-            for event in events:
-                if Plot.check_exit_event(event):
-                    return
-                if event.type == pg.MOUSEBUTTONUP:
-                    if event.button == 3:
-                        return
-                    if event.button == 4:
-                        self.zoom_in()
-                    elif event.button == 5:
-                        self.zoom_out()
-            p = pg.mouse.get_pos()
-            self.move_camera(p[0] - pos[0], p[1] - pos[1])
-            pos = p
-            self.clock.tick(60)
-
-    def clicked(self, pos):
-        old_obj = self.selected_object
-        self.selected_object, self.selected_object_index = None, None
-        for i in range(len(self.layers)):
-            if self.layers[i].hidden:
-                continue
-            for j in range(len(self.layers[i].objects)):
-                obj = self.layers[i].objects[j]
-                for el in obj.xy_projection:
-                    if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 4:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                    if isinstance(el, ScreenPoint2) and snap.distance(pos, el.tuple()) <= 3:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                    if isinstance(el, ScreenSegment) and snap.distance(
-                            pg.mouse.get_pos(), snap.nearest_point(pos, el)) <= 3:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                    if isinstance(el, ScreenCircle) and abs(snap.distance(pos, el.center.tuple()) - el.radius) <= 3:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                for el in obj.xz_projection:
-                    if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 2:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                    if isinstance(el, ScreenPoint2) and snap.distance(pos, el.tuple()) <= 2:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                    if isinstance(el, ScreenSegment) and snap.distance(
-                            pg.mouse.get_pos(), snap.nearest_point(pos, el)) <= 2:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-                    if isinstance(el, ScreenCircle) and abs(snap.distance(pos, el.center.tuple()) - el.radius) <= 3:
-                        if obj != old_obj:
-                            self.selected_object, self.selected_object_index = obj, (i, j)
-                        break
-        if self.selected_object is not None:
-            # self.screen.attributes_window = AttributesWindow(self.screen, self.selected_object)
-            for el in self.selected_object.xy_projection:
-                if isinstance(el, ScreenPoint) and \
-                        self.tlp[0] + 3 <= el.x <= self.brp[0] - 3 and self.tlp[1] + 3 <= el.y <= self.brp[1] - 3:
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), el.tuple(), 6)
-                elif isinstance(el, ScreenPoint2) and \
-                        self.tlp[0] + 1 <= el.x <= self.brp[0] - 1 and self.tlp[1] + 1 <= el.y <= self.brp[1] - 1:
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), el.tuple(), 2)
-                elif isinstance(el, ScreenSegment) and el.drawing:
-                    pg.draw.line(self.screen.screen, (0, 162, 232), el.point1.tuple(), el.point2.tuple(), 4)
-                    # pg.draw.circle(self.screen.screen, (0, 162, 232), el.p1.tuple(), 4)
-                    # pg.draw.circle(self.screen.screen, (0, 162, 232), el.p2.tuple(), 4)
-                elif isinstance(el, ScreenCircle) and self.tlp[0] + el.radius + 1 <= el.center.x <= self.brp[0] - \
-                        el.radius - 1 and self.tlp[1] + el.radius + 1 <= el.center.y <= self.brp[1] - el.radius - 1:
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), el.center.tuple(), el.radius + 1, 4)
-            for el in self.selected_object.xz_projection:
-                if isinstance(el, ScreenPoint) and \
-                        self.tlp[0] + 3 <= el.x <= self.brp[0] - 3 and self.tlp[1] + 3 <= el.y <= self.brp[1] - 3:
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), el.tuple(), 6)
-                elif isinstance(el, ScreenPoint2) and \
-                        self.tlp[0] + 1 <= el.x <= self.brp[0] - 1 and self.tlp[1] + 1 <= el.y <= self.brp[1] - 1:
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), el.tuple(), 2)
-                elif isinstance(el, ScreenSegment) and el.drawing:
-                    pg.draw.line(self.screen.screen, (0, 162, 232), el.point1.tuple(), el.point2.tuple(), 4)
-                    # pg.draw.circle(self.screen.screen, (0, 162, 232), el.p1.tuple(), 4)
-                    # pg.draw.circle(self.screen.screen, (0, 162, 232), el.p2.tuple(), 4)
-                elif isinstance(el, ScreenCircle) and self.tlp[0] + el.radius + 1 <= el.center.x <= self.brp[0] - \
-                        el.radius - 1 and self.tlp[1] + el.radius + 1 <= el.center.y <= self.brp[1] - el.radius - 1:
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), el.center.tuple(), el.radius + 1, 4)
-            self.selected_object.draw()
-            # self.screen.attributes_window.destroy()
-            # self.screen.draw_attributes_window()
-        else:
-            # if self.screen.attributes_window is not None:
-            #     if old_obj is not None:
-            #         old_obj.update_projections()
-            #     self.screen.attributes_window.destroy()
-            #     self.screen.attributes_window = None
-            # self.full_update()
-            pass
-
-    def change_current_layer(self, new_layer):
-        self.hm.add_record('change_layer', self.current_layer, new_layer)
-        self.current_layer = new_layer
-        self.screen.menu.update_layer_list()
-
-    def add_layer(self, name):
-        self.layers.append(Layer(self, name))
-        self.screen.menu.update_layer_list()
-
-    def show_hide_layer(self, hidden, index=-1):
-        self.hm.add_record('hide_layer', index, hidden)
-        if index == -1:
-            self.layers[self.current_layer].hidden = hidden
-        else:
-            self.layers[index].hidden = hidden
-        self.screen.menu.update_layer_list()
-
-    def zoom_in(self):
-        pos = pg.mouse.get_pos()
-        if not self.point_is_on_plot(pos):
-            pos = (self.tlp[0] + self.brp[0]) / 2, (self.tlp[1] + self.brp[1]) / 2
-        self.zoom *= self.zoom_step
-        self.pm.zoom *= self.zoom_step
-        self.move_camera((self.zoom_step - 1) * ((self.axis.rp.x - pos[0]) + self.camera_pos[0]),
-                         (self.zoom_step - 1) * (self.axis.rp.y - pos[1]), update=False)
-        for layer in self.layers:
-            layer.update_projections()
+    def add_object(self, ag_object, name=None, color=None, end=False, **config):
+        if color is None:
+            color = Color.random()
+        if name is None:
+            name = names.generate_name(self, ag_object, config)
+        self.add_object_func(ag_object, name, color, history_record=True, **config)
         self.sm.update_intersections()
-        self.full_update()
+        self.update()
+        if end:
+            self.end()
 
-    def zoom_out(self):
-        pos = pg.mouse.get_pos()
-        if not self.point_is_on_plot(pos):
-            pos = (self.tlp[0] + self.brp[0]) / 2, (self.tlp[1] + self.brp[1]) / 2
-        self.zoom /= self.zoom_step
-        self.pm.zoom /= self.zoom_step
-        new_camera_x = (self.camera_pos[0] + self.axis.rp.x - pos[0]) / self.zoom_step - self.axis.rp.x + pos[0]
-        new_axis_y = pos[1] - (pos[1] - self.axis.lp.y) / self.zoom_step
-        self.move_camera(new_camera_x - self.camera_pos[0], new_axis_y - self.axis.lp.y, update=False)
-        for layer in self.layers:
-            layer.update_projections()
+    def modify_plot_object(self, id, general_object):
+        if general_object:
+            for obj in self.objects:
+                if obj.id == id:
+                    obj.replace_general_object(general_object)
+                    break
+            else:
+                self.objects.append(PlotObject(self, general_object))
+        else:
+            self.objects.remove(self.find_by_id(id))
         self.sm.update_intersections()
-        self.full_update()
+        self.update()
 
-    def full_update(self):
-        pg.draw.rect(self.screen.screen, self.bg_color,
-                     (self.tlp[0], self.tlp[1], self.brp[0] - self.tlp[0], self.brp[1] - self.tlp[1]))
-        # if self.tlp[0] <= self.axis.lp.x <= self.brp[0] and self.tlp[1] <= self.axis.lp.y <= self.brp[1]:
-        self.axis.draw()
-        for layer in self.layers:
-            layer.draw()
-        self.screen.draw_attributes_window()
+    def update_plot_objects(self, object_list):
+        self.objects.clear()
+        for obj in object_list:
+            self.objects.append(PlotObject(self, obj))
 
-    def point_is_on_plot(self, point):
-        return self.tlp[0] < point[0] < self.brp[0] and self.tlp[1] < point[1] < self.brp[1]
-
-    @staticmethod
-    def random_color():
-        red = random.randint(20, 240)
-        green = random.randint(20, 240)
-        blue = random.randint(20, min(570 - red - green, 240))
-        return red, green, blue
-        while True:
-            red = random.randint(20, 240)
-            green = random.randint(20, 240)
-            blue = random.randint(20, 570 - red - green)
-            if 300 < red + green + blue < 570:
-                return red, green, blue
-
-    @staticmethod
-    def check_exit_event(event):
-        if event.type == pg.QUIT:
-            pg.quit()
-            exit(0)
-        elif event.type == pg.MOUSEBUTTONDOWN and event.button == 3:
-            return True
-        return False
-
-    def select_object(self, types):
-        def check_object_type(obj):
-            if types is None:
-                return True
-            if isinstance(types, tuple):
-                for el in types:
-                    if isinstance(obj.ag_object, el):
-                        return True
-                return False
-            return isinstance(obj.ag_object, types)
-
-        while True:
-            events = pg.event.get()
-            for event in events:
-                if Plot.check_exit_event(event):
-                    return None
-                elif event.type == pg.MOUSEBUTTONDOWN:
-                    for layer in self.layers:
-                        if layer.hidden:
-                            continue
-                        for obj in layer.objects:
-                            if check_object_type(obj):
-                                for el in obj.xy_projection:
-                                    if isinstance(el, ScreenPoint) and snap.distance(event.pos, el.tuple()) <= 2:
-                                        return obj.ag_object
-                                    if isinstance(el, ScreenPoint2) and snap.distance(event.pos, el.tuple()) <= 2:
-                                        return obj.ag_object
-                                    if isinstance(el, ScreenSegment) and snap.distance(
-                                            pg.mouse.get_pos(), snap.nearest_point(event.pos, el)) <= 2:
-                                        return obj.ag_object
-                                    if isinstance(el, ScreenCircle) and el.radius - 2 <= \
-                                            snap.distance(event.pos, el.center.tuple()) <= el.radius + 2:
-                                        return obj.ag_object
-                                for el in obj.xz_projection:
-                                    if isinstance(el, ScreenPoint) and snap.distance(event.pos, el.tuple()) <= 2:
-                                        return obj.ag_object
-                                    if isinstance(el, ScreenPoint2) and snap.distance(event.pos, el.tuple()) <= 2:
-                                        return obj.ag_object
-                                    if isinstance(el, ScreenSegment) and snap.distance(
-                                            pg.mouse.get_pos(), snap.nearest_point(event.pos, el)) <= 2:
-                                        return obj.ag_object
-                                    if isinstance(el, ScreenCircle) and el.radius - 2 <= \
-                                            snap.distance(event.pos, el.center.tuple()) <= el.radius + 2:
-                                        return obj.ag_object
-            self.clock.tick(30)
-
-    def select_screen_point(self, plane, x=None, y=None, z=None, segment=None, func=None, objects=tuple(), line=None):
-        c = z if plane == 'xy' else y
-        while True:
-            self.full_update()
-            if line is None:
-                pos = self.sm.get_snap(self.screen, pg.mouse.get_pos(), plane, x=x, y=y, z=z, last_point=segment)
+    def mousePressEvent(self, a0) -> None:
+        if a0.button() == 1:
+            if self.mouse_left:
+                self.mouse_left(a0.pos())
             else:
-                pos = snap.nearest_point(pg.mouse.get_pos(), line, as_line=True)
-            events = pg.event.get()
-            for event in events:
-                if Plot.check_exit_event(event):
-                    return None
-                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1 and self.point_is_on_plot(event.pos):
-                    if line is None:
-                        res = self.sm.get_snap(self.screen, event.pos, plane, x=x, y=y, z=z, last_point=segment)
-                    else:
-                        res = snap.nearest_point(pg.mouse.get_pos(), line, as_line=True)
-                    if x is None and c is None:
-                        return res
-                    elif x is not None:
-                        return res[1]
-                    else:
-                        return res[0]
-            if self.point_is_on_plot(pos):
-                pg.draw.circle(self.screen.screen, (0, 162, 232), pos, 3)
-                if segment is not None:
-                    pg.draw.line(self.screen.screen, (0, 162, 232), segment, pos, 2)
-                if func is not None:
-                    func(pos)
-                if x is not None and c is not None:
-                    pg.draw.line(self.screen.screen, (180, 180, 180), (x, c), pos, 2)
-                for obj in objects:
-                    obj.draw()
-                self.screen.update()
-                self.clock.tick(30)
-
-    def create_point(self):
-        if (r := self.select_screen_point('xy')) is not None:
-            x, y = r
-        else:
-            return
-        a = ScreenPoint(self, x, y, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x, y=y, objects=(a,))) is not None:
-            z = r
-        else:
-            return
-        self.layers[self.current_layer].add_object(ag.Point(self.pm.convert_screen_x_to_ag_x(x),
-                                                            self.pm.convert_screen_y_to_ag_y(y),
-                                                            self.pm.convert_screen_y_to_ag_z(z)), Plot.random_color())
-        self.full_update()
-        return True
-
-    def create_segment(self):
-        if (r := self.select_screen_point('xy')) is not None:
-            x1, y1 = r
-        else:
-            return
-        a1 = ScreenPoint(self, x1, y1, (0, 162, 232))
-        if (r := self.select_screen_point('xy', segment=(x1, y1), objects=(a1,))) is not None:
-            x2, y2 = r
-        else:
-            return
-        a2 = ScreenPoint(self, x2, y2, (0, 162, 232))
-        s1 = ScreenSegment(self, a1, a2, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x1, y=y1, objects=(a1, a2, s1))) is not None:
-            z1 = r
-        else:
-            return
-        b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
-        s2 = ScreenSegment(self, a1, b1, (180, 180, 180))
-        if (
-        r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
-            z2 = r
-        else:
-            return
-        self.layers[self.current_layer].add_object(ag.Segment(
-            ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
-                     self.pm.convert_screen_y_to_ag_z(z1)),
-            ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
-                     self.pm.convert_screen_y_to_ag_z(z2))), Plot.random_color())
-        self.full_update()
-        return True
-
-    def create_line(self):
-        if (r := self.select_screen_point('xy')) is not None:
-            x1, y1 = r
-        else:
-            return
-        a1 = ScreenPoint(self, x1, y1, (0, 162, 232))
-        if (r := self.select_screen_point('xy', segment=(x1, y1), objects=(a1,))) is not None:
-            x2, y2 = r
-        else:
-            return
-        a2 = ScreenPoint(self, x2, y2, (0, 162, 232))
-        s1 = ScreenSegment(self, a1, a2, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x1, y=y1, objects=(a1, a2, s1))) is not None:
-            z1 = r
-        else:
-            return
-        b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
-        s2 = ScreenSegment(self, a1, b1, (180, 180, 180))
-        if (
-                r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1),
-                                              objects=(a1, a2, s1, b1, s2))) is not None:
-            z2 = r
-        else:
-            return
-        self.layers[self.current_layer].add_object(ag.Line(
-            ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
-                     self.pm.convert_screen_y_to_ag_z(z1)),
-            ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
-                     self.pm.convert_screen_y_to_ag_z(z2))), Plot.random_color())
-        self.full_update()
-        return True
-
-    def create_plane(self):
-        if (r := self.select_screen_point('xy', y=self.axis.lp.y, z=self.axis.lp.y)) is not None:
-            x0 = r
-        else:
-            return
-        a = ScreenPoint(self, x0, self.axis.lp.y, (0, 162, 232))
-        if (r := self.select_screen_point('xy', segment=a.tuple(), objects=(a,))) is not None:
-            x1, y1 = r
-        else:
-            return
-        b = ScreenPoint(self, x1, y1)
-        h0 = ScreenSegment(self, a, b, (0, 162, 232))
-        if (r := self.select_screen_point('xz', segment=a.tuple(), objects=(a, b, h0))) is not None:
-            x2, z2 = r
-        else:
-            return
-        self.layers[self.current_layer].add_object(ag.Plane(
-            ag.Point(self.pm.convert_screen_x_to_ag_x(x0), 0, 0),
-            ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1), 0),
-            ag.Point(self.pm.convert_screen_x_to_ag_x(x2), 0, self.pm.convert_screen_y_to_ag_z(z2))), Plot.random_color())
-        self.full_update()
-        return True
-
-    def create_perpendicular(self, line=False):
-        self.full_update()
-        self.screen.update()
-        self.screen.info_string.print('Выберите отрезок, прямую или плоскость')
-        obj = self.select_object((ag.Segment, ag.Line, ag.Plane))
-        self.screen.info_string.print('')
-        if isinstance(obj, ag.Segment):
-            v = ag.Vector(obj.p1, obj.p2)
-            obj = ag.Line(obj.p1, obj.p2)
-        elif isinstance(obj, ag.Line):
-            v = obj.vector
-        elif isinstance(obj, ag.Plane):
-            v = obj.normal
-        else:
-            return
-        if (r := self.select_screen_point('xy')) is not None:
-            x, y = r
-        else:
-            return
-        a = ScreenPoint(self, x, y, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x, y=y, objects=(a,))) is not None:
-            z = r
-        else:
-            return
-        p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
-                      self.pm.convert_screen_y_to_ag_z(z))
-        if line:
-            if isinstance(obj, ag.Plane):
-                self.layers[self.current_layer].add_object(ag.Line(p1, v), Plot.random_color())
+                self.select_object((a0.x(), a0.y()))
+        elif a0.button() == 2:
+            if self.mouse_right:
+                self.mouse_right(a0.pos())
             else:
-                self.layers[self.current_layer].add_object(ag.Line(p1, v & ag.Plane(p1, obj).normal), Plot.random_color())
-        else:
-            if isinstance(obj, ag.Plane):
-                p2 = ag.Line(p1, v).intersection(obj)
-            else:
-                p2 = ag.Line(p1, v & ag.Plane(p1, obj).normal).intersection(obj)
-            if p2 is None:
-                print('error: can\'t create perpendicular')
-                return
-            self.layers[self.current_layer].add_object(ag.Segment(p1, p2), Plot.random_color())
-        self.full_update()
-        return True
+                self.mouse_pos = a0.x(), a0.y()
+                self.moving_camera = True
+        elif a0.button() == Qt.MouseButton.MidButton:
+            self.mouse_pos = a0.x(), a0.y()
+            self.moving_camera = True
 
-    def create_parallel(self, line=False):
-        self.full_update()
-        self.screen.update()
-        self.screen.info_string.print('Выберите отрезок или прямую')
-        obj = self.select_object((ag.Segment, ag.Line))
-        self.screen.info_string.print('')
-        if isinstance(obj, ag.Segment):
-            v = ag.Vector(obj.p1, obj.p2)
-            obj = ag.Line(obj.p1, obj.p2)
-        elif isinstance(obj, ag.Line):
-            v = obj.vector
-        else:
-            return
-        if (r := self.select_screen_point('xy')) is not None:
-            x, y = r
-        else:
-            return
-        a = ScreenPoint(self, x, y, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x, y=y, objects=(a,))) is not None:
-            z = r
-        else:
-            return
-        p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
-                      self.pm.convert_screen_y_to_ag_z(z))
-        if line:
-            self.layers[self.current_layer].add_object(ag.Line(p1, v), Plot.random_color())
-        else:
-            line = self.pm.get_projection(ag.Line(p1, v), 'xy', (255, 255, 255))
-            if (r := self.select_screen_point('xy', line=line, segment=(x, y))) is not None:
-                x2, y2 = r
-            else:
-                return
-            p2 = ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
-                          ag.Line(p1, v).z((self.pm.convert_screen_x_to_ag_x(x2))))
-            self.layers[self.current_layer].add_object(ag.Segment(p1, p2), Plot.random_color())
-        self.full_update()
-        return True
+    def mouseReleaseEvent(self, a0) -> None:
+        if a0.button() in (2, Qt.MouseButton.MidButton):
+            self.moving_camera = False
 
-    def create_plot_from_3_points(self):
-        if (r := self.select_screen_point('xy')) is not None:
-            x1, y1 = r
-        else:
-            return
-        a1 = ScreenPoint(self, x1, y1, (0, 162, 232))
-        if (r := self.select_screen_point('xy', segment=(x1, y1), objects=(a1,))) is not None:
-            x2, y2 = r
-        else:
-            return
-        a2 = ScreenPoint(self, x2, y2, (0, 162, 232))
-        s1 = ScreenSegment(self, a1, a2, (0, 162, 232))
-        if (r := self.select_screen_point('xy', segment=(x2, y2), objects=(a1, a2, s1))) is not None:
-            x3, y3 = r
-        else:
-            return
-        a3 = ScreenPoint(self, x3, y3, (0, 162, 232))
-        s2 = ScreenSegment(self, a2, a3, (0, 162, 232))
-        s3 = ScreenSegment(self, a1, a3, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x1, y=y1, objects=(a1, a2, a3, s1, s2, s3))) is not None:
-            z1 = r
-        else:
-            return
-        b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
-        l1 = ScreenSegment(self, a1, b1, (180, 180, 180))
-        if (r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1),
-                                          objects=(a1, a2, a3, s1, s2, s3, b1, l1))) is not None:
-            z2 = r
-        else:
-            return
-        b2 = ScreenPoint(self, x2, z2, (0, 162, 232))
-        l2 = ScreenSegment(self, a2, b2, (180, 180, 180))
-        c = ScreenSegment(self, b1, b2, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x3, y=y3, segment=(x2, z2),
-                                          objects=(a1, a2, a3, s1, s2, s3, b1, b2, l1, l2, c))) is not None:
-            z3 = r
-        else:
-            return
-        self.layers[self.current_layer].add_object(ag.Plane(
-            ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
-                     self.pm.convert_screen_y_to_ag_z(z1)),
-            ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
-                     self.pm.convert_screen_y_to_ag_z(z2)),
-            ag.Point(self.pm.convert_screen_x_to_ag_x(x3), self.pm.convert_screen_y_to_ag_y(y3),
-                     self.pm.convert_screen_y_to_ag_z(z3))), Plot.random_color())
-        self.full_update()
-        return True
+    def mouseMoveEvent(self, a0) -> None:
+        if self.moving_camera:
+            self.move_camera(a0.x() - self.mouse_pos[0], a0.y() - self.mouse_pos[1])
+            self.mouse_pos = a0.x(), a0.y()
+        if self.mouse_move:
+            self.mouse_move(a0.pos())
 
-    def create_parallel_plane(self):
-        self.full_update()
-        self.screen.update()
-        self.screen.info_string.print('Выберите плоскость')
-        obj = self.select_object(ag.Plane)
-        self.screen.info_string.print('')
-        if obj is None:
-            return
-        if (r := self.select_screen_point('xy')) is not None:
-            x, y = r
+    def wheelEvent(self, a0) -> None:
+        if a0.angleDelta().y() > 0:
+            self.set_zoom(self.zoom * self.zoom_step, (a0.x(), a0.y()))
         else:
-            return
-        a = ScreenPoint(self, x, y, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x, y=y, objects=(a,))) is not None:
-            z = r
-        else:
-            return
-        p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
-                      self.pm.convert_screen_y_to_ag_z(z))
-        self.layers[self.current_layer].add_object(ag.Plane(obj.normal, p1), Plot.random_color())
-        self.full_update()
-        return True
+            self.set_zoom(self.zoom / self.zoom_step, (a0.x(), a0.y()))
 
-    def create_h_f(self, f=False):
-        self.full_update()
-        self.screen.update()
-        self.screen.info_string.print('Выберите плоскость')
-        obj = self.select_object(ag.Plane)
-        self.screen.info_string.print('')
-        if obj is None:
-            return
-        if (r := self.select_screen_point('xy', func=lambda pos: pg.draw.circle(
-                self.screen.screen, (0, 162, 232), self.pm.convert_ag_coordinate_to_screen_coordinate(
-                    self.pm.convert_screen_x_to_ag_x(pos[0]), 0, obj.z(
-                        x=self.pm.convert_screen_x_to_ag_x(pos[0]), y=self.pm.convert_screen_y_to_ag_y(pos[1])),
-                    'xz'), 3))) is not None:
-            x, y = r
-            z = self.pm.convert_ag_coordinate_to_screen_coordinate(
-                x, y, obj.z(x=self.pm.convert_screen_x_to_ag_x(x), y=self.pm.convert_screen_y_to_ag_y(y)), 'xz')[1]
+    def select_object(self, pos):
+        selected_object = None
+        for obj in self.objects:
+            for el in obj.xy_projection:
+                if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 7:
+                    selected_object = obj
+                    break
+                if isinstance(el, ThinScreenPoint) and snap.distance(pos, el.tuple()) <= 3:
+                    selected_object = obj
+                    break
+                if isinstance(el, ScreenSegment) and snap.distance(pos, snap.nearest_point(pos, el)) <= 3:
+                    selected_object = obj
+                    break
+                if isinstance(el, ScreenCircle) and abs(snap.distance(pos, el.center) - el.radius) <= 3:
+                    selected_object = obj
+                    break
+            for el in obj.xz_projection:
+                if isinstance(el, ScreenPoint) and snap.distance(pos, el.tuple()) <= 7:
+                    selected_object = obj
+                    break
+                if isinstance(el, ThinScreenPoint) and snap.distance(pos, el.tuple()) <= 2:
+                    selected_object = obj
+                    break
+                if isinstance(el, ScreenSegment) and snap.distance(pos, snap.nearest_point(pos, el)) <= 2:
+                    selected_object = obj
+                    break
+                if isinstance(el, ScreenCircle) and abs(snap.distance(pos, el.center) - el.radius) <= 3:
+                    selected_object = obj
+                    break
+        if selected_object:
+            if selected_object.id != self.selected_object_index:
+                self.objectSelected.emit(selected_object.id)
         else:
-            return
-        p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
-                      self.pm.convert_screen_y_to_ag_z(z))
-        self.layers[self.current_layer].add_object(ag.Line(
-            p1, obj.normal & (ag.Vector(0, 1, 0) if f else ag.Vector(0, 0, 1))), Plot.random_color())
-        self.full_update()
-        return True
+            self.objectSelected.emit(0)
 
-    def get_distance(self):
-        self.screen.info_string.print('Выберите 1-ый объект')
-        if (r := self.select_object(None)) is None:
-            return
+    def set_selected_object(self, obj):
+        if obj:
+            self.selected_object_index = obj.id
+            self.selected_object = self.find_by_id(obj.id)
         else:
-            obj1 = r
-        self.screen.info_string.print('Выберите 2-ой объект')
-        if (r := self.select_object(None)) is None:
-            return
-        else:
-            obj2 = r
-        try:
-            self.screen.info_string.print(ag.distance(obj1, obj2))
-        except Exception:
-            self.screen.info_string.print('Ошибка')
+            self.selected_object_index = 0
+            self.selected_object = None
+        self.update()
 
-    def get_angle(self, plane=''):
-        self.full_update()
-        self.screen.update()
-        self.screen.info_string.print('Выберите объект')
-        if (r := self.select_object(None)) is None:
-            return
-        else:
-            obj1 = r
-        if plane == '':
-            self.screen.info_string.print('Выберите 2-ой объект')
-            if (r := self.select_object(None)) is None:
-                return
-            else:
-                obj2 = r
-            try:
-                self.screen.info_string.print(ag.angle(obj1, obj2))
-            except Exception:
-                self.screen.info_string.print('Ошибка')
-        elif plane == 'xy':
-            try:
-                self.screen.info_string.print(ag.angle(obj1, ag.Plane(ag.Vector(0, 0, 1), ag.Point(0, 0, 0))))
-            except Exception:
-                self.screen.info_string.print('Ошибка')
-        elif plane == 'xz':
-            try:
-                self.screen.info_string.print(ag.angle(obj1, ag.Plane(ag.Vector(0, 1, 0), ag.Point(0, 0, 0))))
-            except Exception:
-                self.screen.info_string.print('Ошибка')
+    def find_by_id(self, id):
+        for obj in self.objects:
+            if obj.id == id:
+                return obj
+        raise IndexError(f"Object {id} not found")
 
-    def get_distance_between_points(self):
-        if (r := self.select_screen_point('xy')) is not None:
-            x1, y1 = r
-        else:
-            return
-        a1 = ScreenPoint(self, x1, y1, (0, 162, 232))
-        if (r := self.select_screen_point('xy', segment=(x1, y1), objects=(a1,))) is not None:
-            x2, y2 = r
-        else:
-            return
-        a2 = ScreenPoint(self, x2, y2, (0, 162, 232))
-        s1 = ScreenSegment(self, a1, a2, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x1, y=y1, objects=(a1, a2, s1))) is not None:
-            z1 = r
-        else:
-            return
-        b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
-        s2 = ScreenSegment(self, a1, b1, (180, 180, 180))
-        if (
-        r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
-            z2 = r
-        else:
-            return
-        print(ag.distance(
-            ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
-                     self.pm.convert_screen_y_to_ag_z(z1)),
-            ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
-                     self.pm.convert_screen_y_to_ag_z(z2))))
-        self.full_update()
-        return True
+    def set_zoom(self, zoom, pos=None):
+        if zoom > self.zoom:
+            self.zoom_in(pos, zoom / self.zoom)
+        elif zoom < self.zoom:
+            self.zoom_out(pos, self.zoom / zoom)
 
-    def create_circle(self):
-        self.screen.info_string.print('Выберите плоскость')
-        plane = self.select_object(ag.Plane)
-        if plane is None:
-            return
-        self.screen.info_string.print('')
-        if (r := self.select_screen_point('xy', func=lambda pos: pg.draw.circle(
-                self.screen.screen, (0, 162, 232), self.pm.convert_ag_coordinate_to_screen_coordinate(
-                    self.pm.convert_screen_x_to_ag_x(pos[0]), 0, plane.z(
-                        x=self.pm.convert_screen_x_to_ag_x(pos[0]), y=self.pm.convert_screen_y_to_ag_y(pos[1])),
-                    'xz'), 3))) is not None:
-            x, y = r
-            z = self.pm.convert_ag_coordinate_to_screen_coordinate(
-                x, y, plane.z(x=self.pm.convert_screen_x_to_ag_x(x), y=self.pm.convert_screen_y_to_ag_y(y)), 'xz')[1]
-        else:
-            return
-        a1 = ScreenPoint(self, x, y, (0, 162, 232))
-        a2 = ScreenPoint(self, x, z, (0, 162, 232))
-        center = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
-                          self.pm.convert_screen_y_to_ag_z(z))
-        if (r := self.select_screen_point('xy', objects=(a1, a2), func=lambda pos: GeneralObject(
-                self, ag.Circle(center, ag.distance(ag.Point(
-                    self.pm.convert_screen_x_to_ag_x(pos[0]), self.pm.convert_screen_y_to_ag_y(pos[1]),
-                    plane.z(x=self.pm.convert_screen_x_to_ag_x(pos[0]), y=self.pm.convert_screen_y_to_ag_y(pos[1]))),
-                    center), plane.normal), (0, 162, 232)).draw())) is not None:
-            x0, y0 = r
-        else:
-            return
-        self.layers[self.current_layer].add_object(ag.Circle(
-            center, ag.distance(ag.Point(
-                    self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0),
-                    plane.z(self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0))),
-                    center), plane.normal), Plot.random_color())
-        self.full_update()
-        return True
+    def zoom_in(self, pos=None, zoom_step=1.5):
+        if pos is None:
+            pos = (self.tlp[0] + self.brp[0]) // 2, (self.tlp[1] + self.brp[1]) // 2
+        self.zoom *= zoom_step
+        self.pm.zoom *= zoom_step
+        self.move_camera((zoom_step - 1) * ((self.axis.rp[0] - pos[0]) + self.camera_pos[0]),
+                         (zoom_step - 1) * (self.axis.rp[1] - pos[1]), update=False)
+        for obj in self.objects:
+            obj.update_projections()
+        self.sm.update_intersections()
+        self.update()
 
-    def create_cone(self, cylinder=False):
-        if (r := self.select_screen_point('xy')) is not None:
-            x1, y1 = r
-        else:
-            return
-        a1 = ScreenPoint(self, x1, y1, (0, 162, 232))
-        if (r := self.select_screen_point('xy', segment=(x1, y1), objects=(a1,))) is not None:
-            x2, y2 = r
-        else:
-            return
-        a2 = ScreenPoint(self, x2, y2, (0, 162, 232))
-        s1 = ScreenSegment(self, a1, a2, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x1, y=y1, objects=(a1, a2, s1))) is not None:
-            z1 = r
-        else:
-            return
-        b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
-        s2 = ScreenSegment(self, a1, b1, (180, 180, 180))
-        if (
-        r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
-            z2 = r
-        else:
-            return
-        p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
-                      self.pm.convert_screen_y_to_ag_z(z1))
-        p2 = ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
-                      self.pm.convert_screen_y_to_ag_z(z2))
-        plane = ag.Plane(ag.Vector(p1, p2), p1)
-        if cylinder:
-            obj_type = ag.Cylinder
-        else:
-            obj_type = ag.Cone
-        if (r := self.select_screen_point('xy', objects=(a1, a2), func=lambda pos: GeneralObject(
-                self, obj_type(p1, p2, ag.distance(ag.Point(
-                    self.pm.convert_screen_x_to_ag_x(pos[0]), self.pm.convert_screen_y_to_ag_y(pos[1]),
-                    plane.z(x=self.pm.convert_screen_x_to_ag_x(pos[0]), y=self.pm.convert_screen_y_to_ag_y(pos[1]))
-                    if p1.z != p2.z else p1.z),
-                    p1)), (0, 162, 232)).draw())) is not None:
-            x0, y0 = r
-        else:
-            return
-        radius = ag.distance(ag.Point(
-                    self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0),
-                    plane.z(self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0))
-                    if p1.z != p2.z else p1.z), p1)
-        self.layers[self.current_layer].add_object(obj_type(p1, p2, radius), Plot.random_color())
-        self.full_update()
-        return True
+    def zoom_out(self, pos=None, zoom_step=1.5):
+        if pos is None:
+            pos = (self.tlp[0] + self.brp[0]) // 2, (self.tlp[1] + self.brp[1]) // 2
+        self.zoom /= zoom_step
+        self.pm.zoom /= zoom_step
+        new_camera_x = (self.camera_pos[0] + self.axis.rp[0] - pos[0]) / zoom_step - self.axis.rp[0] + pos[0]
+        new_axis_y = pos[1] - (pos[1] - self.axis.lp[1]) / zoom_step
+        self.move_camera(new_camera_x - self.camera_pos[0], new_axis_y - self.axis.lp[1], update=False)
+        for obj in self.objects:
+            obj.update_projections()
+        self.sm.update_intersections()
+        self.update()
 
-    def create_spline(self):
-        self.screen.info_string.print('Выберите плоскость')
-        plane = self.select_object(ag.Plane)
-        if plane is None:
-            return
-        self.screen.info_string.print('')
-        while True:
-            points = []
-            while True:
-                self.full_update()
-                pos = self.sm.get_snap(self.screen, pg.mouse.get_pos(), 'xy')
-                events = pg.event.get()
-                for event in events:
-                    if Plot.check_exit_event(event):
-                        return None
-                    if event.type == pg.MOUSEBUTTONDOWN and event.button == 1 and self.point_is_on_plot(event.pos):
-                        res = self.sm.get_snap(self.screen, event.pos, 'xy')
-                        points.append(ag.Point(self.pm.convert_screen_x_to_ag_x(res[0]),
-                                               self.pm.convert_screen_y_to_ag_y(res[1]),
-                                               plane.z(self.pm.convert_screen_x_to_ag_x(res[0]),
-                                                       self.pm.convert_screen_y_to_ag_y(res[1]))))
-                    elif event.type == pg.KEYDOWN and event.key == 13:
-                        self.layers[self.current_layer].add_object(ag.Spline(plane, *points), Plot.random_color())
-                        self.full_update()
-                        return True
-                if self.point_is_on_plot(pos):
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), pos, 3)
-                    if len(points) == 1:
-                        GeneralObject(self, ag.Segment(points[0], ag.Point(
-                            self.pm.convert_screen_x_to_ag_x(pos[0]), self.pm.convert_screen_y_to_ag_y(pos[1]),
-                            plane.z(self.pm.convert_screen_x_to_ag_x(pos[0]),
-                                    self.pm.convert_screen_y_to_ag_y(pos[1])))), (0, 162, 232)).draw()
-                    elif len(points) >= 2:
-                        try:
-                            GeneralObject(self, ag.Spline(plane, *points, ag.Point(
-                            self.pm.convert_screen_x_to_ag_x(pos[0]), self.pm.convert_screen_y_to_ag_y(pos[1]),
-                            plane.z(self.pm.convert_screen_x_to_ag_x(pos[0]),
-                                    self.pm.convert_screen_y_to_ag_y(pos[1])))), (0, 162, 232)).draw()
-                        except Exception:
-                            pass
-                    self.screen.update()
-                    self.clock.tick(30)
+    def end(self):
+        self.mouse_move = None
+        self.mouse_left = None
+        self.mouse_right = None
+        self.setMouseTracking(False)
+        self.cmd_command = None
+        self.setCmdStatus.emit(False)
+        self.update()
 
-    def get_intersection(self):
-        random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
-        self.screen.info_string.print('Выберите 1-ый объект')
-        if (r := self.select_object(None)) is None:
-            return
-        else:
-            obj1 = r
-        self.screen.info_string.print('Выберите 2-ой объект')
-        if (r := self.select_object(None)) is None:
-            return
-        else:
-            obj2 = r
-        self.screen.info_string.print('...')
-        # res = obj1.intersection(obj2)
-        try:
-            res = obj1.intersection(obj2)
-        except Exception:
-            try:
-                res = obj1.intersection(obj2)
-            except Exception:
-                res = None
-                self.screen.info_string.print('Ошибка')
-                return True
-        if res is not None:
-            if isinstance(res, tuple):
-                for el in res:
-                    self.layers[self.current_layer].add_object(el, random_color, history_record=False)
-                self.hm.add_record('add_several_objects', len(res))
-            else:
-                self.layers[self.current_layer].add_object(res, random_color)
-            self.screen.info_string.print('Готово')
-        else:
-            self.screen.info_string.print('Нет пересечения')
-        self.full_update()
-        return True
+    def print(self, s):
+        self.printToCommandLine.emit(s)
+        print(s)
 
-    def create_tor(self):
-        def draw_tor(pos):
-            try:
-                GeneralObject(
-                    self, ag.Tor(center, radius, abs(radius - ag.distance(
-                    ag.Point(self.pm.convert_screen_x_to_ag_x(pos[0]), self.pm.convert_screen_y_to_ag_y(pos[1]),
-                    center.z), center)), vector), (0, 162, 232)).draw()
-            except Exception:
-                pass
 
-        if (r := self.select_screen_point('xy')) is not None:
-            x, y = r
-        else:
-            return
-        a1 = ScreenPoint(self, x, y, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x, y=y, objects=(a1,))) is not None:
-            z = r
-        else:
-            return
-        a2 = ScreenPoint(self, x, z, (0, 162, 232))
-        center = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
-                          self.pm.convert_screen_y_to_ag_z(z))
-        if (r := self.select_screen_point('xy', func=lambda pos: GeneralObject(
-                self, ag.Circle(center, ag.distance(ag.Point(
-                    self.pm.convert_screen_x_to_ag_x(pos[0]), self.pm.convert_screen_y_to_ag_y(pos[1]),
-                    center.z), center)),
-                (0, 162, 232)).draw())) is not None:
-            x0, y0 = r
-        else:
-            return
-        radius = ag.distance(ag.Point(
-                    self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0), center.z), center)
-        if (r := self.select_screen_point('xy', func=lambda pos: GeneralObject(
-                self, ag.Circle(center, radius, ag.Vector(center, ag.Point(
-                    self.pm.convert_screen_x_to_ag_x(pos[0]), self.pm.convert_screen_y_to_ag_y(pos[1]), 0))),
-                (0, 162, 232)).draw())) is not None:
-            x0, y0 = r
-        else:
-            return
-        if (r := self.select_screen_point('xz', x=x0, y=y0, func=lambda pos: GeneralObject(
-                self, ag.Circle(center, radius, ag.Vector(center, ag.Point(
-                    self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0),
-                    self.pm.convert_screen_y_to_ag_z(pos[1])))), (0, 162, 232)).draw())) is not None:
-            z0 = r
-        else:
-            return
-        vector = ag.Vector(center, ag.Point(self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0),
-                           self.pm.convert_screen_y_to_ag_z(z0)))
-        if (r := self.select_screen_point('xy', func=draw_tor)) is not None:
-            x0, y0 = r
-        else:
-            return
-        tube_radius = abs(radius - ag.distance(ag.Point(
-            self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0), center.z), center))
-        self.layers[self.current_layer].add_object(ag.Tor(center, radius, tube_radius, vector), Plot.random_color())
-        self.full_update()
-        return True
+def main():
+    app = QApplication([])
+    plot = Plot(None)
+    plot.show()
+    app.exec_()
 
-    def create_rotation_surface(self):
-        if (r := self.select_screen_point('xy')) is not None:
-            x1, y1 = r
-        else:
-            return
-        a1 = ScreenPoint(self, x1, y1, (0, 162, 232))
-        if (r := self.select_screen_point('xy', segment=(x1, y1), objects=(a1,))) is not None:
-            x2, y2 = r
-        else:
-            return
-        a2 = ScreenPoint(self, x2, y2, (0, 162, 232))
-        s1 = ScreenSegment(self, a1, a2, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x1, y=y1, objects=(a1, a2, s1))) is not None:
-            z1 = r
-        else:
-            return
-        b1 = ScreenPoint(self, x1, z1, (0, 162, 232))
-        s2 = ScreenSegment(self, a1, b1, (180, 180, 180))
-        if (
-        r := self.select_screen_point('xz', x=x2, y=y2, segment=(x1, z1), objects=(a1, a2, s1, b1, s2))) is not None:
-            z2 = r
-        else:
-            return
-        b2 = ScreenPoint(self, x2, z2, (0, 162, 232))
-        p1 = ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
-                      self.pm.convert_screen_y_to_ag_z(z1))
-        p2 = ag.Point(self.pm.convert_screen_x_to_ag_x(x2), self.pm.convert_screen_y_to_ag_y(y2),
-                      self.pm.convert_screen_y_to_ag_z(z2))
-        if ag.Vector(p1, p2) | ag.Vector(0, 0, 1):
-            plane = ag.Plane(p1, p2, ag.Vector(0, 1, 0) & ag.Vector(p1, p2))
-            l1 = self.pm.get_projection(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xz', (200, 200, 200))
-            l2 = self.pm.get_projection(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xz', (200, 200, 200))
-            s2 = ScreenSegment(self, b1, b2, (0, 162, 232))
-            if (r := self.select_screen_point('xz', line=l1, objects=(s1, s2, l1, l2))) is not None:
-                x1, z1 = r
-            else:
-                return
-            points = [ag.Point(self.pm.convert_screen_x_to_ag_x(x1), plane.y(x=self.pm.convert_screen_x_to_ag_x(x1),
-                                       z=self.pm.convert_screen_y_to_ag_z(z1)), self.pm.convert_screen_y_to_ag_z(z1)) +
-                      ag.Vector(p1, p2) * (-1 / abs(ag.Vector(p1, p2)))]
-            while True:
-                while True:
-                    self.full_update()
-                    pos = self.sm.get_snap(self.screen, pg.mouse.get_pos(), 'xz')
-                    events = pg.event.get()
-                    for event in events:
-                        if Plot.check_exit_event(event):
-                            return None
-                        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1 and self.point_is_on_plot(event.pos):
-                            res = self.sm.get_snap(self.screen, event.pos, 'xz')
-                            if snap.distance(res, snap.nearest_point(res, l2, as_line=True)) <= 10:
-                                res = snap.nearest_point(res, l2, as_line=True)
-                                points.append(ag.Point(self.pm.convert_screen_x_to_ag_x(res[0]),
-                                                       plane.y(self.pm.convert_screen_x_to_ag_x(res[0]),
-                                                               self.pm.convert_screen_y_to_ag_z(res[1])),
-                                                       self.pm.convert_screen_y_to_ag_z(res[1])) +
-                                              ag.Vector(p1, p2) * (1 / abs(ag.Vector(p1, p2))))
-                                self.layers[self.current_layer].add_object(
-                                    ag.RotationSurface(p1, p2, ag.Spline(plane, *points)), Plot.random_color())
-                                self.full_update()
-                                return True
-                            points.append(ag.Point(self.pm.convert_screen_x_to_ag_x(res[0]),
-                                                   plane.y(self.pm.convert_screen_x_to_ag_x(res[0]),
-                                                           self.pm.convert_screen_y_to_ag_z(res[1])),
-                                                   self.pm.convert_screen_y_to_ag_z(res[1])))
-                    if self.point_is_on_plot(pos):
-                        pg.draw.circle(self.screen.screen, (0, 162, 232), pos, 3)
-                        if len(points) == 1:
-                            GeneralObject(self, ag.Segment(points[0], ag.Point(
-                                self.pm.convert_screen_x_to_ag_x(pos[0]),
-                                plane.y(self.pm.convert_screen_x_to_ag_x(pos[0]),
-                                        self.pm.convert_screen_y_to_ag_z(pos[1])),
-                                self.pm.convert_screen_y_to_ag_z(pos[1]))), (0, 162, 232)).draw()
-                        elif len(points) >= 2:
-                            try:
-                                GeneralObject(self, ag.Spline(plane, *points, ag.Point(
-                                    self.pm.convert_screen_x_to_ag_x(pos[0]),
-                                    plane.y(self.pm.convert_screen_x_to_ag_x(pos[0]),
-                                            self.pm.convert_screen_y_to_ag_z(pos[1])),
-                                    self.pm.convert_screen_y_to_ag_z(pos[1]))), (0, 162, 232)).draw()
-                            except Exception:
-                                pass
-                        s1.draw()
-                        s2.draw()
-                        l1.draw()
-                        l2.draw()
-                        self.screen.update()
-                        self.clock.tick(30)
-        plane = ag.Plane(p1, p2, ag.Vector(0, 0, 1) & ag.Vector(p1, p2))
-        l1 = self.pm.get_projection(ag.Line(p1, ag.Vector(p1, p2) & plane.normal), 'xy', (200, 200, 200))
-        l2 = self.pm.get_projection(ag.Line(p2, ag.Vector(p1, p2) & plane.normal), 'xy', (200, 200, 200))
-        s2 = ScreenSegment(self, b1, b2, (0, 162, 232))
-        if (r := self.select_screen_point('xy', line=l1, objects=(s1, s2, l1, l2))) is not None:
-            x1, y1 = r
-        else:
-            return
-        points = [ag.Point(self.pm.convert_screen_x_to_ag_x(x1), self.pm.convert_screen_y_to_ag_y(y1),
-                           plane.z(x=self.pm.convert_screen_x_to_ag_x(x1), y=self.pm.convert_screen_y_to_ag_y(y1))) +
-                  ag.Vector(p1, p2) * (-1 / abs(ag.Vector(p1, p2)))]
-        while True:
-            while True:
-                self.full_update()
-                pos = self.sm.get_snap(self.screen, pg.mouse.get_pos(), 'xy')
-                events = pg.event.get()
-                for event in events:
-                    if Plot.check_exit_event(event):
-                        return None
-                    if event.type == pg.MOUSEBUTTONDOWN and event.button == 1 and self.point_is_on_plot(event.pos):
-                        res = self.sm.get_snap(self.screen, event.pos, 'xy')
-                        if snap.distance(res, snap.nearest_point(res, l2, as_line=True)) <= 10:
-                            res = snap.nearest_point(res, l2, as_line=True)
-                            points.append(ag.Point(self.pm.convert_screen_x_to_ag_x(res[0]),
-                                                   self.pm.convert_screen_y_to_ag_y(res[1]),
-                                                   plane.z(self.pm.convert_screen_x_to_ag_x(res[0]),
-                                                           self.pm.convert_screen_y_to_ag_y(res[1]))) +
-                                          ag.Vector(p1, p2) * (1 / abs(ag.Vector(p1, p2))))
-                            random_color = (random.randint(50, 180), random.randint(80, 180), random.randint(50, 180))
-                            self.layers[self.current_layer].add_object(
-                                ag.RotationSurface(p1, p2, ag.Spline(plane, *points)), random_color)
-                            self.full_update()
-                            return True
-                        points.append(ag.Point(self.pm.convert_screen_x_to_ag_x(res[0]),
-                                               self.pm.convert_screen_y_to_ag_y(res[1]),
-                                               plane.z(self.pm.convert_screen_x_to_ag_x(res[0]),
-                                                       self.pm.convert_screen_y_to_ag_y(res[1]))))
-                if self.point_is_on_plot(pos):
-                    pg.draw.circle(self.screen.screen, (0, 162, 232), pos, 3)
-                    if len(points) == 1:
-                        GeneralObject(self, ag.Segment(points[0], ag.Point(
-                            self.pm.convert_screen_x_to_ag_x(pos[0]), self.pm.convert_screen_y_to_ag_y(pos[1]),
-                            plane.z(self.pm.convert_screen_x_to_ag_x(pos[0]),
-                                    self.pm.convert_screen_y_to_ag_y(pos[1])))), (0, 162, 232)).draw()
-                    elif len(points) >= 2:
-                        try:
-                            GeneralObject(self, ag.Spline(plane, *points, ag.Point(
-                            self.pm.convert_screen_x_to_ag_x(pos[0]), self.pm.convert_screen_y_to_ag_y(pos[1]),
-                            plane.z(self.pm.convert_screen_x_to_ag_x(pos[0]),
-                                    self.pm.convert_screen_y_to_ag_y(pos[1])))), (0, 162, 232)).draw()
-                        except Exception:
-                            pass
-                    s1.draw()
-                    s2.draw()
-                    l1.draw()
-                    l2.draw()
-                    self.screen.update()
-                    self.clock.tick(30)
 
-    def create_sphere(self):
-        if (r := self.select_screen_point('xy')) is not None:
-            x, y = r
-        else:
-            return
-        a1 = ScreenPoint(self, x, y, (0, 162, 232))
-        if (r := self.select_screen_point('xz', x=x, y=y, objects=(a1,))) is not None:
-            z = r
-        else:
-            return
-        a2 = ScreenPoint(self, x, z, (0, 162, 232))
-        center = ag.Point(self.pm.convert_screen_x_to_ag_x(x), self.pm.convert_screen_y_to_ag_y(y),
-                          self.pm.convert_screen_y_to_ag_z(z))
-        if (r := self.select_screen_point('xy', objects=(a1, a2), func=lambda pos: GeneralObject(
-                self, ag.Sphere(center, ag.distance(ag.Point(
-                    self.pm.convert_screen_x_to_ag_x(pos[0]), self.pm.convert_screen_y_to_ag_y(pos[1]),
-                    center.z),
-                    center)), (0, 162, 232)).draw())) is not None:
-            x0, y0 = r
-        else:
-            return
-        self.layers[self.current_layer].add_object(ag.Sphere(center, ag.distance(ag.Point(
-                    self.pm.convert_screen_x_to_ag_x(x0), self.pm.convert_screen_y_to_ag_y(y0),
-                    center.z),
-                    center)), Plot.random_color())
-        self.full_update()
-        return True
+if __name__ == '__main__':
+    main()

@@ -1,105 +1,131 @@
-import utils.history.serializable as serializable
-from pygame_widgets.textbox import TextBox
-import pygame as pg
+from PyQt5 import QtWidgets, QtGui
+from utils.objects.general_object import GeneralObject
 
 
-class AttributesWindow:
-    def __init__(self, screen, obj, pos=(10, 70)):
-        self.screen = screen
+ONLY_POSITIVE_ATTRIBUTES = ['radius', 'radius1', 'radius2', 'tube_radius']
+
+
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self, obj):
+        super().__init__()
+        self.setFixedSize(300, 400)
+
         self.obj = obj
-        self.size = (300, 300)
-        self.pos = pos
-        self.dict = self.obj.ag_object.__dict__
+        self.dict = obj.to_dict()
+        self.save_changes = True
+        self.setWindowTitle(self.obj.ag_object.__class__.__name__)
 
-        self.font1 = pg.font.SysFont('Courier', 12)
-        self.font2 = pg.font.SysFont('Courier', 16)
+        self.attributes_panel_widget = QtWidgets.QWidget(self)
+        self.attributes_panel_widget.setGeometry(10, 10, 265, 330)
 
-        self.name_textbox = TextBox(self.screen.screen, self.pos[0] + 75, self.pos[1] + 30, 200, 25,
-                               inactiveColour=(255, 255, 255), activeColour=(200, 200, 200), textColour=(0, 0, 0),
-                               borderColour=(64, 64, 64), radius=3, borderThickness=1,
-                               font=self.font2)
-        self.name_textbox.text = list(obj.name)
-        self.name_textbox.cursorPosition = len(obj.name)
-        self.name_textbox.onTextChanged = lambda: self.change_obj_name(''.join(self.name_textbox.text))
+        self.attributes_panel = QtWidgets.QWidget(self.attributes_panel_widget)
+        self.attributes_panel.setGeometry(10, 10, 265, 100000)
 
-        self.pos_to_write = 0
-        self.text_boxes = []
+        self.button1 = QtWidgets.QPushButton('Отмена', self)
+        self.button1.setGeometry(10, 350, 120, 40)
+        self.button1.clicked.connect(lambda *args: self.exit(False))
+        self.button2 = QtWidgets.QPushButton('ОК', self)
+        self.button2.setGeometry(140, 350, 120, 40)
+        self.button2.clicked.connect(lambda *args: self.exit(True))
 
-    def change_obj_name(self, name):
-        self.obj.name = name
+        label = QtWidgets.QLabel('Name:', self.attributes_panel)
+        label.setGeometry(0, 0, 75, 25)
+        name_line = QtWidgets.QLineEdit(self.dict['name'], self.attributes_panel)
+        name_line.setGeometry(75, 0, 190, 25)
+        name_line.textChanged.connect(self.set_name)
 
-    def draw(self):
-        pg.draw.rect(self.screen.screen, (195, 195, 195), (self.pos, self.size), border_radius=5)
-        pg.draw.rect(self.screen.screen, (80, 80, 80), (self.pos, self.size), 2, 5)
-        self.screen.screen.blit(self.font2.render(self.obj.ag_object.__class__.__name__, False, (0, 0, 0)),
-                                (self.pos[0] + 10, self.pos[1] + 10))
-        self.screen.screen.blit(self.font1.render('Имя:', False, (0, 0, 0)),
-                                (self.pos[0] + 10, self.pos[1] + 35))
-        self.screen.screen.blit(self.font1.render('Цвет:', False, (0, 0, 0)),
-                                (self.pos[0] + 10, self.pos[1] + 60))
-        pg.draw.rect(self.screen.screen, self.obj.color, (self.pos[0] + 75, self.pos[1] + 58, 40, 16))
-        self.pos_to_write = 80
-        for attribute in serializable.angem_objects[serializable.angem_class_by_name[self.obj.ag_object.__class__.__name__]]:
-            self.draw_attributes((attribute,))
-        self.name_textbox.show()
+        label = QtWidgets.QLabel('Color:', self.attributes_panel)
+        label.setGeometry(0, 30, 75, 25)
 
-    def draw_attributes(self, obj):
-        level = len(obj) - 1
-        dct = self.dict
-        for i in range(len(obj) - 1):
-            dct = dct[obj[i]]
-            if not isinstance(dct, list) and not isinstance(dct, tuple):
-                dct = dct.__dict__
-        class_name = dct[obj[-1]].__class__
-        dct = dct[obj[-1]]
-        if isinstance(dct, int) or isinstance(dct, float):
-            index = len(self.text_boxes)
-            self.screen.screen.blit(self.font1.render(f'{obj[-1]}:', False, (0, 0, 0)),
-                                    (self.pos[0] + 10 + 20 * level, self.pos[1] + self.pos_to_write))
-            self.text_boxes.append(TextBox(self.screen.screen, self.pos[0] + 75 + 20 * level, self.pos[1] + self.pos_to_write, 150, 18,
-                                           inactiveColour=(255, 255, 255), activeColour=(200, 200, 200),
-                                           textColour=(0, 0, 0),
-                                           borderColour=(64, 64, 64), radius=3, borderThickness=1,
-                                           font=self.font1))
-            self.text_boxes[-1].text = list(str(dct))
-            self.text_boxes[-1].cursorPosition = len(str(obj))
-            self.text_boxes[-1].onTextChanged = lambda: self.set_attribute(obj, ''.join(self.text_boxes[index].text))
-            self.pos_to_write += 20
-        elif isinstance(dct, list) or isinstance(dct, tuple):
-            for i in range(len(dct)):
-                self.screen.screen.blit(self.font1.render(f'{obj[-1]}[{i}]:', False, (0, 0, 0)),
-                                        (self.pos[0] + 10 + 20 * level, self.pos[1] + self.pos_to_write))
-                self.pos_to_write += 20
-                self.draw_attributes(obj + (i,))
-        else:
-            self.screen.screen.blit(self.font1.render(f'{obj[-1]}:', False, (0, 0, 0)),
-                                    (self.pos[0] + 10 + 20 * level, self.pos[1] + self.pos_to_write))
-            self.pos_to_write += 20
-            for attribute in serializable.angem_objects[class_name]:
-                self.draw_attributes(obj + (attribute,))
+        self.color_dialog = QtWidgets.QColorDialog()
+        self.color_button = QtWidgets.QPushButton(self.attributes_panel)
+        self.color_button.setGeometry(75, 30, 100, 25)
+        self.color_button.clicked.connect(lambda *args: self.set_color())
+        self.color_button.setStyleSheet(f'background: rgb{str(obj.color)}')
 
-    def set_attribute(self, obj, value):
-        dct = self.dict
-        if value == '':
-            value = 0
-        else:
-            try:
-                value = float(value)
-            except Exception:
-                return
-        for i in range(len(obj) - 1):
-            dct = dct[obj[i]].__dict__
-        dct[obj[-1]] = value
+        attributes_window = AttributeWindow(self.attributes_panel, self.dict['ag_object'])
+        attributes_window.setGeometry(0, 60, 275, attributes_window.h)
+        h = attributes_window.h + 70
 
-    def point_on_window(self, pos):
-        if self.pos[0] < pos[0] < self.pos[0] + self.size[0] and self.pos[1] < pos[1] < self.pos[1] + self.size[1]:
-            return True
-        return False
+        if h > 330:
+            self.scroll_bar = QtWidgets.QScrollBar(self)
+            self.scroll_bar.valueChanged.connect(lambda *args: self.scroll_attributes_panel())
+            self.scroll_bar.setGeometry(285, 0, 15, 400)
+            self.scroll_bar.setMaximum((h - 330) // 10)
 
-    def clicked(self, pos):
-        pass
+    def scroll_attributes_panel(self):
+        self.attributes_panel.move(10, 10 - self.scroll_bar.value() * 10)
 
-    def destroy(self):
-        self.name_textbox.hide()
-        for textbox in self.text_boxes:
-            textbox.hide()
+    def set_color(self):
+        QtWidgets.QColorDialog.setStandardColor(0, QtGui.QColor(*self.obj.color))
+        color = self.color_dialog.getColor()
+        self.dict['color'] = color.red(), color.green(), color.blue()
+        self.color_button.setStyleSheet(f'background: rgb{str((color.red(), color.green(), color.blue()))}')
+
+    def set_name(self, name):
+        self.dict['name'] = name
+
+    def exit(self, save_changes):
+        self.save_changes = save_changes
+        self.close()
+
+
+class AttributeWindow(QtWidgets.QWidget):
+    def __init__(self, parent, dct):
+        super().__init__(parent)
+        self.h = 0
+        y = 0
+        for key, item in dct.items():
+            attributes_window = AttributeWindow2(self, key, item, dct)
+            attributes_window.setGeometry(0, y, 275, attributes_window.h)
+            y += attributes_window.h
+        self.h = y
+
+
+class AttributeWindow2(QtWidgets.QWidget):
+    def __init__(self, parent, key, item, dct, index=None):
+        def set_value(dct, key, value):
+            dct[key] = value
+
+        super().__init__(parent)
+        y = 0
+        self.h = 0
+        if isinstance(item, float) or isinstance(item, int):
+            label = QtWidgets.QLabel(f'{key}:' if index is None else f'{key}[{index}]:', self)
+            label.setGeometry(0, y, 50, 25)
+            spin_box = QtWidgets.QDoubleSpinBox(self)
+            spin_box.setMaximum(1e100)
+            spin_box.setMinimum(0 if key in ONLY_POSITIVE_ATTRIBUTES else -1e100)
+            spin_box.setDecimals(4)
+            spin_box.setValue(item)
+            spin_box.setGeometry(50, y, 150, 25)
+            spin_box.valueChanged.connect(lambda value: set_value(dct, key, value))
+            y += 30
+        if isinstance(item, tuple) and key != 'color' or isinstance(item, list):
+            for i in range(len(item)):
+                attributes_window = AttributeWindow2(self, key, item[i], dct, index=i)
+                attributes_window.setGeometry(0, y, 275, attributes_window.h)
+                y += attributes_window.h
+        elif isinstance(item, dict):
+            label = QtWidgets.QLabel(f'{key}:' if index is None else f'{key}[{index}]:', self)
+            label.setGeometry(0, y, 50, 25)
+            y += 30
+            for key2, item2 in item.items():
+                attributes_window = AttributeWindow2(self, key2, item2, dct[key] if index is None else dct[key][index])
+                attributes_window.setGeometry(25, y, 275, attributes_window.h)
+                y += attributes_window.h
+        self.h = y
+
+
+def open_attribute_window(obj):
+    app = QtWidgets.QApplication([])
+    window = MainWindow(obj)
+    window.show()
+
+    app.exec_()
+    if window.save_changes:
+        try:
+            return GeneralObject.from_dict(obj.plot, window.dict)
+        except Exception:
+            return obj
+    return obj
