@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QVBoxLayout
 from utils.ui.bars.tool import Tool
 from utils.ui.widgets.widget import Widget
+from utils.color import *
 
 
 class ToolBar(Widget):
@@ -9,7 +10,7 @@ class ToolBar(Widget):
 
         self.tools = list()
 
-        self.setStyleSheet("background-color: #EAEAEA; border-radius: 10px;")
+        self.setStyleSheet(f"background-color: {LIGHT_COLOR}; border-radius: 10px;")
 
         # Layout
         self.layout = QVBoxLayout(self.central_widget)

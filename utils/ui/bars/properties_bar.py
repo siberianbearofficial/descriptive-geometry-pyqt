@@ -1,11 +1,11 @@
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QLayout, QComboBox, \
     QColorDialog, QScrollArea, QWidget
-from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt
 
 from utils.ui.bars.properties_bar_object import PropertiesBarObject
 from utils.ui.widgets.LineEditWidget import LineEditWidget
 from utils.ui.widgets.widget import Widget
+from utils.color import *
 
 
 class PropertiesBar(Widget):
@@ -22,7 +22,7 @@ class PropertiesBar(Widget):
         self.layers_list = []
         self.font_manager = font_manager
 
-        self.setStyleSheet("background-color: #FFFFFF; border-radius: 10px;")
+        self.setStyleSheet(f"background-color: {WHITE_COLOR}; border-radius: 10px;")
         self.layout = QVBoxLayout(self.central_widget)
         self.layout.setAlignment(Qt.AlignTop)
         self.layout.setContentsMargins(15, 15, 15, 15)
@@ -33,16 +33,16 @@ class PropertiesBar(Widget):
         name_label.setFixedHeight(20)
 
         name_label.setFont(font_manager.bold())
-        name_label.setStyleSheet("color: #00ABB3;")
+        name_label.setStyleSheet(f"color: {ACCENT_COLOR};")
         name_label.setText('Name')
         name.addWidget(name_label)
 
         self.name_line_edit = LineEditWidget(self.central_widget)
         self.name_line_edit.setFixedHeight(30)
         self.name_line_edit.setFont(font_manager.bold())
-        self.name_line_edit.setStyleSheet("color: #00ABB3;\n"
-                                          "background-color: #EAEAEA;\n"
-                                          "border: 2px solid #00ABB3;\n"
+        self.name_line_edit.setStyleSheet(f"color: {ACCENT_COLOR};\n"
+                                          f"background-color: {LIGHT_COLOR};\n"
+                                          f"border: 2px solid {ACCENT_COLOR};\n"
                                           "padding-left: 3px;")
         self.name_line_edit.connect(lambda: self.on_name_change(self.name_line_edit.text()))
         name.addWidget(self.name_line_edit)
@@ -61,15 +61,15 @@ class PropertiesBar(Widget):
         color_label = QLabel(self.central_widget)
         color_label.setFixedHeight(20)
         color_label.setFont(font_manager.bold())
-        color_label.setStyleSheet("color: #00ABB3;")
+        color_label.setStyleSheet(f"color: {ACCENT_COLOR};")
         color_label.setText('Color')
         color.addWidget(color_label)
 
         self.color_button = QPushButton(self.central_widget)
         self.color_button.setFixedSize(30, 30)
-        self.color_button.setStyleSheet("color: #00ABB3;\n"
-                                        "background-color: #CCFCE5;\n"
-                                        "border: 2px solid #00ABB3;\n"
+        self.color_button.setStyleSheet(f"color: {ACCENT_COLOR};\n"
+                                        f"background-color: {WHITE_COLOR};\n"
+                                        f"border: 2px solid {ACCENT_COLOR};\n"
                                         "padding-top: 3px;")
         self.color_button_stylesheet = self.color_button.styleSheet().split('\n')
         self.color_button.setText("")
@@ -87,7 +87,7 @@ class PropertiesBar(Widget):
         layer_label = QLabel(self.central_widget)
         layer_label.setFixedHeight(20)
         layer_label.setFont(font_manager.bold())
-        layer_label.setStyleSheet("color: #00ABB3;")
+        layer_label.setStyleSheet(f"color: {ACCENT_COLOR};")
         layer_label.setText('Layer')
         layer.addWidget(layer_label)
 
@@ -95,15 +95,15 @@ class PropertiesBar(Widget):
         self.layer_combobox.setFixedSize(70, 30)
         self.layer_combobox.setFont(font_manager.bold())
         self.layer_combobox.setLayoutDirection(Qt.RightToLeft)
-        self.layer_combobox.setStyleSheet("QComboBox {\n"
-                                              "color: #00ABB3;\n"
-                                              "background-color: #EAEAEA;\n"
-                                              "border: 2px solid #00ABB3;\n"
-                                              "padding-right: 1px;\n"
-                                              "}\n"
-                                              "QComboBox::drop-down:button {\n"
-                                              "border-radius: 5px;\n"
-                                              "}")
+        self.layer_combobox.setStyleSheet("QComboBox {"
+                                          f"color: {ACCENT_COLOR};"
+                                          f"background-color: {LIGHT_COLOR};"
+                                          f"border: 2px solid {ACCENT_COLOR};"
+                                          "padding-right: 1px;"
+                                          "}"
+                                          "QComboBox::drop-down:button {"
+                                          "border-radius: 5px;"
+                                          "}")
         self.layer_combobox.setMaxVisibleItems(6)
         self.layer_combobox.currentIndexChanged.connect(
             lambda: self.on_layer_change(self.layer_combobox.currentIndex()))
@@ -128,7 +128,7 @@ class PropertiesBar(Widget):
         thickness_label = QLabel(self.central_widget)
         thickness_label.setFixedHeight(20)
         thickness_label.setFont(font_manager.bold())
-        thickness_label.setStyleSheet("color: #00ABB3;")
+        thickness_label.setStyleSheet(f"color: {ACCENT_COLOR};")
         thickness_label.setText('Thickness')
         thickness.addWidget(thickness_label)
 
@@ -136,14 +136,14 @@ class PropertiesBar(Widget):
         self.thickness_combobox.setFixedSize(70, 30)
         self.thickness_combobox.setFont(font_manager.bold())
         self.thickness_combobox.setLayoutDirection(Qt.RightToLeft)
-        self.thickness_combobox.setStyleSheet("QComboBox {\n"
-                                              "color: #00ABB3;\n"
-                                              "background-color: #EAEAEA;\n"
-                                              "border: 2px solid #00ABB3;\n"
-                                              "padding-right: 1px;\n"
-                                              "}\n"
-                                              "QComboBox::drop-down:button {\n"
-                                              "border-radius: 5px;\n"
+        self.thickness_combobox.setStyleSheet("QComboBox {"
+                                              f"color: {ACCENT_COLOR};"
+                                              f"background-color: {LIGHT_COLOR};"
+                                              f"border: 2px solid {ACCENT_COLOR};"
+                                              "padding-right: 1px;"
+                                              "}"
+                                              "QComboBox::drop-down:button {"
+                                              "border-radius: 5px;"
                                               "}")
         self.thickness_combobox.setMaxVisibleItems(3)
         self.thickness_combobox.addItem("light")
@@ -210,9 +210,9 @@ class PropertiesBar(Widget):
 
     def on_color_change(self):
         if self.set_obj_color:
-            color = QColorDialog.getColor(QColor(*self.current_object.color))
-            self.change_stylesheet(self.color_button, f'background-color: rgba{color.getRgb()};')
-            self.set_obj_color(color=color.getRgb())
+            color = Color(QColorDialog.getColor(self.current_object.color))
+            self.change_stylesheet(self.color_button, f'background-color: {color};')
+            self.set_obj_color(color=color)
 
     def change_stylesheet(self, obj=None, new_style_sheet=None):
         self.color_button_stylesheet[1] = new_style_sheet
@@ -252,7 +252,7 @@ class PropertiesBar(Widget):
             self.obj_layout.itemAt(i).widget().deleteLater()
 
     def show_objects(self, struct):
-        # self.clear_objects()
+        self.clear_objects()
         self.obj = PropertiesBarObject(struct=struct['ag_object'], parent=self.central_widget,
                                        font_manager=self.font_manager, name='Objects',
                                        on_editing_finished=self.on_ag_object_change).set_margin(
@@ -261,7 +261,7 @@ class PropertiesBar(Widget):
 
     def show_object(self):
         self.name_line_edit.setText(self.current_object.name)
-        self.change_stylesheet(self.color_button, f'background-color: rgb{self.current_object.color};')
+        self.change_stylesheet(self.color_button, f'background-color: {self.current_object.color};')
         self.thickness_combobox.setCurrentIndex(self.current_object.thickness - 1)
         self.thickness_combobox.setDisabled(False)
 

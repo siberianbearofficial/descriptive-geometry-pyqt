@@ -4,6 +4,7 @@ from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import pyqtSignal, Qt
 
 from utils.ui.widgets.LineEditWidget import LineEditWidget
+from utils.color import *
 
 
 class LayerWindow(QMainWindow):
@@ -29,15 +30,15 @@ class LayerWindow(QMainWindow):
         font.setBold(True)
         font.setWeight(75)
         self.menu_bar.setFont(font)
-        self.menu_bar.setStyleSheet("color: #00ABB3;")
+        self.menu_bar.setStyleSheet(f"color: {ACCENT_COLOR};")
 
         self.scroll_area = QScrollArea(self)
-        self.scroll_area.setGeometry(0, 30, 640, 450)
-        self.scroll_area.setStyleSheet("background-color: #3C4048;")
+        self.scroll_area.setGeometry(0, 30, 640, 450)    # TODO: REMOVE!
+        self.scroll_area.setStyleSheet(f"background-color: {DARK_COLOR};")
 
         self.layers_widget = QWidget(self)
         self.layers_widget.setGeometry(0, 0, 620, 5)
-        self.layers_widget.setStyleSheet("background-color: #3C4048;")
+        self.layers_widget.setStyleSheet(f"background-color: {DARK_COLOR};")
         self.layout = QVBoxLayout(self.layers_widget)
         self.layout.setContentsMargins(5, 5, 5, 5)
         # self.layout.setAlignment(Qt.AlignTop)
@@ -121,7 +122,7 @@ class LayerBar(QWidget):
     def __init__(self, parent, index, func_select, func_rename, func_hide, func_delete, func_color, func_thickness,
                  **kwargs):
         super(LayerBar, self).__init__(parent)
-        self.setStyleSheet("background-color: #EAEAEA; border-radius: 10px")
+        self.setStyleSheet(f"background-color: {LIGHT_COLOR}; border-radius: 10px")
         self.index = index
         self.func_select = func_select
         self.func_rename = func_rename
@@ -140,9 +141,9 @@ class LayerBar(QWidget):
 
         self.name_bar = LineEditWidget(self.strange_widget)
         self.name_bar.setText(kwargs.get('name', ''))
-        self.name_bar.setStyleSheet("color: #00ABB3;\n"
-                                    "background-color: #EAEAEA;\n"
-                                    "border: 2px solid #00ABB3;\n"
+        self.name_bar.setStyleSheet(f"color: {ACCENT_COLOR};"
+                                    f"background-color: {LIGHT_COLOR};"
+                                    f"border: 2px solid {ACCENT_COLOR};"
                                     "padding-left: 3px;")
         self.name_bar.setGeometry(25, 5, 230, 30)
         self.name_bar.connect(lambda: self.func_rename(self.name_bar.text(), self.index))
@@ -167,9 +168,9 @@ class LayerBar(QWidget):
         self.thickness_combobox.setGeometry(330, 5, 70, 30)
         # self.thickness_combobox.setFont(font_manager.bold())
         self.thickness_combobox.setStyleSheet("QComboBox {\n"
-                                              "color: #00ABB3;\n"
-                                              "background-color: #EAEAEA;\n"
-                                              "border: 2px solid #00ABB3;\n"
+                                              f"color: {ACCENT_COLOR};\n"
+                                              f"background-color: {LIGHT_COLOR};\n"
+                                              f"border: 2px solid {ACCENT_COLOR};\n"
                                               "padding-right: 1px;\n"
                                               "}\n"
                                               "QComboBox::drop-down:button {\n"
@@ -202,9 +203,9 @@ class Button(QWidget):
     def __init__(self, parent, text='', color=None, pixmap=None):
         super(Button, self).__init__(parent)
         self.setFixedSize(30, 30)
-        self.setStyleSheet("border: 2px solid #00ABB3;\n"
+        self.setStyleSheet(f"border: 2px solid {ACCENT_COLOR};\n"
                            "border-radius: 10px;\n"
-                           "background-color: #ffffff;")
+                           f"background-color: {WHITE_COLOR};")
         self.icon = QLabel(self)
         self.icon.setFixedSize(self.size())
         if pixmap:
@@ -212,7 +213,7 @@ class Button(QWidget):
         if text:
             self.icon.setText(text)
         if color:
-            self.setStyleSheet(f"background-color: rgb{str(color)};")
+            self.setStyleSheet(f"background-color: {color};")
 
     def mousePressEvent(self, a0):
         if a0.button() == 1:
@@ -220,10 +221,10 @@ class Button(QWidget):
 
     def set_color(self, color):
         if color is not None:
-            self.setStyleSheet("border: 2px solid #00ABB3;\n"
+            self.setStyleSheet(f"border: 2px solid {ACCENT_COLOR};\n"
                                "border-radius: 10px;\n"
-                               f"background-color: rgb({str(color.red())},{str(color.green())},{str(color.blue())});")
+                               f"background-color: {color};")
         else:
-            self.setStyleSheet("border: 2px solid #00ABB3;\n"
+            self.setStyleSheet(f"border: 2px solid {ACCENT_COLOR};\n"
                                "border-radius: 10px;\n"
-                               f"background-color: white;")
+                               f"background-color: {WHITE_COLOR};")

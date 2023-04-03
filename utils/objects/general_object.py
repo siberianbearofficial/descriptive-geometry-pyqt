@@ -1,5 +1,6 @@
 import core.angem as ag
 import utils.history.serializable as serializable
+from utils.color import *
 
 ALPH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 alph = ALPH.lower()
@@ -12,7 +13,7 @@ SEP = '-'
 class GeneralObject:
     current_id = 1
 
-    def __init__(self, ag_object=None, color=(0, 0, 0), name='', **kwargs):
+    def __init__(self, ag_object=None, color=Color(0, 0, 0), name='', **kwargs):
         self.ag_object = ag_object
         self.color = color
         self.name = name
@@ -130,11 +131,11 @@ class GeneralObject:
                 res[key] = convert(dct[key])
             return res
 
-        return {'name': self.name, 'color': self.color, 'ag_object': convert(self.ag_object), 'config': self.config}
+        return {'name': self.name, 'color': str(self.color), 'ag_object': convert(self.ag_object), 'config': self.config}
 
     @staticmethod
     def from_dict(dct):
-        return GeneralObject(unpack_ag_object(dct['ag_object']), dct['color'], dct['name'], **dct['config'])
+        return GeneralObject(unpack_ag_object(dct['ag_object']), Color(dct['color']), dct['name'], **dct['config'])
 
     def set_name(self, name):
         if name == self.name:
@@ -150,7 +151,6 @@ class GeneralObject:
 
     def set_thickness(self, thickness):
         if thickness != self.thickness:
-            print('THICKNESS', thickness)
             self.thickness = thickness
             return True
         return False
@@ -186,4 +186,3 @@ def unpack_ag_object(obj):
             cls = serializable.angem_class_by_name[obj['class']]
             return cls(*[unpack_ag_object(obj[key]) for key in serializable.angem_objects[cls]])
         return obj['class'](*[unpack_ag_object(obj[key]) for key in serializable.angem_objects[obj['class']]])
-

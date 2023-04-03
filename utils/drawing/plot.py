@@ -14,6 +14,7 @@ from utils.objects.layer import Layer
 from utils.objects.general_object import GeneralObject
 import utils.drawing.drawing_on_plot as drw
 import utils.drawing.names as names
+from utils.color import *
 
 from random import randint
 from utils.drawing.projections.plot_object import PlotObject
@@ -41,7 +42,7 @@ class Plot(QWidget):
         self.screen = parent
         self.painter = QPainter()
 
-        self.bg_color = (255, 255, 255)
+        self.bg_color = WHITE_COLOR
 
         self.tlp = 0, 0
         self.brp = self.width(), self.height()
@@ -91,7 +92,7 @@ class Plot(QWidget):
         if self.selected_object_index:
             self.selected_object.draw(selected=1)
 
-        self.set_pen((0, 0, 0), 4)
+        self.set_pen(BLACK_COLOR, 4)
         self.lm.draw()
         self.painter.end()
 
@@ -101,72 +102,29 @@ class Plot(QWidget):
             if self.esc is not None:
                 self.esc(a0)
         if key == Qt.Key_Space:
-            print('Enter')
             if self.enter is not None:
                 self.enter(a0)
-        elif key == Qt.Key_C:
-            self.draw('cylinder')
-        elif key == Qt.Key_P:
-            self.draw('point')
-        elif key == Qt.Key_S:
-            self.draw('segment')
-        elif key == Qt.Key_O:
-            self.draw('plane')
-        elif key == Qt.Key_L:
-            self.draw('line')
-        elif key == Qt.Key_W:
-            self.draw('perpendicular_segment')
-        elif key == Qt.Key_E:
-            self.draw('parallel_segment')
-        elif key == Qt.Key_G:
-            self.draw('perpendicular_line')
-        elif key == Qt.Key_T:
-            self.draw('parallel_line')
-        elif key == Qt.Key_I:
-            self.draw('plane_3p')
-        elif key == Qt.Key_U:
-            self.draw('parallel_plane')
-        elif key == Qt.Key_H:
-            self.draw('horizontal')
-        elif key == Qt.Key_F:
-            self.draw('frontal')
-        elif key == Qt.Key_D:
-            self.draw('distance')
-        elif key == Qt.Key_A:
-            self.draw('angle')
-        elif key == Qt.Key_V:
-            self.draw('circle')
-        elif key == Qt.Key_B:
-            self.draw('sphere')
-        elif key == Qt.Key_K:
-            self.draw('cone')
-        elif key == Qt.Key_X:
-            self.draw('intersection')
-        elif key == Qt.Key_Q:
-            self.draw('spline')
-        elif key == Qt.Key_R:
-            self.draw('rotation_surface')
 
-    def draw_segment(self, p1, p2, color=(0, 0, 0), thickness=1, line_type=1):
+    def draw_segment(self, p1, p2, color=BLACK_COLOR, thickness=1, line_type=1):
         self.set_pen(color, thickness * self.scale2, line_type)
         self.painter.drawLine(int(p1[0] * self.scale1), int(p1[1] * self.scale1),
                               int(p2[0] * self.scale1), int(p2[1] * self.scale1))
 
-    def draw_point(self, point, color=(0, 0, 0), thickness=1):
+    def draw_point(self, point, color=BLACK_COLOR, thickness=1):
         self.set_pen(color, thickness * self.scale2)
         brush = self.painter.brush()
-        self.painter.setBrush(QColor(*self.bg_color))
+        self.painter.setBrush(self.bg_color)
         self.painter.drawEllipse(
             int(point[0] * self.scale1 - 5 * self.scale2), int(point[1] * self.scale1 - 5 * self.scale2),
             int(10 * self.scale2), int(10 * self.scale2))
         self.painter.setBrush(brush)
 
-    def draw_point2(self, point, color=(0, 0, 0), thickness=1):
+    def draw_point2(self, point, color=BLACK_COLOR, thickness=1):
         if self.tlp[0] <= point[0] <= self.brp[0] and self.tlp[1] <= point[1] <= self.brp[1]:
             self.set_pen(color, thickness * self.scale2)
             self.painter.drawPoint(int(point[0] * self.scale1), int(point[1] * self.scale1))
 
-    def draw_circle(self, center, radius, color=(0, 0, 0), thickness=2):
+    def draw_circle(self, center, radius, color=BLACK_COLOR, thickness=2):
         self.set_pen(color, thickness * self.scale2)
         self.painter.drawEllipse(int((center[0] - radius) * self.scale1), int((center[1] - radius) * self.scale1),
                                  int(radius * 2 * self.scale1), int(radius * 2 * self.scale1))
@@ -178,7 +136,7 @@ class Plot(QWidget):
         self.painter.drawText(rect, text, option)
 
     def set_pen(self, color, thickness, line_type=1):
-        self.painter.setPen(QPen(QColor(*color), int(thickness), line_type))
+        self.painter.setPen(QPen(color, int(thickness), line_type))
 
     def clear(self):
         self.objects.clear()
@@ -216,7 +174,7 @@ class Plot(QWidget):
 
     def add_object(self, ag_object, name=None, color=None, end=False, **config):
         if color is None:
-            color = self.random_color()
+            color = Color.random()
         if name is None:
             name = names.generate_name(self, ag_object, config)
         self.add_object_func(ag_object, name, color, history_record=True, **config)
@@ -264,7 +222,6 @@ class Plot(QWidget):
             self.moving_camera = False
 
     def mouseMoveEvent(self, a0) -> None:
-        # print('mouse move')
         if self.moving_camera:
             self.move_camera(a0.x() - self.mouse_pos[0], a0.y() - self.mouse_pos[1])
             self.mouse_pos = a0.x(), a0.y()
@@ -371,67 +328,11 @@ class Plot(QWidget):
         self.printToCommandLine.emit(s)
         print(s)
 
-    @staticmethod
-    def random_color():
-        red = randint(20, 240)
-        green = randint(20, 240)
-        blue = randint(20, min(570 - red - green, 240))
-        return red, green, blue
-        while True:
-            red = randint(20, 240)
-            green = randint(20, 240)
-            blue = randint(20, 570 - red - green)
-            if 300 < red + green + blue < 570:
-                return red, green, blue
-
-    def set_current_layer(self, ind, history_record=True):
-        if ind == self.current_layer:
-            return
-        if history_record:
-            self.hm.add_record('change_layer', self.current_layer)
-        self.current_layer = ind
-
-    def add_layer(self, layer=None, history_record=True):
-        if history_record:
-            self.hm.add_record('add_layer', len(self.layers) - 1)
-        if layer:
-            self.layers.append(layer)
-        else:
-            self.layers.append(Layer(self, ''))
-
-    def insert_layer_from_dict(self, dct, index):
-        self.layers.insert(index, Layer.from_dict(dct, self))
-
-    def replace_object(self, dct, layer=None, index=None, history_record=True):
-        if layer is None:
-            layer, index = self.selected_object_index
-        self.layers[layer].replace_object(index, dct)
-        self.update()
-
-    def save_object_properties(self, obj: GeneralObject, name=None, layer=None, thickness=None, color=None,
-                               ag_obj=None, config=None, history_record=True):
-        if obj:
-            if name:
-                old_name = obj.name
-                if obj.set_name(name) and history_record:
-                    self.hm.add_record('object_modified', obj, 'name', old_name)
-            if thickness:
-                old_thickness = obj.thickness
-                if obj.set_thickness(thickness) and history_record:
-                    self.hm.add_record('object_modified', obj, 'thickness', old_thickness)
-            if color:
-                old_color = obj.color
-                if obj.set_color(color) and history_record:
-                    self.hm.add_record('object_modified', obj, 'color', old_color)
-        self.update()
-
-    def update_layer_list(self):
-        self.layersModified.emit(self.layers, self.current_layer)
-
 
 def main():
     app = QApplication([])
     plot = Plot(None)
+    plot.show()
     app.exec_()
 
 

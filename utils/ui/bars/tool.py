@@ -2,6 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QLabel, QHBoxLayout
 from PyQt5.QtGui import QPixmap
 from utils.ui.widgets.widget import Widget
+from utils.color import *
 
 
 class Tool(Widget):
@@ -9,10 +10,10 @@ class Tool(Widget):
         super().__init__(parent)
 
         self.setStyleSheet("QWidget {"
-                           "color: #00ABB3;"
+                           f"color: {ACCENT_COLOR};"
                            "}"
                            "QWidget::hover {"
-                           "color: #3C4048;"
+                           f"color: {DARK_COLOR};"
                            "}")
 
         self.clicked = None

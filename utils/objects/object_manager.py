@@ -1,12 +1,12 @@
 from utils.objects.layer import Layer
-from random import randint
 from utils.objects.general_object import GeneralObject
 from utils.history.history_manager import HistoryManager
+from utils.color import *
 
 
 class ObjectManager:
     def __init__(self, func_plot_update, func_plot_obj, plot_full_update, func_object_selected):
-        self.layers = [Layer("Layer 1")]
+        self.layers = [Layer("Layer 1")]    # TODO: make it constant
         self.current_layer = 0
         self.selected_object = None
         self.selected_object_index = None
@@ -25,6 +25,7 @@ class ObjectManager:
         self.func_layer_color = None
         self.func_layer_thickness = None
         self.objects_changed = None
+        self.current_object_changed = None
 
     def set_layers_func(self, func_layer_add, func_layer_delete, func_layer_hide, func_layer_select, func_layer_rename,
                         func_layer_color, func_layer_thickness):
@@ -36,9 +37,9 @@ class ObjectManager:
         self.func_layer_color = func_layer_color
         self.func_layer_thickness = func_layer_thickness
 
-    def add_object(self, ag_object, name='', color=None, history_record=True, **config):
+    def add_object(self, ag_object, name='', color=Color(0, 0, 0), history_record=True, **config):
         if color is None:
-            color = self.random_color()
+            color = Color.random()
         if history_record:
             self.hm.add_record('add_object', index=(self.current_layer, len(self.layers[self.current_layer].objects)))
         obj = GeneralObject(ag_object, color, name, **config)
@@ -135,7 +136,11 @@ class ObjectManager:
             self.selected_object = self.layers[self.selected_object_index[0]].objects[self.selected_object_index[1]]
             for func in self.func_object_selected:
                 func(self.selected_object)
-        # TODO: change current object
+        self.current_object_changed(self.selected_object_index)
+
+    def set_object_hidden(self, hidden):
+        # TODO: show and hide objects
+        pass
 
     def set_layer_hidden(self, ind, hidden, history_record=True):
         if self[ind].hidden == hidden:
@@ -165,19 +170,6 @@ class ObjectManager:
                 continue
             for obj in layer.objects:
                 yield obj
-
-    @staticmethod
-    def random_color():
-        red = randint(20, 240)
-        green = randint(20, 240)
-        blue = randint(20, min(570 - red - green, 240))
-        return red, green, blue
-        while True:
-            red = randint(20, 240)
-            green = randint(20, 240)
-            blue = randint(20, 570 - red - green)
-            if 300 < red + green + blue < 570:
-                return red, green, blue
 
     def set_layer_color(self, color, layer=None, history_record=True):
         if layer is None:
@@ -315,3 +307,5 @@ class ObjectManager:
             self.layers.append(Layer.from_dict(el))
         self.current_layer = dct['current_layer']
         self.plot_full_update(self.get_all_objects())
+        if self.objects_changed:
+            self.objects_changed(self.layers[self.current_layer])

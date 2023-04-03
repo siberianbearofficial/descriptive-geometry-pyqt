@@ -2,10 +2,9 @@ import core.angem as ag
 from utils.drawing.projections.screen_point import ScreenPoint, ThinScreenPoint
 from utils.drawing.projections.screen_segment import ScreenSegment
 from utils.drawing.projections.screen_circle import ScreenCircle
+from utils.color import *
 import math
 from PyQt5.QtCore import Qt
-
-COLOR_CL = (180, 180, 180)
 
 
 class ProjectionManager:
@@ -21,7 +20,7 @@ class ProjectionManager:
             p_xy = self.point_projections(obj, 'xy', color)
             p_xz = self.point_projections(obj, 'xz', color)
             if kwargs.get('draw_cl', False):
-                return p_xy, p_xz, ScreenSegment(self.plot, p_xy, p_xz, color=COLOR_CL, thickness=1,
+                return p_xy, p_xz, ScreenSegment(self.plot, p_xy, p_xz, color=CONNECT_LINE_COLOR, thickness=1,
                                                  line_type=Qt.DashLine)
             return self.point_projections(obj, 'xy', color), self.point_projections(obj, 'xz', color)
 
@@ -39,8 +38,8 @@ class ProjectionManager:
             if kwargs.get('draw_cl', False):
                 return (self.segment_projections(obj, 'xy', color), p1_xy, p2_xy), \
                        (self.segment_projections(obj, 'xz', color), p1_xz, p2_xz), \
-                       (ScreenSegment(self.plot, p1_xy, p1_xz, color=COLOR_CL, thickness=1, line_type=Qt.DashLine),
-                        ScreenSegment(self.plot, p2_xy, p2_xz, color=COLOR_CL, thickness=1, line_type=Qt.DashLine))
+                       (ScreenSegment(self.plot, p1_xy, p1_xz, color=CONNECT_LINE_COLOR, thickness=1, line_type=Qt.DashLine),
+                        ScreenSegment(self.plot, p2_xy, p2_xz, color=CONNECT_LINE_COLOR, thickness=1, line_type=Qt.DashLine))
             return (self.segment_projections(obj, 'xy', color), p1_xy, p2_xy), \
                    (self.segment_projections(obj, 'xz', color), p1_xz, p2_xz)
 
@@ -49,9 +48,9 @@ class ProjectionManager:
                 p_xy = self.plane_projections(obj, 'xy', color, draw_3p=kwargs.get('draw_3p', False))
                 p_xz = self.plane_projections(obj, 'xz', color, draw_3p=kwargs.get('draw_3p', False))
                 return p_xy, p_xz, \
-                       (ScreenSegment(self.plot, p_xy[3], p_xz[3], color=COLOR_CL, thickness=1, line_type=Qt.DashLine),
-                        ScreenSegment(self.plot, p_xy[4], p_xz[4], color=COLOR_CL, thickness=1, line_type=Qt.DashLine),
-                        ScreenSegment(self.plot, p_xy[5], p_xz[5], color=COLOR_CL, thickness=1, line_type=Qt.DashLine))
+                       (ScreenSegment(self.plot, p_xy[3], p_xz[3], color=CONNECT_LINE_COLOR, thickness=1, line_type=Qt.DashLine),
+                        ScreenSegment(self.plot, p_xy[4], p_xz[4], color=CONNECT_LINE_COLOR, thickness=1, line_type=Qt.DashLine),
+                        ScreenSegment(self.plot, p_xy[5], p_xz[5], color=CONNECT_LINE_COLOR, thickness=1, line_type=Qt.DashLine))
             return self.plane_projections(obj, 'xy', color, draw_3p=kwargs.get('draw_3p', False)), \
                    self.plane_projections(obj, 'xz', color, draw_3p=kwargs.get('draw_3p', False))
 

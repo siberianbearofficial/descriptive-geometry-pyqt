@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtCore import Qt
 from utils.ui.bars.draw_tool import DrawTool
 from utils.ui.widgets.widget import Widget
+from utils.color import *
 
 
 class DrawBar(Widget):
@@ -11,7 +12,7 @@ class DrawBar(Widget):
 
         self.setMouseTracking(True)
 
-        self.setStyleSheet("background-color: #EAEAEA;\n"
+        self.setStyleSheet(f"background-color: {LIGHT_COLOR};\n"
                            "border-radius: 10px;")
 
         self.layout = QVBoxLayout(self.central_widget)

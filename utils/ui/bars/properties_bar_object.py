@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel, QWidget, QLineEdit
 from PyQt5.QtGui import QPixmap, QMouseEvent, QTransform
 
 from utils.ui.widgets.LineEditWidget import LineEditWidget
-from utils.ui.widgets.widget import Widget
+from utils.color import *
 
 
 class PropertiesBarObject(QWidget):
@@ -39,7 +39,7 @@ class PropertiesBarObject(QWidget):
 
         # Label
         label = QLabel(self)
-        label.setStyleSheet("color: #00ABB3;")
+        label.setStyleSheet(f"color: {ACCENT_COLOR};")
         if font_manager:
             label.setFont(font_manager.bold())
         if name:
@@ -67,7 +67,7 @@ class PropertiesBarObject(QWidget):
                     objects_layout.addWidget(wdg)
             self.layout.addWidget(self.objects_widget)
             self.clicked()
-        elif isinstance(struct, float):
+        elif isinstance(struct, (int, float)):
             # self.layout.addWidget(QLabel(str(struct)))    # test line
             self.clear_container()
             self.container.addWidget(
@@ -128,16 +128,16 @@ class FloatInputWidget(QWidget):
         # Name
         name_widget = QLabel()
         name_widget.setText(name)
-        name_widget.setStyleSheet('color: #00ABB3;')
+        name_widget.setStyleSheet(f'color: {ACCENT_COLOR};')
         layout.addWidget(name_widget)
 
         # Value
         self.value_widget = LineEditWidget()
         self.value_widget.setText(value)
         self.value_widget.textChanged.connect(self.text_changed)
-        self.value_widget.setStyleSheet("color: #00ABB3;\n"
-                                        "background-color: #EAEAEA;\n"
-                                        "border: 2px solid #00ABB3;")
+        self.value_widget.setStyleSheet(f"color: {ACCENT_COLOR};\n"
+                                        f"background-color: {LIGHT_COLOR};\n"
+                                        f"border: 2px solid {ACCENT_COLOR};")
         self.value_widget.setFixedHeight(30)
         if editing_finished:
             self.value_widget.editingFinished.connect(lambda: editing_finished(float(self.value_widget.text())))

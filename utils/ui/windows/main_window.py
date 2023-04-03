@@ -13,6 +13,8 @@ from utils.ui.widgets.column import Column
 from utils.fonts.font_manager import FontManager
 from utils.history.settings_manager import SettingsManager
 from utils.ui.windows.layer_window import LayerWindow
+from utils.color import *
+
 import os
 
 import utils.history.serializer as srl
@@ -28,7 +30,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('DescriptiveGeometry')
 
         central_widget = QWidget(self)
-        central_widget.setStyleSheet("background-color: #3C4048;")
+        central_widget.setStyleSheet(f"background-color: {DARK_COLOR};")
 
         main_layout = QHBoxLayout(central_widget)
         main_layout.setContentsMargins(10, 10, 10, 10)
@@ -49,7 +51,7 @@ class MainWindow(QMainWindow):
         # Properties bar
         self.properties_bar = PropertiesBar(right_column, font_manager=fm)
         self.plot.show_object_properties = self.properties_bar.open_object
-        self.properties_bar.save = self.plot.save_object_properties
+        # self.properties_bar.save = self.plot.save_object_properties
         self.properties_bar.setMinimumHeight(150)
 
         # Object manager
@@ -102,7 +104,10 @@ class MainWindow(QMainWindow):
         # Inspector bar
         self.inspector_bar = InspectorBar(right_column, font_manager=fm)
         self.inspector_bar.setMinimumHeight(100)
+        self.inspector_bar.set_object_hidden_func(self.object_manager.set_object_hidden)
+        self.inspector_bar.set_change_current_object_func(self.object_manager.select_object)
         self.object_manager.objects_changed = self.inspector_bar.set_objects
+        self.object_manager.current_object_changed = self.inspector_bar.select_object
 
         # Render window
         self.render_window = RenderWindow()
@@ -192,7 +197,7 @@ class MainWindow(QMainWindow):
 
     def serialize_as(self):
         path = QFileDialog.getSaveFileName(self, "Select File Name", self.settings_manager.recent_directory,
-                                           "Text files (*.txt)")[0]
+                                           "Descriptive Geometry Files (*.dg)")[0]
         if path:
             srl.serialize(self.object_manager.serialize(), path=path)
             self.current_file = path
@@ -203,10 +208,12 @@ class MainWindow(QMainWindow):
     def deserialize(self, recent_file=-1):
         if recent_file == -1:
             path = QFileDialog.getOpenFileName(self, "Open File", self.settings_manager.recent_directory,
-                                               "Text files (*.txt)")[0]
+                                               "Descriptive Geometry Files (*.dg)")[0]
         elif 0 <= recent_file < len(self.settings_manager.recent_files):
             path = self.settings_manager.recent_files[recent_file]
         else:
+            return
+        if not path:
             return
         if not os.path.isfile(path):
             QMessageBox.warning(self, "Error", "File not found")

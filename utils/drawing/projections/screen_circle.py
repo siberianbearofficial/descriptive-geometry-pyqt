@@ -1,8 +1,9 @@
 from utils.drawing.projections.projection_manager import ScreenPoint
+from utils.color import *
 
 
 class ScreenCircle:
-    def __init__(self, plot, center, radius, color=(0, 0, 0), thickness=2):
+    def __init__(self, plot, center, radius, color=BLACK_COLOR, thickness=2):
         if isinstance(center, ScreenPoint):
             center = center.list()
         elif isinstance(center, tuple):

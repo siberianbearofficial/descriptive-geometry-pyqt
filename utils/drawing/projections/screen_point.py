@@ -1,5 +1,8 @@
+from utils.color import *
+
+
 class ScreenPoint:
-    def __init__(self, plot, x, y, color=(0, 0, 0), thickness=4):
+    def __init__(self, plot, x, y, color=BLACK_COLOR, thickness=4):
         self.x = x
         self.y = y
         self.plot = plot
@@ -25,7 +28,7 @@ class ScreenPoint:
 
 
 class ThinScreenPoint:
-    def __init__(self, plot, x, y, color=(0, 0, 0), thickness=2):
+    def __init__(self, plot, x, y, color=BLACK_COLOR, thickness=2):
         self.x = x
         self.y = y
         self.plot = plot

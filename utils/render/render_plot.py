@@ -5,11 +5,13 @@ from utils.drawing.plot import Plot
 from utils.render.render_label import RenderLabel
 from utils.drawing.projections.plot_object import PlotObject
 
+from utils.color import *
+
 
 class RenderPlot(Plot):
     def __init__(self, width, height, parent=None):
         super(RenderPlot, self).__init__(parent)
-        self.main_color = (120, 90, 80)
+        self.main_color = Color(120, 90, 80)
         self.setFixedSize(width, height)
         self.draw_mode = 0
         self.zoom = 3
@@ -17,26 +19,26 @@ class RenderPlot(Plot):
         self.mode = 1
         self.labels = []
 
-    def draw_point(self, point, color=(0, 0, 0), thickness=1):
+    def draw_point(self, point, color=Color(0, 0, 0), thickness=1):
         self.set_pen(color, thickness * self.scale2)
         if self.mode == 0:
             super(RenderPlot, self).draw_point(point, color=self.main_color, thickness=thickness)
         else:
             self.set_pen(self.main_color, thickness * self.scale2)
             brush = self.painter.brush()
-            self.painter.setBrush(QColor(*self.main_color))
+            self.painter.setBrush(self.main_color)
             self.painter.drawEllipse(
                 int(point[0] * self.scale1 - 3 * self.scale2), int(point[1] * self.scale1 - 3 * self.scale2),
                 6 * self.scale2, 6 * self.scale2)
             self.painter.setBrush(brush)
         
-    def draw_point2(self, point, color=(0, 0, 0), thickness=1):
+    def draw_point2(self, point, color=Color(0, 0, 0), thickness=1):
         super(RenderPlot, self).draw_point2(point, self.main_color, thickness)
         
-    def draw_segment(self, p1, p2, color=(0, 0, 0), thickness=1, line_type=1):
+    def draw_segment(self, p1, p2, color=Color(0, 0, 0), thickness=1, line_type=1):
         super(RenderPlot, self).draw_segment(p1, p2, self.main_color, thickness, line_type)
         
-    def draw_circle(self, center, radius, color=(0, 0, 0), thickness=2):
+    def draw_circle(self, center, radius, color=Color(0, 0, 0), thickness=2):
         super(RenderPlot, self).draw_circle(center, radius, self.main_color, thickness)
 
     def paintEvent(self, e):
@@ -53,7 +55,7 @@ class RenderPlot(Plot):
         if self.selected_object_index:
             self.selected_object.draw(selected=1)
 
-        self.set_pen((0, 0, 0), 4)
+        self.set_pen(Color(0, 0, 0), 4)
         for label in self.labels:
             label.draw()
         self.painter.end()
@@ -89,7 +91,7 @@ class RenderPlot(Plot):
         self.axis.draw()
         for obj in self.objects:
             obj.draw()
-        font = QFont('Arial', int(14 * scale2))
+        font = QFont('Arial', int(14 * scale2))    # TODO: connect font manager + ISOCPEUR font
         self.painter.setFont(font)
         for label in self.labels:
             label.draw()
@@ -97,4 +99,3 @@ class RenderPlot(Plot):
         self.scale1 = 1
         self.scale2 = 1
         image.save(path, 'PNG')
-

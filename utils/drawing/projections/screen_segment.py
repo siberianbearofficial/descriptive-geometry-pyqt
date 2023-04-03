@@ -1,8 +1,9 @@
 from utils.drawing.projections.projection_manager import ScreenPoint
+from utils.color import *
 
 
 class ScreenSegment:
-    def __init__(self, plot, p1, p2, color=(0, 0, 0), thickness=3, line_type=1):
+    def __init__(self, plot, p1, p2, color=BLACK_COLOR, thickness=3, line_type=1):
         if isinstance(p1, ScreenPoint):
             p1 = p1.list()
         elif isinstance(p1, tuple):

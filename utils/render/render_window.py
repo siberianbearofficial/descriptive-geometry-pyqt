@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QMainWindow, QHBoxLayout, QWidget
 from utils.render.render_plot import RenderPlot
 from utils.ui.windows.options_window import OptionsWidget
+from utils.color import *
 
 render_params = {'A4': 1, 'A3': 2 ** 0.5, 'A2': 2}
 formats = ['A2', 'A3', 'A4']
@@ -11,7 +12,7 @@ zoom_str = ['5:1', '3:1', '2:1', '1:1', '1:2', '1:3', '1:5']
 class RenderWindow(QMainWindow):
     def __init__(self):
         super(RenderWindow, self).__init__()
-        self.setWindowTitle("DescriptiveGeometry - Render")
+        self.setWindowTitle("DescriptiveGeometry - Render")    # TODO: remove constant app title
         self.strange_widget = QWidget()
         self.setCentralWidget(self.strange_widget)
         layout = QHBoxLayout()
@@ -27,7 +28,7 @@ class RenderWindow(QMainWindow):
         layout.addWidget(self.options_widget)
 
         self.plot = RenderPlot(861, 600)
-        self.plot.setStyleSheet("border: 2px solid #00ABB3;")
+        self.plot.setStyleSheet(f"border: 2px solid {ACCENT_COLOR};")
         layout.addWidget(self.plot)
 
         self.strange_widget.setLayout(layout)

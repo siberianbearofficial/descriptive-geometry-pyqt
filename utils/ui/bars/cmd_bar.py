@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QVBoxLayout, QLabel, QLineEdit
 
 import core.angem as ag
 from utils.ui.widgets.widget import Widget
+from utils.color import *
 
 
 class CmdBar(Widget):
@@ -11,7 +12,7 @@ class CmdBar(Widget):
         self.command = None
         self.command_to_plot = False
 
-        self.setGeometry(160, 640, 711, 61)
+        self.setGeometry(160, 640, 711, 61)    # TODO: REMOVE THIS!!!
         self.setStyleSheet("background-color: #B2B2B2;\n"
                            "border-radius: 10px;")
 

@@ -1,3 +1,5 @@
+from utils.color import *
+
 import core.angem as ag
 
 
@@ -21,9 +23,9 @@ class PlotObject:
         if selected:
             if selected == 1:
                 for el in self.xy_projection:
-                    el.draw(color=(250, 30, 30), thickness=(el.thickness + 2))
+                    el.draw(color=SELECTION_COLOR, thickness=(el.thickness + 2))
                 for el in self.xz_projection:
-                    el.draw(color=(250, 30, 30), thickness=(el.thickness + 2))
+                    el.draw(color=SELECTION_COLOR, thickness=(el.thickness + 2))
                 for el in self.xy_projection:
                     el.draw()
                 for el in self.xz_projection:
@@ -83,7 +85,7 @@ class PlotObject:
 
 
 class TempObject:
-    def __init__(self, plot, ag_object=None, color=(0, 0, 0)):
+    def __init__(self, plot, ag_object=None, color=BLACK_COLOR):
         self.plot = plot
         self.ag_object = ag_object
         self.color = color
@@ -110,4 +112,3 @@ class TempObject:
                 el.draw()
             for el in self.xz_projection:
                 el.draw()
-

@@ -1,9 +1,10 @@
 from utils.drawing.projections.projection_manager import ScreenSegment
+from utils.color import *
 
 
 class Axis:
 
-    def __init__(self, plot, color=(0, 0, 0)):
+    def __init__(self, plot, color=BLACK_COLOR):
         self.plot = plot
         self.color = color
         self.lp = None

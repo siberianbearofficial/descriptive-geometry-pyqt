@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QHBoxLayout, QLabel
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QHoverEvent
 from utils.ui.widgets.widget import Widget
+from utils.color import *
 
 
 class DrawTool(Widget):
@@ -22,9 +23,9 @@ class DrawTool(Widget):
 
         self.icon = QLabel(self.central_widget)
         self.icon.setMaximumSize(30, 30)
-        self.icon.setStyleSheet("border: 2px solid #00ABB3;\n"
+        self.icon.setStyleSheet(f"border: 2px solid {ACCENT_COLOR};\n"
                                 "border-radius: 10px;\n"
-                                "background-color: #ffffff;")
+                                f"background-color: {WHITE_COLOR};")
         self.icon.setPixmap(QPixmap(":/img/img/point.png"))
         self.icon.setScaledContents(True)
         self.icon.setAlignment(Qt.AlignCenter)
@@ -35,7 +36,7 @@ class DrawTool(Widget):
 
         self.label.setFont(font_manager.bold())
         self.label.setText(name)
-        self.label.setStyleSheet('color: #00ABB3;')
+        self.label.setStyleSheet(f'color: {ACCENT_COLOR};')
 
         self.layout.addWidget(self.label)
 
@@ -59,11 +60,11 @@ class DrawTool(Widget):
 
     def hover(self):
         # print('Hover:', self.label.text())
-        self.label.setStyleSheet('color: #3C4048;')
+        self.label.setStyleSheet(f'color: {DARK_COLOR};')
 
     def unhover(self):
         # print('Unhover:', self.label.text())
-        self.label.setStyleSheet('color: #00ABB3;')
+        self.label.setStyleSheet(f'color: {ACCENT_COLOR};')
 
     @staticmethod
     def tool_hovered(tool):
