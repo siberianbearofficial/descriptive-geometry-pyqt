@@ -19,13 +19,6 @@ class ScreenPoint:
             color = self.color
         self.plot.draw_point(self.tuple(), color, thickness)
 
-    def draw_on_image(self, color=None, thickness=-1):
-        if thickness == -1:
-            thickness = self.thickness
-        if color is None:
-            color = self.color
-        self.plot.draw_point(self.tuple(), color, thickness, on_iamge=True)
-
     def move(self, x, y):
         self.x += x
         self.y += y

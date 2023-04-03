@@ -48,6 +48,8 @@ class Plot(QWidget):
         self.zoom = 1
         self.zoom_step = 1.5
         self.camera_pos = (0, 0)
+        self.min_zoom = 1/20
+        self.max_zoom = 20
 
         self.objects = []
         self.add_object_func = None
@@ -65,7 +67,8 @@ class Plot(QWidget):
         self.extra_objects = tuple()
         self.selected_mode = 0
         self.i = 0
-        self.scale = 1
+        self.scale1 = 1
+        self.scale2 = 1
 
         self.mouse_move = None
         self.mouse_left = None
@@ -145,44 +148,39 @@ class Plot(QWidget):
             self.draw('rotation_surface')
 
     def draw_segment(self, p1, p2, color=(0, 0, 0), thickness=1, line_type=1):
-        self.set_pen(color, thickness * self.scale, line_type)
-        self.painter.drawLine(int(p1[0]) * self.scale, int(p1[1]) * self.scale,
-                              int(p2[0]) * self.scale, int(p2[1]) * self.scale)
+        self.set_pen(color, thickness * self.scale2, line_type)
+        self.painter.drawLine(int(p1[0] * self.scale1), int(p1[1] * self.scale1),
+                              int(p2[0] * self.scale1), int(p2[1] * self.scale1))
 
     def draw_point(self, point, color=(0, 0, 0), thickness=1):
-        self.set_pen(color, thickness * self.scale)
+        self.set_pen(color, thickness * self.scale2)
         brush = self.painter.brush()
         self.painter.setBrush(QColor(*self.bg_color))
-        self.painter.drawEllipse((int(point[0]) - 5) * self.scale, (int(point[1]) - 5) * self.scale,
-                                 10 * self.scale, 10 * self.scale)
+        self.painter.drawEllipse(
+            int(point[0] * self.scale1 - 5 * self.scale2), int(point[1] * self.scale1 - 5 * self.scale2),
+            int(10 * self.scale2), int(10 * self.scale2))
         self.painter.setBrush(brush)
 
     def draw_point2(self, point, color=(0, 0, 0), thickness=1):
         if self.tlp[0] <= point[0] <= self.brp[0] and self.tlp[1] <= point[1] <= self.brp[1]:
-            self.set_pen(color, thickness * self.scale)
-            if self.scale != 1:
-                brush = self.painter.brush()
-                self.painter.setBrush(QColor(*color))
-                self.painter.drawEllipse(int(point[0] - 1) * self.scale, int(point[1] - 1) * self.scale,
-                                         2 * self.scale, 2 * self.scale)
-                self.painter.setBrush(brush)
-            self.painter.drawPoint(int(point[0]) * self.scale, int(point[1]) * self.scale)
+            self.set_pen(color, thickness * self.scale2)
+            self.painter.drawPoint(int(point[0] * self.scale1), int(point[1] * self.scale1))
 
     def draw_circle(self, center, radius, color=(0, 0, 0), thickness=2):
-        self.set_pen(color, thickness * self.scale)
-        self.painter.drawEllipse(int(center[0] - radius) * self.scale, int(center[1] - radius) * self.scale,
-                                 int(radius * 2) * self.scale, int(radius * 2) * self.scale)
+        self.set_pen(color, thickness * self.scale2)
+        self.painter.drawEllipse(int((center[0] - radius) * self.scale1), int((center[1] - radius) * self.scale1),
+                                 int(radius * 2 * self.scale1), int(radius * 2 * self.scale1))
 
     def draw_text(self, pos, text):
-        self.painter.drawText(*pos, text)
+        self.painter.drawText(int(pos[0] * self.scale1), int(pos[1] * self.scale1), text)
 
     def draw_text2(self, rect, text, option):
         self.painter.drawText(rect, text, option)
 
     def set_pen(self, color, thickness, line_type=1):
-        self.painter.setPen(QPen(QColor(*color), thickness, line_type))
+        self.painter.setPen(QPen(QColor(*color), int(thickness), line_type))
 
-    def clear(self, index=-1):
+    def clear(self):
         self.objects.clear()
         self.update()
 
@@ -275,9 +273,9 @@ class Plot(QWidget):
 
     def wheelEvent(self, a0) -> None:
         if a0.angleDelta().y() > 0:
-            self.zoom_in((a0.x(), a0.y()))
+            self.set_zoom(self.zoom * self.zoom_step, (a0.x(), a0.y()))
         else:
-            self.zoom_out((a0.x(), a0.y()))
+            self.set_zoom(self.zoom / self.zoom_step, (a0.x(), a0.y()))
 
     def select_object(self, pos):
         selected_object = None
@@ -329,25 +327,31 @@ class Plot(QWidget):
                 return obj
         raise IndexError(f"Object {id} not found")
 
-    def zoom_in(self, pos=None):
+    def set_zoom(self, zoom, pos=None):
+        if zoom > self.zoom:
+            self.zoom_in(pos, zoom / self.zoom)
+        elif zoom < self.zoom:
+            self.zoom_out(pos, self.zoom / zoom)
+
+    def zoom_in(self, pos=None, zoom_step=1.5):
         if pos is None:
             pos = (self.tlp[0] + self.brp[0]) // 2, (self.tlp[1] + self.brp[1]) // 2
-        self.zoom *= self.zoom_step
-        self.pm.zoom *= self.zoom_step
-        self.move_camera((self.zoom_step - 1) * ((self.axis.rp[0] - pos[0]) + self.camera_pos[0]),
-                         (self.zoom_step - 1) * (self.axis.rp[1] - pos[1]), update=False)
+        self.zoom *= zoom_step
+        self.pm.zoom *= zoom_step
+        self.move_camera((zoom_step - 1) * ((self.axis.rp[0] - pos[0]) + self.camera_pos[0]),
+                         (zoom_step - 1) * (self.axis.rp[1] - pos[1]), update=False)
         for obj in self.objects:
             obj.update_projections()
         self.sm.update_intersections()
         self.update()
 
-    def zoom_out(self, pos=None):
+    def zoom_out(self, pos=None, zoom_step=1.5):
         if pos is None:
             pos = (self.tlp[0] + self.brp[0]) // 2, (self.tlp[1] + self.brp[1]) // 2
-        self.zoom /= self.zoom_step
-        self.pm.zoom /= self.zoom_step
-        new_camera_x = (self.camera_pos[0] + self.axis.rp[0] - pos[0]) / self.zoom_step - self.axis.rp[0] + pos[0]
-        new_axis_y = pos[1] - (pos[1] - self.axis.lp[1]) / self.zoom_step
+        self.zoom /= zoom_step
+        self.pm.zoom /= zoom_step
+        new_camera_x = (self.camera_pos[0] + self.axis.rp[0] - pos[0]) / zoom_step - self.axis.rp[0] + pos[0]
+        new_axis_y = pos[1] - (pos[1] - self.axis.lp[1]) / zoom_step
         self.move_camera(new_camera_x - self.camera_pos[0], new_axis_y - self.axis.lp[1], update=False)
         for obj in self.objects:
             obj.update_projections()
