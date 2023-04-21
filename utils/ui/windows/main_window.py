@@ -1,4 +1,6 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QFileDialog, QMessageBox
+import copy
+
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QFileDialog, QMessageBox, QPushButton
 
 from utils.render.render_window import RenderWindow
 from utils.ui.bars.plot_bar import PlotBar
@@ -17,7 +19,7 @@ from utils.color import *
 
 import os
 
-import utils.history.serializer as srl
+from utils.history.serializer import Serializer
 
 
 class MainWindow(QMainWindow):
@@ -26,6 +28,8 @@ class MainWindow(QMainWindow):
         self.resize(1180, 740)
 
         fm = FontManager()
+        self.srl = Serializer()
+        self.settings_manager = SettingsManager(self.srl)
 
         self.setWindowTitle('DescriptiveGeometry')
 
@@ -133,19 +137,26 @@ class MainWindow(QMainWindow):
                 'File':
                     {
                         'New': (lambda: self.new_file(), 'Ctrl+Alt+T'),
-                        'Open': (lambda: self.deserialize(-1), 'Ctrl+Alt+Y'),
+                        'Open': (lambda: self.deserialize(), 'Ctrl+Alt+Y'),
                         'Save': (self.serialize, 'Ctrl+S'),
                         'Save as': (self.serialize_as, 'Ctrl+Shift+S'),
                         'Recent files':
                             {
-                                '0': (lambda: self.deserialize(0), None),
-                                '1': (lambda: self.deserialize(1), None),
-                                '2': (lambda: self.deserialize(2), None),
-                                '3': (lambda: self.deserialize(3), None),
-                                '4': (lambda: self.deserialize(4), None),
-                                '5': (lambda: self.deserialize(5), None),
-                                '6': (lambda: self.deserialize(6), None),
-                                '7': (lambda: self.deserialize(7), None)
+                                '0': (lambda: self.deserialize(self.settings_manager.recent_file(0)), None),
+                                '1': (lambda: self.deserialize(self.settings_manager.recent_file(1)), None),
+                                '2': (lambda: self.deserialize(self.settings_manager.recent_file(2)), None),
+                                '3': (lambda: self.deserialize(self.settings_manager.recent_file(3)), None),
+                                '4': (lambda: self.deserialize(self.settings_manager.recent_file(4)), None),
+                                '5': (lambda: self.deserialize(self.settings_manager.recent_file(5)), None),
+                                '6': (lambda: self.deserialize(self.settings_manager.recent_file(6)), None),
+                                '7': (lambda: self.deserialize(self.settings_manager.recent_file(7)), None)
+                                # '1': (lambda: self.deserialize(1), None),
+                                # '2': (lambda: self.deserialize(2), None),
+                                # '3': (lambda: self.deserialize(3), None),
+                                # '4': (lambda: self.deserialize(4), None),
+                                # '5': (lambda: self.deserialize(5), None),
+                                # '6': (lambda: self.deserialize(6), None),
+                                # '7': (lambda: self.deserialize(7), None)
                             },
                     },
                 'Edit':
@@ -172,7 +183,6 @@ class MainWindow(QMainWindow):
         )
         self.setMenuBar(self.menu_bar)
 
-        self.settings_manager = SettingsManager()
         self.current_file = None
         self.update_recent_files_menu()
 
@@ -191,7 +201,7 @@ class MainWindow(QMainWindow):
 
     def serialize(self):
         try:
-            srl.serialize(self.object_manager.serialize(), path=self.current_file)
+            self.srl.serialize(self.object_manager.serialize(), path=self.current_file)
         except Exception:
             self.serialize_as()
 
@@ -199,36 +209,38 @@ class MainWindow(QMainWindow):
         path = QFileDialog.getSaveFileName(self, "Select File Name", self.settings_manager.recent_directory,
                                            "Descriptive Geometry Files (*.dg)")[0]
         if path:
-            srl.serialize(self.object_manager.serialize(), path=path)
+            self.srl.serialize(self.object_manager.serialize(), path=path)
             self.current_file = path
             self.settings_manager.add_to_recent_files(path)
             self.update_recent_files_menu()
             self.settings_manager.set_recent_directory(path)
 
-    def deserialize(self, recent_file=-1):
-        if recent_file == -1:
-            path = QFileDialog.getOpenFileName(self, "Open File", self.settings_manager.recent_directory,
-                                               "Descriptive Geometry Files (*.dg)")[0]
-        elif 0 <= recent_file < len(self.settings_manager.recent_files):
-            path = self.settings_manager.recent_files[recent_file]
-        else:
-            return
-        if not path:
-            return
-        if not os.path.isfile(path):
-            QMessageBox.warning(self, "Error", "File not found")
-            return
+    def deserialize(self, path: str = None) -> None:
+        """
+        Function that opens and deserializes chosen file
+        :param path: path to the file
+        :return:
+        """
+
         try:
-            self.object_manager.deserialize(srl.deserialize(path=path))
+            self.srl.deserialize_file(self, path, self.settings_manager.recent_directory,
+                                      self.object_manager.deserialize)
+        except FileNotFoundError:
+            pass
+        except ValueError as e:
+            QMessageBox.warning(self, "Error", str(e))
+        except Exception as e:
+            QMessageBox.warning(self, "Unknown error", str(e))
+        else:
             self.layer_window.update_layer_list(self.object_manager.layers, self.object_manager.current_layer)
             self.properties_bar.update_layers_widget()
-            self.settings_manager.add_to_recent_files(path)
+
+            self.settings_manager.add_to_recent_files(path)  # TODO: do something with settings manager!
             self.current_file = path
             self.update_recent_files_menu()
-            self.plot.update()
             self.settings_manager.set_recent_directory(path)
-        except Exception:
-            QMessageBox.warning(self, "Error", "Invalid file")
+
+            self.plot.update()
 
     def new_file(self):
         self.object_manager.clear()
@@ -252,3 +264,28 @@ class MainWindow(QMainWindow):
 
 
 import resources_rc
+
+
+class Test(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.d = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
+
+        layout = QHBoxLayout(self)
+        btn = QPushButton('Open')
+        btn.clicked.connect(self.filename)
+        layout.addWidget(btn)
+
+    def filename(self):
+        self.path = QFileDialog.getOpenFileName(self, 'Open File', self.d)[0]
+        print(self.path)
+
+
+if __name__ == '__main__':
+    from PyQt5.QtWidgets import QApplication
+
+    app = QApplication([])
+    widget = Test()
+    widget.show()
+    app.exec()

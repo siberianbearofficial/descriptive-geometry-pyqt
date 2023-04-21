@@ -6,7 +6,7 @@ from utils.color import *
 
 class ObjectManager:
     def __init__(self, func_plot_update, func_plot_obj, plot_full_update, func_object_selected):
-        self.layers = [Layer("Layer 1")]    # TODO: make it constant
+        self.layers = [Layer.empty()]
         self.current_layer = 0
         self.selected_object = None
         self.selected_object_index = None
@@ -298,14 +298,50 @@ class ObjectManager:
 
     def clear(self):
         self.layers.clear()
-        self.layers.append(Layer("Layer 1"))
+        self.layers.append(Layer.empty())
         self.plot_full_update(self.get_all_objects())
 
-    def deserialize(self, dct):
+    def deserialize(self, dct: dict) -> None:
+        """
+        Function that unpacks and applies given dictionary.
+        :param dct: dictionary
+        :return:
+        """
+
+        # Checking if it is possible to unpack layers
+        for field in ('layers', 'current_layer'):
+            if field not in dct:
+                raise ValueError(f'Invalid dictionary, no such field: {field}.')
+
+        # Unpacking layers
         self.layers.clear()
-        for el in dct['layers']:
-            self.layers.append(Layer.from_dict(el))
-        self.current_layer = dct['current_layer']
+        for layer_dict in dct['layers']:
+            try:
+                layer = Layer.from_dict(layer_dict)
+                self.layers.append(layer)
+            except ValueError as e:
+                print(e)
+        if not self.layers:
+            self.layers.append(Layer.empty())
+
+        self.set_current_layer(dct['current_layer'])
         self.plot_full_update(self.get_all_objects())
+
+        # Notifying all managers that objects have changed
         if self.objects_changed:
             self.objects_changed(self.layers[self.current_layer])
+
+    def set_current_layer(self, index) -> None:
+        """
+        Function that sets current layer's index.
+        :param index: index of the current layer
+        :return:
+        """
+
+        if isinstance(index, int):
+            self.current_layer = min(len(self.layers), max(0, index))
+        else:
+            try:
+                self.set_current_layer(int(index))
+            except TypeError:
+                self.current_layer = 0

@@ -1,15 +1,16 @@
+from utils.color import Color
 from utils.objects.general_object import GeneralObject
 
 
 class Layer:
-    def __init__(self, name='', hidden=False, color=None, thickness=2):
+    serializable = ['name', 'hidden', 'color', 'thickness']
+
+    def __init__(self, name='', hidden=False, color: Color = None, thickness=2):
         self.hidden = hidden
         self.color = color
         self.thickness = thickness
         self.objects = []
         self.name = name
-
-        self.serializable = ['hidden', 'objects', 'name']
 
     def __getitem__(self, item):
         return self.objects[item]
@@ -49,10 +50,33 @@ class Layer:
                 'objects': [obj.to_dict(True) for obj in self.objects]}
 
     @staticmethod
-    def from_dict(dct):
-        layer = Layer(dct['name'], dct['hidden'], dct['color'], dct['thickness'])
-        layer.objects = [GeneralObject.from_dict(el) for el in dct['objects']]
+    def from_dict(dct: dict):
+        """
+        Function that creates layer from the given dictionary.
+        :param dct: dictionary
+        :return: layer
+        """
+
+        # Checking if it is possible to create a layer
+        for field in Layer.serializable:
+            if field not in dct:
+                raise ValueError(f'Unable to create layer, no such field in the given dictionary: {field}.')
+
+        # Creating layer
+        layer = Layer(*(dct[field] for field in Layer.serializable))
+        layer.objects = list()
+        if 'objects' in dct:
+            for object_dict in dct['objects']:
+                try:
+                    layer.objects.append(GeneralObject.from_dict(object_dict))
+                except ValueError as e:
+                    print(e)
+
         return layer
+
+    @staticmethod
+    def empty():
+        return Layer("Layer 1")
 
     def set_name(self, name):
         self.name = name

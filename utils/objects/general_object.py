@@ -134,7 +134,19 @@ class GeneralObject:
         return {'name': self.name, 'color': str(self.color), 'ag_object': convert(self.ag_object), 'config': self.config}
 
     @staticmethod
-    def from_dict(dct):
+    def from_dict(dct: dict):
+        """
+        Function that creates general object from the given dictionary.
+        :param dct: dictionary
+        :return: general object
+        """
+
+        # Checking if it is possible to create a general object
+        for field in ('ag_object', 'color', 'name', 'config'):
+            if field not in dct:
+                raise ValueError(f'Unable to create GeneralObject, no such field in the given dictionary: {field}.')
+
+        # Creating GeneralObject
         return GeneralObject(unpack_ag_object(dct['ag_object']), Color(dct['color']), dct['name'], **dct['config'])
 
     def set_name(self, name):
@@ -182,7 +194,7 @@ def unpack_ag_object(obj):
     if isinstance(obj, list) or isinstance(obj, tuple):
         return list(map(unpack_ag_object, obj))
     if isinstance(obj, dict):
-        if isinstance(obj['class'], str):
+        if 'class' in obj and isinstance(obj['class'], str):
             cls = serializable.angem_class_by_name[obj['class']]
             return cls(*[unpack_ag_object(obj[key]) for key in serializable.angem_objects[cls]])
         return obj['class'](*[unpack_ag_object(obj[key]) for key in serializable.angem_objects[obj['class']]])

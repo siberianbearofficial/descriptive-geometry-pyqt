@@ -1,13 +1,11 @@
-import utils.history.serializer as srl
 import os
 
 
 class SettingsManager:
-    def __init__(self):
-        try:
-            dct = srl.deserialize(path='settings.txt')
-        except Exception:
-            dct = dict()
+    def __init__(self, srl):
+        self.srl = srl
+
+        dct = srl.deserialize(path='settings.txt')
         self.recent_files = dct.get('recent_files', [])
         if not isinstance(self.recent_files, list):
             self.recent_files = []
@@ -27,4 +25,14 @@ class SettingsManager:
 
     def serialize(self):
         dct = {'recent_files': self.recent_files, 'recent_directory': self.recent_directory}
-        srl.serialize(dct, path='settings.txt')
+        self.srl.serialize(dct, path='settings.txt')
+
+    def recent_file(self, index=-1):
+        """
+        Function that returns recent file by index.
+        :param index: index of recent file
+        :return: path to the recent file
+        """
+        if -1 <= index < len(self.recent_files):
+            return self.recent_files[index]
+        return
