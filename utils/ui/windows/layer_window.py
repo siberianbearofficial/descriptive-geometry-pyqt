@@ -162,7 +162,7 @@ class LayerBar(QWidget):
 
         self.button_color = Button(self, color=kwargs.get('color', None))
         self.button_color.move(295, 5)
-        self.button_color.clicked.connect(lambda: self.func_color(QColorDialog.getColor(), self.index))
+        self.button_color.clicked.connect(lambda: self.func_color(Color(QColorDialog.getColor()), self.index))
 
         self.thickness_combobox = QComboBox(self)
         self.thickness_combobox.setGeometry(330, 5, 70, 30)

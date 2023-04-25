@@ -26,7 +26,7 @@ class Color(QColor):
         elif isinstance(red, QColor):
             super().__init__(red)
         else:
-            raise ValueError('Oops, invalid color format!')
+            raise ValueError(f'Oops, invalid color format: {red}, {green}, {blue}, {alpha}!')
 
     def __str__(self):
         return f'rgba({self.red()}, {self.green()}, {self.blue()}, {self.alpha()})'

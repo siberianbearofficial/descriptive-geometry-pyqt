@@ -200,6 +200,7 @@ class Plot(QWidget):
         self.objects.clear()
         for obj in object_list:
             self.objects.append(PlotObject(self, obj))
+        self.update()
 
     def mousePressEvent(self, a0) -> None:
         if a0.button() == 1:

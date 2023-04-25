@@ -88,15 +88,15 @@ class HistoryManager:
         elif record.action_type == 'layer_name':
             add_action('layer_name', clear_redo=False, name=self.object_manager[record.action_info['index']].name,
                        index=record.action_info['index'])
-            self.object_manager.set_layer_name(record.action_info['name'], record.action_info['index'])
+            self.object_manager.set_layer_attr('name', record.action_info['name'], record.action_info['index'])
         elif record.action_type == 'layer_color':
             add_action('layer_color', clear_redo=False, color=self.object_manager[record.action_info['index']].color,
                        index=record.action_info['index'])
-            self.object_manager.set_layer_color(record.action_info['color'], record.action_info['index'])
+            self.object_manager.set_layer_attr('color', record.action_info['color'], record.action_info['index'])
         elif record.action_type == 'layer_thickness':
             add_action('layer_thickness', clear_redo=False, thickness=self.object_manager[record.action_info['index']].thickness,
                        index=record.action_info['index'])
-            self.object_manager.set_layer_thickness(record.action_info['thickness'], record.action_info['index'])
+            self.object_manager.set_layer_attr('thickness', record.action_info['thickness'], record.action_info['index'])
         elif record.action_type == 'layer_hidden':
             add_action('layer_hidden', clear_redo=False, hidden=self.object_manager[record.action_info['index']].hidden,
                        index=record.action_info['index'])

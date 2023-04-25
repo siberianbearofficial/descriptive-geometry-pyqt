@@ -5,9 +5,9 @@ from utils.objects.general_object import GeneralObject
 class Layer:
     serializable = ['name', 'hidden', 'color', 'thickness']
 
-    def __init__(self, name='', hidden=False, color: Color = None, thickness=2):
+    def __init__(self, name='', hidden=False, color: Color | str = None, thickness=2):
         self.hidden = hidden
-        self.color = color
+        self.color = color if isinstance(color, Color) else Color(color) if color else None
         self.thickness = thickness
         self.objects = []
         self.name = name
@@ -46,7 +46,7 @@ class Layer:
             obj.move(x, y)
 
     def to_dict(self):
-        return {'name': self.name, 'hidden': self.hidden, 'color': self.color, 'thickness': self.thickness,
+        return {'name': self.name, 'hidden': self.hidden, 'color': str(self.color), 'thickness': self.thickness,
                 'objects': [obj.to_dict(True) for obj in self.objects]}
 
     @staticmethod
@@ -77,6 +77,25 @@ class Layer:
     @staticmethod
     def empty():
         return Layer("Layer 1")
+
+    @staticmethod
+    def generate_name(layers):
+        """
+        Function that generates a unique name for a layer
+        :param layers: list of layers that present in a project
+        :return: generated name for a layer
+        """
+
+        i = 1
+        while True:
+            name = f'Layer {i}'
+            for layer in layers:
+                if layer.name == name:
+                    break
+            else:
+                break
+            i += 1
+        return name
 
     def set_name(self, name):
         self.name = name

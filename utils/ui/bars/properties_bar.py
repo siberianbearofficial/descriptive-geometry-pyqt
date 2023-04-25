@@ -205,7 +205,7 @@ class PropertiesBar(Widget):
             self.layer_combobox.addItem(layer.name)
 
     def on_layer_change(self, layer):
-        if self.set_obj_layer:
+        if self.set_obj_layer and layer >= 0:
             self.set_obj_layer(int(layer))
 
     def on_color_change(self):
@@ -246,6 +246,7 @@ class PropertiesBar(Widget):
         elif self.current_object:
             self.clear_objects()
             self.hide()
+            self.current_object = None
 
     def clear_objects(self):
         for i in range(self.obj_layout.count() - 1, -1, -1):
@@ -264,7 +265,7 @@ class PropertiesBar(Widget):
         self.change_stylesheet(self.color_button, f'background-color: {self.current_object.color};')
         self.thickness_combobox.setCurrentIndex(self.current_object.thickness - 1)
         self.thickness_combobox.setDisabled(False)
-
+        self.layer_combobox.setCurrentIndex(0)  # TODO: set current layer
         self.show_objects(self.current_object.to_dict())
 
     def hide(self):

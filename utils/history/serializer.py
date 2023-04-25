@@ -6,9 +6,17 @@ from PyQt5.QtWidgets import QFileDialog
 
 
 class Serializer:
+    """
+    Class that performs operations with file system
+    """
+
     def __init__(self):
+        self.recent_directory = None
+        self.current_file = None
+
         self.reg_file = QSettings('settings.ini', QSettings.IniFormat)
         self.file_extension = '.dg'
+        self.program_name = 'Descriptive Geometry'
 
     def serialize(self, content, path='history.txt'):
         """
@@ -18,7 +26,10 @@ class Serializer:
         """
 
         # Serializing
-        hist = json.dumps(content)  # TODO: exception is generated if content is not a valid object
+        try:
+            hist = json.dumps(content)  # TODO: exception is generated if content is not a valid object
+        except Exception:
+            raise ValueError('File can not be encoded with JSON.')
 
         # Writing json
         if path == 'history.txt':
@@ -50,14 +61,50 @@ class Serializer:
         return dct
 
     def extension(self, path: str):
+        """
+        Function to fix extension of the given file
+        :param path: path to a file
+        :return: path to a file with fixed extension
+        """
+
         if '.' not in path:
             return path + self.file_extension
         return (path[:path.rindex('.')] + self.file_extension) if '.' in path else (path + self.file_extension)
 
-    def deserialize_file(self, parent, path, directory, deserialization_func):
+    def serialize_file(self, parent, create_new=False, content=None):
+        """
+        Function to serialize the given content
+        :param parent: widget to be a parent of QFileDialog
+        :param create_new: current file is used if True else QFileDialog is opened
+        :param content: JSON-serializable object or serialized one
+        :return: path to a file
+        """
+
+        if create_new or not self.current_file:
+            path = self.extension(QFileDialog.getSaveFileName(parent, 'Select File Name', self.recent_directory,
+                                                              f'{self.program_name} Files (*{self.file_extension})')[0])
+        else:
+            path = self.current_file
+
+        if path:
+            self.serialize(content, path)
+            self.current_file = path
+        else:
+            raise FileNotFoundError('File is not chosen.')
+        return path
+
+    def deserialize_file(self, parent, path, deserialization_func):
+        """
+        Function to deserialize the given file
+        :param parent: widget to be a parent of QFileDialog
+        :param path: path to a file (QFileDialog is opened if None)
+        :param deserialization_func: function to process deserialized objects
+        :return:
+        """
+
         if not path:
-            path = QFileDialog.getOpenFileName(parent, 'Open File', directory,
-                                               'Descriptive Geometry Files (*.dg)')[0]
+            path = QFileDialog.getOpenFileName(parent, 'Open File', self.recent_directory,
+                                               f'{self.program_name} Files (*{self.file_extension})')[0]
         if path and os.path.isfile(path):
             dct = self.deserialize(path)
             if dct:
@@ -65,10 +112,15 @@ class Serializer:
                     deserialization_func(dct)
                 except Exception as e:
                     raise ValueError(f'Invalid file: {dct}. Error: {e}.')
+                else:
+                    self.current_file = path
             else:
                 raise ValueError('File can not be decoded with JSON.')
         else:
             raise FileNotFoundError('File is not chosen.')
+
+    def new_file(self):
+        self.current_file = None
 
 
 if __name__ == '__main__':

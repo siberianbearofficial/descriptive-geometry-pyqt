@@ -30,6 +30,7 @@ class MainWindow(QMainWindow):
         fm = FontManager()
         self.srl = Serializer()
         self.settings_manager = SettingsManager(self.srl)
+        self.srl.recent_directory = self.settings_manager.recent_directory
 
         self.setWindowTitle('DescriptiveGeometry')
 
@@ -54,7 +55,6 @@ class MainWindow(QMainWindow):
 
         # Properties bar
         self.properties_bar = PropertiesBar(right_column, font_manager=fm)
-        self.plot.show_object_properties = self.properties_bar.open_object
         # self.properties_bar.save = self.plot.save_object_properties
         self.properties_bar.setMinimumHeight(150)
 
@@ -118,9 +118,14 @@ class MainWindow(QMainWindow):
 
         # Layer window
         self.layer_window = LayerWindow(
-            self.object_manager.add_layer, self.object_manager.delete_layer, self.object_manager.select_layer,
-            self.object_manager.set_layer_name, self.object_manager.set_layer_hidden,
-            self.object_manager.set_layer_color, self.object_manager.set_layer_thickness)
+            self.object_manager.add_layer,
+            self.object_manager.delete_layer,
+            self.object_manager.select_layer,
+            lambda *args: self.object_manager.set_layer_attr('name', *args),
+            self.object_manager.set_layer_hidden,
+            lambda *args: self.object_manager.set_layer_attr('color', *args),
+            lambda *args: self.object_manager.set_layer_attr('thickness', *args)
+        )
         self.layer_window.update_layer_list(self.object_manager.layers, self.object_manager.current_layer)
         self.object_manager.set_layers_func(
             (self.layer_window.add_layer, self.properties_bar.update_layers_widget),
@@ -128,7 +133,9 @@ class MainWindow(QMainWindow):
             (self.layer_window.select_layer,),
             (self.layer_window.rename_layer, self.properties_bar.update_layers_widget),
             (self.layer_window.set_layer_color,),
-            (self.layer_window.set_layer_thickness,))
+            (self.layer_window.set_layer_thickness,),
+            self.layer_window.update_layer_list,
+        )
         self.plot.setCmdStatus.connect(self.cmd_bar.set_command_to_plot)
 
         # Menubar
@@ -139,7 +146,7 @@ class MainWindow(QMainWindow):
                         'New': (lambda: self.new_file(), 'Ctrl+Alt+T'),
                         'Open': (lambda: self.deserialize(), 'Ctrl+Alt+Y'),
                         'Save': (self.serialize, 'Ctrl+S'),
-                        'Save as': (self.serialize_as, 'Ctrl+Shift+S'),
+                        'Save as': (lambda: self.serialize(True), 'Ctrl+Shift+S'),
                         'Recent files':
                             {
                                 '0': (lambda: self.deserialize(self.settings_manager.recent_file(0)), None),
@@ -163,7 +170,7 @@ class MainWindow(QMainWindow):
                     {
                         'Undo': (lambda: self.object_manager.hm.undo(), 'Alt+Z'),
                         'Redo': (lambda: self.object_manager.hm.undo(redo=True), 'Alt+Shift+Z'),
-                        'Delete': (lambda: self.object_manager.delete_selected_object(), 'Alt+Delete'),
+                        'Delete': (lambda: self.object_manager.delete_object(), 'Alt+Delete'),
                         'Copy': (lambda: print('copy'), 'Ctrl+C'),
                         'Paste': (lambda: print('paste'), 'Ctrl+V'),
                     },
@@ -183,7 +190,6 @@ class MainWindow(QMainWindow):
         )
         self.setMenuBar(self.menu_bar)
 
-        self.current_file = None
         self.update_recent_files_menu()
 
         left_column.add(self.draw_bar)
@@ -199,19 +205,19 @@ class MainWindow(QMainWindow):
     def keyPressEvent(self, a0) -> None:
         self.plot.keyPressEvent(a0)
 
-    def serialize(self):
-        try:
-            self.srl.serialize(self.object_manager.serialize(), path=self.current_file)
-        except Exception:
-            self.serialize_as()
+    def serialize(self, create_new=False):
+        """
+        Function that opens and deserializes chosen file
+        :param create_new: current file is used if True else QFileDialog is opened
+        :return:
+        """
 
-    def serialize_as(self):
-        path = QFileDialog.getSaveFileName(self, "Select File Name", self.settings_manager.recent_directory,
-                                           "Descriptive Geometry Files (*.dg)")[0]
-        if path:
-            self.srl.serialize(self.object_manager.serialize(), path=path)
-            self.current_file = path
-            self.settings_manager.add_to_recent_files(path)
+        try:
+            path = self.srl.serialize_file(self, create_new, self.object_manager.serialize())
+        except Exception as e:
+            print(e)
+        else:
+            self.settings_manager.add_to_recent_files(path)  # TODO: do something with settings manager!
             self.update_recent_files_menu()
             self.settings_manager.set_recent_directory(path)
 
@@ -223,8 +229,7 @@ class MainWindow(QMainWindow):
         """
 
         try:
-            self.srl.deserialize_file(self, path, self.settings_manager.recent_directory,
-                                      self.object_manager.deserialize)
+            self.srl.deserialize_file(self, path, self.object_manager.deserialize)
         except FileNotFoundError:
             pass
         except ValueError as e:
@@ -232,19 +237,20 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.warning(self, "Unknown error", str(e))
         else:
-            self.layer_window.update_layer_list(self.object_manager.layers, self.object_manager.current_layer)
-            self.properties_bar.update_layers_widget()
-
             self.settings_manager.add_to_recent_files(path)  # TODO: do something with settings manager!
-            self.current_file = path
             self.update_recent_files_menu()
             self.settings_manager.set_recent_directory(path)
 
-            self.plot.update()
+            self.update_objects()
+
+    def update_objects(self):
+        self.layer_window.update_layer_list(self.object_manager.layers, self.object_manager.current_layer)
+        self.properties_bar.update_layers_widget()
+        self.plot.update()
 
     def new_file(self):
         self.object_manager.clear()
-        self.current_file = None
+        self.srl.new_file()
         self.plot.update()
 
     def start_render(self):
@@ -252,6 +258,11 @@ class MainWindow(QMainWindow):
         self.render_window.show()
 
     def update_recent_files_menu(self):
+        """
+        Function that updates recent files menu.
+        :return:
+        """
+
         i = -1
         for i, path in enumerate(self.settings_manager.recent_files):
             self.menu_bar.action_dict['File']['Recent files'][str(i)].setText(path)
