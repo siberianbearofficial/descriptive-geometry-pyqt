@@ -6,10 +6,11 @@ from utils.color import *
 
 
 class InspectorBar(Widget):
-    def __init__(self, parent, font_manager):
+    def __init__(self, parent, font_manager, theme_manager):
         super().__init__(parent)
 
         self.font_manager = font_manager
+        self.theme_manager = theme_manager
 
         self.setStyleSheet(f"background-color: {LIGHT_COLOR}; border-radius: 10px;")
 
@@ -60,3 +61,6 @@ class InspectorBar(Widget):
     def clear_layout(self):
         for i in range(self.layout.count() - 1, -1, -1):
             self.layout.itemAt(i).widget().deleteLater()
+
+    def set_styles(self):
+        self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))

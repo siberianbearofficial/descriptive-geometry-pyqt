@@ -1,16 +1,14 @@
 from PyQt5.QtWidgets import QVBoxLayout
 from utils.ui.bars.tool import Tool
 from utils.ui.widgets.widget import Widget
-from utils.color import *
 
 
 class ToolBar(Widget):
-    def __init__(self, struct, parent, font_manager):
+    def __init__(self, struct, parent, font_manager, theme_manager):
         super().__init__(parent)
 
         self.tools = list()
-
-        self.setStyleSheet(f"background-color: {LIGHT_COLOR}; border-radius: 10px;")
+        self.theme_manager = theme_manager
 
         # Layout
         self.layout = QVBoxLayout(self.central_widget)
@@ -32,3 +30,6 @@ class ToolBar(Widget):
         for i in range(len(funcs)):
             self.tools[i].set_on_click_listener(funcs[i])
         return self
+
+    def set_styles(self):
+        self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))

@@ -6,15 +6,14 @@ from utils.color import *
 
 
 class CmdBar(Widget):
-    def __init__(self, parent, font_manager):
+    def __init__(self, parent, font_manager, theme_manager):
         super().__init__(parent)
 
         self.command = None
         self.command_to_plot = False
+        self.theme_manager = theme_manager
 
         self.setGeometry(160, 640, 711, 61)    # TODO: REMOVE THIS!!!
-        self.setStyleSheet("background-color: #B2B2B2;\n"
-                           "border-radius: 10px;")
 
         # Layout
         self.layout = QVBoxLayout(self.central_widget)
@@ -130,3 +129,6 @@ class CmdBar(Widget):
 
     def add_object(self, obj):
         pass
+
+    def set_styles(self):
+        self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))

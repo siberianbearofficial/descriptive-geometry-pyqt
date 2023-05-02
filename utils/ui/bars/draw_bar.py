@@ -7,8 +7,10 @@ from utils.color import *
 
 
 class DrawBar(Widget):
-    def __init__(self, struct, parent, font_manager):
+    def __init__(self, struct, parent, font_manager, theme_manager):
         super().__init__(parent)
+
+        self.theme_manager = theme_manager
 
         self.setMouseTracking(True)
 
@@ -40,3 +42,6 @@ class DrawBar(Widget):
         if isinstance(a1, QMouseEvent):
             DrawTool.tool_hovered(None)
         return False
+
+    def set_styles(self):
+        self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))

@@ -1,9 +1,10 @@
-from PyQt5.QtWidgets import QMenuBar, QAction, QMenu
+from PyQt5.QtWidgets import QMenuBar, QAction
 
 
 class MenuBar(QMenuBar):
-    def __init__(self, struct):
+    def __init__(self, struct, theme_manager):
         super().__init__()
+        self.theme_manager = theme_manager
         _, self.action_dict = self.unpack(struct)
 
     def unpack(self, struct, parent=None, name=None):
@@ -33,3 +34,7 @@ class MenuBar(QMenuBar):
         if shortcut:
             action.setShortcut(shortcut)
         return action
+
+    def set_styles(self):
+        self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))
+

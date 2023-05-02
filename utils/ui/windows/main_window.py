@@ -11,11 +11,11 @@ from utils.ui.bars.inspector_bar import InspectorBar
 from utils.ui.bars.tool_bar import ToolBar
 from utils.ui.bars.menu_bar import MenuBar
 from utils.objects.object_manager import ObjectManager
+from utils.ui.themes.theme_manager import ThemeManager
 from utils.ui.widgets.column import Column
 from utils.fonts.font_manager import FontManager
 from utils.history.settings_manager import SettingsManager
 from utils.ui.windows.layer_window import LayerWindow
-from utils.color import *
 
 import os
 
@@ -28,6 +28,7 @@ class MainWindow(QMainWindow):
         self.resize(1180, 740)
 
         fm = FontManager()
+        self.tm = ThemeManager()
         self.srl = Serializer()
         self.settings_manager = SettingsManager(self.srl)
         self.srl.recent_directory = self.settings_manager.recent_directory
@@ -35,7 +36,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('DescriptiveGeometry')
 
         central_widget = QWidget(self)
-        central_widget.setStyleSheet(f"background-color: {DARK_COLOR};")
 
         main_layout = QHBoxLayout(central_widget)
         main_layout.setContentsMargins(10, 10, 10, 10)
@@ -50,11 +50,11 @@ class MainWindow(QMainWindow):
         right_column.setFixedWidth(250)
 
         # Plot
-        self.plot_bar = PlotBar(middle_column, font_manager=fm)
+        self.plot_bar = PlotBar(middle_column, font_manager=fm, theme_manager=self.tm)
         self.plot = self.plot_bar.painter_widget
 
         # Properties bar
-        self.properties_bar = PropertiesBar(right_column, font_manager=fm)
+        self.properties_bar = PropertiesBar(right_column, font_manager=fm, theme_manager=self.tm)
         # self.properties_bar.save = self.plot.save_object_properties
         self.properties_bar.setMinimumHeight(150)
 
@@ -87,10 +87,10 @@ class MainWindow(QMainWindow):
                 'Spline': (lambda: self.plot.draw('spline'),),
                 'Rotation Surface': (lambda: self.plot.draw('rotation_surface'),),
                 'Horizontal': (lambda: self.plot.draw('horizontal'),),
-            }, parent=left_column, font_manager=fm)
+            }, parent=left_column, font_manager=fm, theme_manager=self.tm)
 
         # Cmd bar
-        self.cmd_bar = CmdBar(middle_column, font_manager=fm)
+        self.cmd_bar = CmdBar(middle_column, font_manager=fm, theme_manager=self.tm)
         self.cmd_bar.setFixedHeight(80)
         self.cmd_bar.add_object = self.plot.add_object
         self.cmd_bar.clear_plot = self.plot.clear
@@ -102,11 +102,11 @@ class MainWindow(QMainWindow):
                 'Ruler': (lambda: self.plot.draw('distance'), 'ruler_icon.png'),
                 'Angle': (lambda: self.plot.draw('angle'), 'angle_icon.png'),
                 'Intersection': (lambda: self.plot.draw('intersection'), 'intersection_icon.png')
-            }, parent=right_column, font_manager=fm)
+            }, parent=right_column, font_manager=fm, theme_manager=self.tm)
         self.tool_bar.setFixedHeight(120)
 
         # Inspector bar
-        self.inspector_bar = InspectorBar(right_column, font_manager=fm)
+        self.inspector_bar = InspectorBar(right_column, font_manager=fm, theme_manager=self.tm)
         self.inspector_bar.setMinimumHeight(100)
         self.inspector_bar.set_object_hidden_func(self.object_manager.set_object_hidden)
         self.inspector_bar.set_change_current_object_func(self.object_manager.select_object)
@@ -149,21 +149,7 @@ class MainWindow(QMainWindow):
                         'Save as': (lambda: self.serialize(True), 'Ctrl+Shift+S'),
                         'Recent files':
                             {
-                                '0': (lambda: self.deserialize(self.settings_manager.recent_file(0)), None),
-                                '1': (lambda: self.deserialize(self.settings_manager.recent_file(1)), None),
-                                '2': (lambda: self.deserialize(self.settings_manager.recent_file(2)), None),
-                                '3': (lambda: self.deserialize(self.settings_manager.recent_file(3)), None),
-                                '4': (lambda: self.deserialize(self.settings_manager.recent_file(4)), None),
-                                '5': (lambda: self.deserialize(self.settings_manager.recent_file(5)), None),
-                                '6': (lambda: self.deserialize(self.settings_manager.recent_file(6)), None),
-                                '7': (lambda: self.deserialize(self.settings_manager.recent_file(7)), None)
-                                # '1': (lambda: self.deserialize(1), None),
-                                # '2': (lambda: self.deserialize(2), None),
-                                # '3': (lambda: self.deserialize(3), None),
-                                # '4': (lambda: self.deserialize(4), None),
-                                # '5': (lambda: self.deserialize(5), None),
-                                # '6': (lambda: self.deserialize(6), None),
-                                # '7': (lambda: self.deserialize(7), None)
+                                str(i): (self.get_recent_lambda(i), None) for i in range(8)
                             },
                     },
                 'Edit':
@@ -186,8 +172,8 @@ class MainWindow(QMainWindow):
                     },
                 'Layers': (self.layer_window.show, 'Ctrl+L'),
                 'Render': (self.start_render, None)
-            }
-        )
+            },
+        theme_manager=self.tm)
         self.setMenuBar(self.menu_bar)
 
         self.update_recent_files_menu()
@@ -201,6 +187,11 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(right_column)
 
         self.setCentralWidget(central_widget)
+
+        self.set_styles()
+
+    def get_recent_lambda(self, i):
+        return lambda: self.deserialize(i)
 
     def keyPressEvent(self, a0) -> None:
         self.plot.keyPressEvent(a0)
@@ -254,7 +245,7 @@ class MainWindow(QMainWindow):
         self.plot.update()
 
     def start_render(self):
-        self.render_window.plot.update_plot_objects(self.object_manager.get_all_objects())
+        self.render_window.plot1.update_plot_objects(self.object_manager.get_all_objects())
         self.render_window.show()
 
     def update_recent_files_menu(self):
@@ -268,6 +259,16 @@ class MainWindow(QMainWindow):
             self.menu_bar.action_dict['File']['Recent files'][str(i)].setText(path)
         for i in range(i + 1, 8):
             self.menu_bar.action_dict['File']['Recent files'][str(i)].setText('')
+
+    def set_styles(self):
+        self.setStyleSheet(self.tm.get_style_sheet(self.__class__.__name__))
+        self.cmd_bar.set_styles()
+        self.draw_bar.set_styles()
+        self.inspector_bar.set_styles()
+        self.plot_bar.set_styles()
+        self.properties_bar.set_styles()
+        self.tool_bar.set_styles()
+        self.menu_bar.set_styles()
 
     def closeEvent(self, a0) -> None:
         self.settings_manager.serialize()

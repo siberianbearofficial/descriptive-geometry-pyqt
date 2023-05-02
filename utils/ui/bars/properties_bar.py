@@ -9,7 +9,7 @@ from utils.color import *
 
 
 class PropertiesBar(Widget):
-    def __init__(self, parent, font_manager):
+    def __init__(self, parent, font_manager, theme_manager):
         super().__init__(parent)
 
         self.current_object = None
@@ -21,6 +21,7 @@ class PropertiesBar(Widget):
         self.set_obj_config = None
         self.layers_list = []
         self.font_manager = font_manager
+        self.theme_manager = theme_manager
 
         self.setStyleSheet(f"background-color: {WHITE_COLOR}; border-radius: 10px;")
         self.layout = QVBoxLayout(self.central_widget)
@@ -278,3 +279,6 @@ class PropertiesBar(Widget):
         self.thickness_combobox.setCurrentIndex(0)
         self.thickness_combobox.setDisabled(True)
         self.layer_line_edit.clear()
+
+    def set_styles(self):
+        self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))
