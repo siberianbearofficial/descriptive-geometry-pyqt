@@ -6,7 +6,7 @@ from utils.ui.styles.plot_bar_css import style_sheet as plot_bar_css
 from utils.ui.styles.properties_bar_css import style_sheet as properties_bar_css
 from utils.ui.styles.toolbar_css import style_sheet as toolbar_css
 from utils.ui.styles.main_window_css import style_sheet as main_window_css
-from utils.ui.styles.memu_bar_css import style_sheet as menu_bar_css
+from utils.ui.styles.menu_bar_css import style_sheet as menu_bar_css
 
 
 PARENT = 0
@@ -72,7 +72,8 @@ class ThemeManager:
         },
     }
 
-    def __init__(self):
+    def __init__(self, serializer):
+        self.serializer = serializer
         self.theme = ThemeManager.basic_theme
 
     def get(self, *args):
@@ -80,7 +81,7 @@ class ThemeManager:
             return self.get('__general__', *args)
 
         r = self.theme.get(args[0], dict()).get(args[1], ThemeManager.basic_theme[args[0]][args[1]])
-        if isinstance(r, tuple):
+        if isinstance(r, (tuple, list)):
             t, v = r
             if t == PARENT:
                 return self.get(v)
@@ -95,4 +96,4 @@ class ThemeManager:
         self.theme = theme
 
     def load_theme(self, name):
-        pass
+        self.set_theme(struct := self.serializer.deserialize(f"themes/{name}.json"))

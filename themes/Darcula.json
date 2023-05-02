@@ -1,0 +1,17 @@
+{
+  "__name__": "Darcula",
+  "__general__": {
+    "LIGHT_COLOR": [1, "#606060"],
+    "ACCENT_COLOR": [1, "#C0C0C0"],
+    "DARK_COLOR": [1, "#202020"],
+    "BORDER_RADIUS": "10px"
+  },
+  "CmdBar": {
+    "background-color": [1, "#404040"]
+  },
+  "MenuBar": {
+    "color": [0, "ACCENT_COLOR"],
+    "background-color": [0, "DARK_COLOR"],
+    "item:selected:background-color": [1, "#505050"]
+  }
+}

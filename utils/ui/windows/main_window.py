@@ -28,10 +28,11 @@ class MainWindow(QMainWindow):
         self.resize(1180, 740)
 
         fm = FontManager()
-        self.tm = ThemeManager()
         self.srl = Serializer()
         self.settings_manager = SettingsManager(self.srl)
         self.srl.recent_directory = self.settings_manager.recent_directory
+        self.tm = ThemeManager(self.srl)
+        self.tm.load_theme('Darcula')
 
         self.setWindowTitle('DescriptiveGeometry')
 

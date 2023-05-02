@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QImage, QPainter, QColor, QFont
+from PyQt5.QtGui import QImage, QPainter, QFont
 
 from utils.drawing.plot import Plot
 from utils.render.render_label import RenderLabel
@@ -60,9 +60,6 @@ class RenderPlot(Plot):
             label.draw()
         self.painter.end()
 
-    def wheelEvent(self, a0) -> None:
-        pass
-
     def update_plot_objects(self, object_list):
         super(RenderPlot, self).update_plot_objects(object_list)
         self.labels = [RenderLabel(self, label.text, [label.x + self.lm.pos[0], label.y + self.lm.pos[1]])
@@ -76,10 +73,20 @@ class RenderPlot(Plot):
                        for label in self.lm.labels.values()]
         self.update()
 
+
+class ChooseAreaPlot(RenderPlot):
+    def wheelEvent(self, a0) -> None:
+        pass
+
     def move_camera(self, x, y, update=True):
         for label in self.labels:
             label.move(x, y)
         super(RenderPlot, self).move_camera(x, y, update)
+
+
+class FinalEditPlot(RenderPlot):
+    def move_camera(self, x, y, update=True):
+        pass
 
     def save_image(self, path, scale1, scale2):
         image = QImage(int(self.width() * scale1), int(self.height() * scale1), QImage.Format_RGB32)

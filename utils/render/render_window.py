@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QMainWindow, QHBoxLayout, QWidget
-from utils.render.render_plot import RenderPlot
+from PyQt5.QtWidgets import QMainWindow, QHBoxLayout, QWidget, QPushButton
+from utils.render.render_plot import RenderPlot, ChooseAreaPlot, FinalEditPlot
 from utils.ui.windows.options_window import OptionsWidget
 from utils.color import *
 
@@ -15,30 +15,47 @@ class RenderWindow(QMainWindow):
         self.setWindowTitle("DescriptiveGeometry - Render")    # TODO: remove constant app title
         self.strange_widget = QWidget()
         self.setCentralWidget(self.strange_widget)
+        self.stage = 0
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         self.options_widget = OptionsWidget(
             {
                 'Format:': {'type': 'combo', 'values': formats, 'initial': formats.index('A4')},
                 'Scale:': {'type': 'combo', 'values': zoom_str, 'initial': zoom_str.index('1:1'), 'max_visible': 7},
-                'File:': {'type': 'file', 'initial': 'image.png', 'filter': 'Picture: (*.png)', 'save': True},
-                'Render': {'type': 'button', 'text': 'Render'}
+                'File:': {'type': 'file', 'initial': 'image.png', 'filter': 'Picture: (*.png)', 'save': True}
             })
         self.options_widget.clicked.connect(self.triggered)
         layout.addWidget(self.options_widget)
 
-        self.plot = RenderPlot(861, 600)
-        self.plot.setStyleSheet(f"border: 2px solid {ACCENT_COLOR};")
-        layout.addWidget(self.plot)
+        self.plot1 = ChooseAreaPlot(861, 600)
+        self.plot1.setStyleSheet(f"border: 2px solid {ACCENT_COLOR};")
+        layout.addWidget(self.plot1)
+
+        buttons_layout = QHBoxLayout()
+        layout.addLayout(buttons_layout)
+
+        self.button_back = QPushButton("Back")
+        buttons_layout.addWidget(self.button_back)
+
+        self.button_next = QPushButton("Next")
+        buttons_layout.addWidget(self.button_next)
 
         self.strange_widget.setLayout(layout)
 
-    def triggered(self, key):
-        if key == 'Render':
-            self.plot.save_image(
+    def button_next(self, *args):
+        if self.stage == 0:                     # TODO: Memory
+            self.open_second_stage()
+            self.stage = 1
+        elif self.stage == 1:
+            self.plot2.save_image(
                 self.options_widget['File:'], 6 * render_params[formats[self.options_widget['Format:']]], 3)
-            self.hide()
-        elif key == 'Scale:' or key == 'Format:':
-            self.plot.set_zoom(1 / render_params[formats[self.options_widget['Format:']]] *
+
+    def open_second_stage(self):
+        self.plot1.hide()
+        self.plot2 = FinalEditPlot(self.plot1.width(), self.plot1.height())
+
+    def triggered(self, key):
+        if key == 'Scale:' or key == 'Format:':
+            self.plot1.set_zoom(1 / render_params[formats[self.options_widget['Format:']]] *
                                zoom[self.options_widget['Scale:']])
-            self.plot.reset_labels()
+            self.plot1.reset_labels()
