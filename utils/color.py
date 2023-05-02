@@ -5,6 +5,13 @@ from random import randint
 
 class Color(QColor):
     def __init__(self, red, green=None, blue=None, alpha=None):
+        if isinstance(red, (tuple, list)):
+            if len(red) == 3:
+                red, green, blue = red
+            elif len(red) == 4:
+                red, green, blue, alpha = red
+            else:
+                raise ValueError('Oops, invalid color format!')
         if isinstance(red, str):
             if '#' in red:
                 super().__init__(red.strip())
