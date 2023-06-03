@@ -74,16 +74,28 @@ class MainWindow(QMainWindow):
         # Draw bar
         self.draw_bar = DrawBar(
             {
-                'Point': (lambda: self.plot.draw('point'),),
-                'Segment': (lambda: self.plot.draw('segment'),),
-                'Line': (lambda: self.plot.draw('line'),),
-                'Plane': (lambda: self.plot.draw('plane'),),
-                'Cylinder': (lambda: self.plot.draw('cylinder'),),
-                'Perp': (lambda: self.plot.draw('perpendicular_line'),),
-                'Plane 3 points': (lambda: self.plot.draw('plane_3p'),),
-                'Spline': (lambda: self.plot.draw('spline'),),
-                'Rotation Surface': (lambda: self.plot.draw('rotation_surface'),),
-                'Horizontal': (lambda: self.plot.draw('horizontal'),),
+                'Point': {
+                    'Point': (lambda: self.plot.draw('point'),),
+                },
+                'Segment': {
+                    'Segment': (lambda: self.plot.draw('segment'),),
+                },
+                'Line': {
+                    'Line': (lambda: self.plot.draw('line'),),
+                    'Perp': (lambda: self.plot.draw('perpendicular_line'),),
+                    'Horizontal': (lambda: self.plot.draw('horizontal'),),
+                },
+                'Plane': {
+                    'Plane': (lambda: self.plot.draw('plane'),),
+                    'Plane 3P': (lambda: self.plot.draw('plane_3p'),),
+                },
+                'Spline': {
+                    'Spline': (lambda: self.plot.draw('spline'),),
+                },
+                'Rotation Surface': {
+                    'Rotation Surface': (lambda: self.plot.draw('rotation_surface'),),
+                    'Cylinder': (lambda: self.plot.draw('cylinder'),),
+                },
             }, parent=left_column, font_manager=fm, theme_manager=self.tm)
 
         # Cmd bar

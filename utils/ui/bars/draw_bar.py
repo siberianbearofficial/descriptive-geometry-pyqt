@@ -1,7 +1,7 @@
 from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtCore import Qt
-from utils.ui.bars.draw_tool import DrawTool
+from utils.ui.bars.draw_tool import DrawTool, DrawToolGroup
 from utils.ui.widgets.widget import Widget
 from utils.color import *
 
@@ -20,26 +20,22 @@ class DrawBar(Widget):
         self.layout = QVBoxLayout(self.central_widget)
         self.layout.setContentsMargins(10, 10, 10, 10)
         self.layout.setAlignment(Qt.AlignTop)
+        self.layout.setSpacing(10)
 
-        self.tools = list()
+        self.groups = list()
 
-        for name in struct:
-            draw_tool = DrawTool(name, self.central_widget, font_manager=font_manager).set_on_click_listener(struct[name][0])
-
-            self.tools.append(draw_tool)
-            self.layout.addWidget(draw_tool)
+        for group in struct:
+            draw_tool_group = DrawToolGroup(group, struct[group], font_manager)
+            self.groups.append(draw_tool_group)
+            self.layout.addWidget(draw_tool_group)
 
     def set_images(self, *images):
         pass
 
-    def set_on_click_listeners(self, *funcs):
-        for i in range(len(funcs)):
-            self.tools[i].set_on_click_listener(funcs[i])
-        return self
-
     def eventFilter(self, a0, a1) -> bool:
         super().eventFilter(a0, a1)
         if isinstance(a1, QMouseEvent):
+            DrawToolGroup.group_hovered(None)
             DrawTool.tool_hovered(None)
         return False
 

@@ -27,3 +27,31 @@ class Widget(QWidget):
 
     def setStyleSheet(self, stylesheet: str) -> None:
         self.central_widget.setStyleSheet(stylesheet)
+
+    def setMinimumHeight(self, minh: int) -> None:
+        super().setMinimumHeight(minh)
+        self.central_widget.setMinimumHeight(minh)
+
+    def setMaximumHeight(self, maxh: int) -> None:
+        super().setMaximumHeight(maxh)
+        self.central_widget.setMaximumHeight(maxh)
+
+    def setFixedHeight(self, fixh: int) -> None:
+        super().setFixedHeight(fixh)
+        self.central_widget.setFixedHeight(fixh)
+
+    def setFixedWidth(self, fixw: int) -> None:
+        super().setFixedWidth(fixw)
+        self.central_widget.setFixedWidth(fixw)
+
+    def setMinimumSize(self, minw: int, minh: int) -> None:
+        self.setMinimumWidth(minw)
+        self.setMinimumHeight(minh)
+
+    def setMaximumSize(self, maxw: int, maxh: int) -> None:
+        self.setMaximumWidth(maxw)
+        self.setMaximumHeight(maxh)
+
+    def setFixedSize(self, fixw: int, fixh: int) -> None:
+        self.setFixedWidth(fixw)
+        self.setFixedHeight(fixh)
