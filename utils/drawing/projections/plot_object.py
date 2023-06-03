@@ -3,6 +3,9 @@ from utils.color import *
 import core.angem as ag
 
 
+SELECTION_BORDER_SIZE = 7
+
+
 class PlotObject:
     def __init__(self, plot, general_object):
         self.general_object = general_object
@@ -23,18 +26,18 @@ class PlotObject:
         if selected:
             if selected == 1:
                 for el in self.xy_projection:
-                    el.draw(color=SELECTION_COLOR, thickness=(el.thickness + 2))
+                    el.draw(color=SELECTION_COLOR, thickness=(el.thickness + SELECTION_BORDER_SIZE))
                 for el in self.xz_projection:
-                    el.draw(color=SELECTION_COLOR, thickness=(el.thickness + 2))
+                    el.draw(color=SELECTION_COLOR, thickness=(el.thickness + SELECTION_BORDER_SIZE))
                 for el in self.xy_projection:
                     el.draw()
                 for el in self.xz_projection:
                     el.draw()
             elif selected == 2:
                 for el in self.xy_projection:
-                    el.draw(thickness=(el.thickness + 2))
+                    el.draw(thickness=(el.thickness + SELECTION_BORDER_SIZE))
                 for el in self.xz_projection:
-                    el.draw(thickness=(el.thickness + 2))
+                    el.draw(thickness=(el.thickness + SELECTION_BORDER_SIZE))
         else:
             for el in self.xy_projection:
                 el.draw()
@@ -43,7 +46,7 @@ class PlotObject:
 
     def projections(self):
         proj = self.plot.pm.get_projection(self.general_object.ag_object, self.general_object.color,
-                                           **self.general_object.config)
+                                           self.general_object.thickness, **self.general_object.config)
         xy_projection, xz_projection = proj[0], proj[1]
         connection_lines = proj[2] if len(proj) >= 3 else tuple()
         if not isinstance(xy_projection, (tuple, list)):
@@ -89,11 +92,11 @@ class TempObject:
         self.plot = plot
         self.ag_object = ag_object
         self.color = color
-        self.thickness = 1
+        self.thickness = 4
         self.xy_projection, self.xz_projection, self.connection_lines = self.projections()
 
     def projections(self):
-        proj = self.plot.pm.get_projection(self.ag_object, self.color)
+        proj = self.plot.pm.get_projection(self.ag_object, self.color, self.thickness)
         xy_projection, xz_projection = proj[0], proj[1]
         connection_lines = proj[2] if len(proj) >= 3 else tuple()
         if not isinstance(xy_projection, (tuple, list)):

@@ -1,11 +1,12 @@
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QLayout, QComboBox, \
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLayout, QComboBox, \
     QColorDialog, QScrollArea, QWidget
 from PyQt5.QtCore import Qt
 
 from utils.ui.bars.properties_bar_object import PropertiesBarObject
-from utils.ui.widgets.LineEditWidget import LineEditWidget
+from utils.ui.widgets.line_edit_widget import LineEditWidget
 from utils.ui.widgets.widget import Widget
 from utils.color import *
+from utils.thickness import *
 
 
 class PropertiesBar(Widget):
@@ -109,16 +110,6 @@ class PropertiesBar(Widget):
         self.layer_combobox.currentIndexChanged.connect(
             lambda: self.on_layer_change(self.layer_combobox.currentIndex()))
         layer.addWidget(self.layer_combobox)
-        # self.layer_line_edit = QLineEdit(self.central_widget)
-        # self.layer_line_edit.setFixedSize(30, 30)
-        # self.layer_line_edit.setFont(font_manager.bold())
-        # self.layer_line_edit.setAcceptDrops(False)
-        # self.layer_line_edit.setStyleSheet("color: #00ABB3;\n"
-        #                                    "background-color: #EAEAEA;\n"
-        #                                    "border: 2px solid #00ABB3;")
-        # self.layer_line_edit.setAlignment(Qt.AlignCenter)
-        # self.layer_line_edit.editingFinished.connect(lambda: self.on_layer_change(self.layer_line_edit.text()))
-        # layer.addWidget(self.layer_line_edit)
 
         self.clt.addLayout(layer)
 
@@ -151,13 +142,14 @@ class PropertiesBar(Widget):
         self.thickness_combobox.addItem("medium")
         self.thickness_combobox.addItem("bold")
         self.thickness_combobox.currentIndexChanged.connect(
-            lambda: self.on_thickness_change(self.thickness_combobox.currentIndex() + 1))
+            lambda: self.on_thickness_change(self.thickness_combobox.currentIndex()))
         thickness.addWidget(self.thickness_combobox)
         self.clt.addLayout(thickness)
         self.layout.addLayout(self.clt)
 
         # Objects
         self.objects_scroll_area = QScrollArea(self.central_widget)
+        self.objects_scroll_area.setStyleSheet(f"background-color: {LIGHT_COLOR}; border-radius: 10px;")
         self.objects_scroll_area.setWidgetResizable(True)
         self.objects_scroll_area.verticalScrollBar().setStyleSheet('QScrollBar {height: 0px;}')
 
@@ -222,7 +214,15 @@ class PropertiesBar(Widget):
 
     def on_thickness_change(self, thickness):
         if self.set_obj_thickness:
-            self.set_obj_thickness(thickness=thickness)
+            match thickness:
+                case 0:
+                    self.set_obj_thickness(thickness=Thickness.LIGHT_THICKNESS)
+                case 1:
+                    self.set_obj_thickness(thickness=Thickness.MEDIUM_THICKNESS)
+                case 2:
+                    self.set_obj_thickness(thickness=Thickness.BOLD_THICKNESS)
+                case _:
+                    self.set_obj_thickness(thickness=Thickness.fix(thickness))
 
     def on_name_change(self, name):
         if self.set_obj_name:
@@ -257,15 +257,36 @@ class PropertiesBar(Widget):
         self.clear_objects()
         self.obj = PropertiesBarObject(struct=struct['ag_object'], parent=self.central_widget,
                                        font_manager=self.font_manager, name='Objects',
-                                       on_editing_finished=self.on_ag_object_change).set_margin(
-            0)
+                                       on_editing_finished=self.on_ag_object_change).set_margin(0)
         self.obj_layout.addWidget(self.obj)
+
+    def thickness_to_ind(self, thickness):
+        match thickness:
+            case Thickness.LIGHT_THICKNESS:
+                return 0
+            case Thickness.MEDIUM_THICKNESS:
+                return 1
+            case Thickness.BOLD_THICKNESS:
+                return 2
+            case _:
+                return self.thickness_to_ind(Thickness.fix(thickness))
 
     def show_object(self):
         self.name_line_edit.setText(self.current_object.name)
         self.change_stylesheet(self.color_button, f'background-color: {self.current_object.color};')
-        self.thickness_combobox.setCurrentIndex(self.current_object.thickness - 1)
-        self.thickness_combobox.setDisabled(False)
+
+        self.thickness_combobox.setCurrentIndex(self.thickness_to_ind(self.current_object.thickness))
+
+        match self.current_object.thickness:
+            case Thickness.LIGHT_THICKNESS:
+                self.thickness_combobox.setCurrentIndex(0)
+            case Thickness.MEDIUM_THICKNESS:
+                self.thickness_combobox.setCurrentIndex(1)
+            case Thickness.BOLD_THICKNESS:
+                self.thickness_combobox.setCurrentIndex(2)
+            case _:
+                self.current_object.thickness = Thickness.fix(self.current_object.thickness)
+
         self.layer_combobox.setCurrentIndex(0)  # TODO: set current layer
         self.show_objects(self.current_object.to_dict())
 
@@ -277,8 +298,6 @@ class PropertiesBar(Widget):
         self.current_object = None
         self.name_line_edit.clear()
         self.thickness_combobox.setCurrentIndex(0)
-        self.thickness_combobox.setDisabled(True)
-        self.layer_line_edit.clear()
 
     def set_styles(self):
         self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))

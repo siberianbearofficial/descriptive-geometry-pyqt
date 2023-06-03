@@ -5,15 +5,24 @@ from utils.objects.general_object import GeneralObject
 class Layer:
     serializable = ['name', 'hidden', 'color', 'thickness']
 
-    def __init__(self, name='', hidden=False, color: Color | str = None, thickness=2):
+    def __init__(self, name='', hidden=False, color: Color | str = None, thickness=2, tm=None):
         self.hidden = hidden
-        self.color = color if isinstance(color, Color) else Color(color) if color else None
+        self.tm = tm
+        self.color = self.deserialize_color(color)
         self.thickness = thickness
         self.objects = []
         self.name = name
 
     def __getitem__(self, item):
         return self.objects[item]
+
+    def deserialize_color(self, color):
+        if isinstance(color, Color):
+            return color
+        elif isinstance(color, str) and Color.isValidColor(color):
+            return Color(color)
+        elif self.tm:
+            return self.tm.some
 
     def add_object(self, general_object):
         self.objects.append(general_object)
@@ -70,7 +79,7 @@ class Layer:
                 try:
                     layer.objects.append(GeneralObject.from_dict(object_dict))
                 except ValueError as e:
-                    print(e)
+                    print('Exception in Layer (from_dict func):', e)
 
         return layer
 

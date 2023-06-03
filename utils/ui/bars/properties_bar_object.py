@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel, QWidget, QLineEdit, QApplication
 from PyQt5.QtGui import QPixmap, QMouseEvent, QTransform
 
-from utils.ui.widgets.LineEditWidget import LineEditWidget
+from utils.ui.widgets.line_edit_widget import LineEditWidget
 from utils.color import *
 
 

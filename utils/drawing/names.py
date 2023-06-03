@@ -69,7 +69,7 @@ def get_alpha(lower=False):
 
 
 def projections(plot, ag_object, config):
-    proj = plot.pm.get_projection(ag_object, (0, 0, 0), **config)
+    proj = plot.pm.get_projection(ag_object, (0, 0, 0), 4, **config)
     xy_projection, xz_projection = proj[0], proj[1]
     connection_lines = proj[2] if len(proj) >= 3 else tuple()
     if not isinstance(xy_projection, (tuple, list)):

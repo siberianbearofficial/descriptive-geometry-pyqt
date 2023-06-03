@@ -1,6 +1,4 @@
-import copy
-
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QFileDialog, QMessageBox, QPushButton
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QMessageBox
 
 from utils.render.render_window import RenderWindow
 from utils.ui.bars.plot_bar import PlotBar
@@ -17,8 +15,6 @@ from utils.fonts.font_manager import FontManager
 from utils.history.settings_manager import SettingsManager
 from utils.ui.windows.layer_window import LayerWindow
 
-import os
-
 from utils.history.serializer import Serializer
 
 
@@ -32,7 +28,7 @@ class MainWindow(QMainWindow):
         self.settings_manager = SettingsManager(self.srl)
         self.srl.recent_directory = self.settings_manager.recent_directory
         self.tm = ThemeManager(self.srl)
-        self.tm.load_theme('Darcula')
+        # self.tm.load_theme('Basic')
 
         self.setWindowTitle('DescriptiveGeometry')
 
@@ -174,7 +170,7 @@ class MainWindow(QMainWindow):
                 'Layers': (self.layer_window.show, 'Ctrl+L'),
                 'Render': (self.start_render, None)
             },
-        theme_manager=self.tm)
+            theme_manager=self.tm)
         self.setMenuBar(self.menu_bar)
 
         self.update_recent_files_menu()
@@ -200,25 +196,30 @@ class MainWindow(QMainWindow):
     def serialize(self, create_new=False):
         """
         Function that opens and deserializes chosen file
-        :param create_new: current file is used if True else QFileDialog is opened
+        :param create_new: current file is used if False else QFileDialog is opened
         :return:
         """
 
         try:
             path = self.srl.serialize_file(self, create_new, self.object_manager.serialize())
         except Exception as e:
-            print(e)
+            print('Exception in MainWindow (serialize func):', e)
         else:
             self.settings_manager.add_to_recent_files(path)  # TODO: do something with settings manager!
             self.update_recent_files_menu()
             self.settings_manager.set_recent_directory(path)
 
-    def deserialize(self, path: str = None) -> None:
+    def deserialize(self, path=None) -> None:
         """
         Function that opens and deserializes chosen file
-        :param path: path to the file
+        :param path: path to the file or index of recent file
         :return:
         """
+
+        if isinstance(path, int):
+            path = self.menu_bar.action_dict['File']['Recent files'].get(str(path), None)
+            if path:
+                path = path.text()
 
         try:
             self.srl.deserialize_file(self, path, self.object_manager.deserialize)
@@ -277,28 +278,3 @@ class MainWindow(QMainWindow):
 
 
 import resources_rc
-
-
-class Test(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        self.d = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
-
-        layout = QHBoxLayout(self)
-        btn = QPushButton('Open')
-        btn.clicked.connect(self.filename)
-        layout.addWidget(btn)
-
-    def filename(self):
-        self.path = QFileDialog.getOpenFileName(self, 'Open File', self.d)[0]
-        print(self.path)
-
-
-if __name__ == '__main__':
-    from PyQt5.QtWidgets import QApplication
-
-    app = QApplication([])
-    widget = Test()
-    widget.show()
-    app.exec()

@@ -22,7 +22,10 @@ class Color(QColor):
                     for el in col:
                         if el.isdigit() or el in '.,':
                             new_col.append(el.replace(',', '.'))
-                    color.append(min(int(float(''.join(new_col))), 255))
+                    if new_col_str := ''.join(new_col):
+                        color.append(min(int(float(new_col_str)), 255))
+                    else:
+                        raise ValueError(f'Oops, invalid color format: {red}, {green}, {blue}, {alpha}!')
                 super().__init__(*color)
         elif red is not None and green is not None and blue is not None:
             red, green, blue = int(float(red)), int(float(green)), int(float(blue))
@@ -34,6 +37,14 @@ class Color(QColor):
             super().__init__(red)
         else:
             raise ValueError(f'Oops, invalid color format: {red}, {green}, {blue}, {alpha}!')
+
+    @staticmethod
+    def valid(color_str: str):
+        try:
+            Color(color_str)
+            return True
+        except ValueError:
+            return False
 
     def __str__(self):
         return f'rgba({self.red()}, {self.green()}, {self.blue()}, {self.alpha()})'

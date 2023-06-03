@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QWidget, QMainWindow, QMenuBar, QLineEdit, QLabel, Q
 from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import pyqtSignal, Qt
 
-from utils.ui.widgets.LineEditWidget import LineEditWidget
+from utils.ui.widgets.line_edit_widget import LineEditWidget
 from utils.color import *
 
 

@@ -310,11 +310,14 @@ class ObjectManager:
         return ready
 
     def clear(self):
+        self.select_object(0)
         self.layers.clear()
         self.layers.append(Layer.empty())
         self.plot_full_update(self.get_all_objects())
         if self.func_layers_clear:
             self.func_layers_clear(self.layers, self.current_layer)
+        if self.objects_changed:
+            self.objects_changed(self.layers[self.current_layer])
 
     def deserialize(self, dct: dict) -> None:
         """
@@ -322,6 +325,8 @@ class ObjectManager:
         :param dct: dictionary
         :return:
         """
+
+        self.clear()
 
         # Checking if it is possible to unpack layers
         for field in ('layers', 'current_layer'):
@@ -335,7 +340,7 @@ class ObjectManager:
                 layer = Layer.from_dict(layer_dict)
                 self.layers.append(layer)
             except ValueError as e:
-                print(e)
+                print('Exception in ObjectManager (deserialize func):', e)
         if not self.layers:
             self.layers.append(Layer.empty())
 

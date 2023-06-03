@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QVBoxLayout
+from PyQt5.QtWidgets import QVBoxLayout, QScrollArea, QWidget
 from PyQt5.QtCore import Qt
 from utils.ui.widgets.widget import Widget
 from utils.ui.bars.inspector_bar_object import InspectorBarObject
@@ -16,17 +16,27 @@ class InspectorBar(Widget):
 
         self.layout = QVBoxLayout(self.central_widget)
         self.layout.setAlignment(Qt.AlignTop)
-        self.layout.setContentsMargins(10, 5, 10, 5)
-        self.layout.setSpacing(0)
+        self.layout.setContentsMargins(15, 15, 15, 15)
+
+        self.objects_scroll_area = QScrollArea(self.central_widget)
+        self.objects_scroll_area.setWidgetResizable(True)
+        self.objects_scroll_area.verticalScrollBar().setStyleSheet('QScrollBar {height: 0px;}')
+
+        self.objects_central_widget = QWidget()
+
+        self.objects_layout = QVBoxLayout(self.objects_central_widget)
+        self.objects_layout.setAlignment(Qt.AlignTop)
+        self.objects_layout.setContentsMargins(0, 0, 0, 0)
+        self.objects_layout.setSpacing(0)
+
+        self.objects_scroll_area.setWidget(self.objects_central_widget)
+
+        self.layout.addWidget(self.objects_scroll_area)
 
         self.object_hidden = None
         self.change_current_object = None
 
         self.objects = list()
-
-        # for i in range(3):
-        #     obj = InspectorBarObject(self.central_widget, font_manager=font_manager)
-        #     self.layout.addWidget(obj)
 
     def set_change_current_object_func(self, func):
         if func:
@@ -42,9 +52,9 @@ class InspectorBar(Widget):
         self.clear_layout()
         self.objects.clear()
         for obj in objects:
-            ib_obj = InspectorBarObject(obj, self.central_widget, font_manager=self.font_manager,
+            ib_obj = InspectorBarObject(obj, self.objects_central_widget, font_manager=self.font_manager,
                                         hide_func=self.object_hidden, select_func=self.select_object)
-            self.layout.addWidget(ib_obj)
+            self.objects_layout.addWidget(ib_obj)
             self.objects.append(ib_obj)
 
     def select_object(self, obj_index):
@@ -59,8 +69,8 @@ class InspectorBar(Widget):
                     self.change_current_object(obj_index.obj.id)
 
     def clear_layout(self):
-        for i in range(self.layout.count() - 1, -1, -1):
-            self.layout.itemAt(i).widget().deleteLater()
+        for i in range(self.objects_layout.count() - 1, -1, -1):
+            self.objects_layout.itemAt(i).widget().deleteLater()
 
     def set_styles(self):
         self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))

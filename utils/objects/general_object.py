@@ -1,6 +1,7 @@
 import core.angem as ag
 import utils.history.serializable as serializable
 from utils.color import *
+from utils.thickness import *
 
 ALPH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 alph = ALPH.lower()
@@ -12,12 +13,13 @@ SEP = '-'
 
 class GeneralObject:
     current_id = 1
+    serializable = ('name', 'ag_object', 'color', 'thickness', 'config')
 
-    def __init__(self, ag_object=None, color=Color(0, 0, 0), name='', **kwargs):
+    def __init__(self, ag_object=None, color=Color(0, 0, 0), name='', thickness=4, **kwargs):
         self.ag_object = ag_object
         self.color = color
         self.name = name
-        self.thickness = 1
+        self.thickness = Thickness.fix(thickness)
         self.config = set_config(ag_object, kwargs)
 
         self.generate_name()
@@ -50,7 +52,7 @@ class GeneralObject:
         elif isinstance(self.ag_object, ag.Plane) and self.config.get('draw_3p', False) and self.name.count(SEP) == 2:
             for el in self.name.split(SEP):
                 used_points.add(el)
-                
+
     def __setattr__(self, key, value):
         if key == 'name' and 'name' in self.__dict__:
             if isinstance(self.ag_object, ag.Point):
@@ -131,7 +133,8 @@ class GeneralObject:
                 res[key] = convert(dct[key])
             return res
 
-        return {'name': self.name, 'color': str(self.color), 'ag_object': convert(self.ag_object), 'config': self.config}
+        return {'name': self.name, 'color': str(self.color), 'ag_object': convert(self.ag_object),
+                'thickness': self.thickness, 'config': self.config}
 
     @staticmethod
     def from_dict(dct: dict):
@@ -142,12 +145,26 @@ class GeneralObject:
         """
 
         # Checking if it is possible to create a general object
-        for field in ('ag_object', 'color', 'name', 'config'):
-            if field not in dct:
-                raise ValueError(f'Unable to create GeneralObject, no such field in the given dictionary: {field}.')
+        if 'ag_object' not in dct:
+            raise ValueError(f'Unable to create GeneralObject, no such field in the given dictionary: ag_object.')
 
         # Creating GeneralObject
-        return GeneralObject(unpack_ag_object(dct['ag_object']), Color(dct['color']), dct['name'], **dct['config'])
+        ag_object = unpack_ag_object(dct['ag_object'])
+        if 'config' in dct and isinstance(dct['config'], dict):
+            general_object = GeneralObject(ag_object, **dct['config'])
+        else:
+            general_object = GeneralObject(ag_object)
+
+        if 'name' in dct and isinstance(dct['name'], str):
+            general_object.name = dct['name']
+        if 'color' in dct and Color.valid(dct['color']):
+            general_object.color = Color(dct['color'])
+        if 'thickness' in dct and (
+                (isinstance(dct['thickness'], str) and dct['thickness'].isdigit()) or isinstance(dct['thickness'],
+                                                                                                 int)):
+            general_object.thickness = int(dct['thickness'])
+
+        return general_object
 
     def set_name(self, name):
         if name == self.name:

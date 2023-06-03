@@ -15,8 +15,8 @@ class ScreenPoint:
     def list(self):
         return [self.x, self.y]
 
-    def draw(self, color=None, thickness=-1):
-        if thickness == -1:
+    def draw(self, color=None, thickness=None):
+        if thickness is None:
             thickness = self.thickness
         if color is None:
             color = self.color
@@ -38,8 +38,8 @@ class ThinScreenPoint:
     def tuple(self):
         return self.x, self.y
 
-    def draw(self, color=None, thickness=-1):
-        if thickness == -1:
+    def draw(self, color=None, thickness=None):
+        if thickness is None:
             thickness = self.thickness
         if color is None:
             color = self.color

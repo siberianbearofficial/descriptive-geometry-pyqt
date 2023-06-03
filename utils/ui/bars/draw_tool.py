@@ -1,12 +1,18 @@
 from PyQt5.QtWidgets import QHBoxLayout, QLabel
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QHoverEvent
+from PyQt5.QtCore import Qt, pyqtProperty, pyqtSignal, QPropertyAnimation
+from PyQt5.QtGui import QPixmap, QHoverEvent, QEnterEvent
+
+from utils.ui.widgets.label import Label
 from utils.ui.widgets.widget import Widget
 from utils.color import *
 
 
 class DrawTool(Widget):
     hovered_tool = None
+    COLOR_ANIMATION_DURATION = 100
+    COLOR = ACCENT_COLOR
+    HOVER_COLOR = DARK_COLOR
+    ICON_SIZE = 30
 
     def __init__(self, name, parent, font_manager):
         super().__init__(parent)
@@ -14,15 +20,13 @@ class DrawTool(Widget):
         self.clicked = None
         self.name = name
 
-        self.setStyleSheet("QWidget::hover {}")
-
         # LAYOUT
         self.layout = QHBoxLayout(self.central_widget)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(10)
 
         self.icon = QLabel(self.central_widget)
-        self.icon.setMaximumSize(30, 30)
+        self.icon.setMaximumSize(DrawTool.ICON_SIZE, DrawTool.ICON_SIZE)
         self.icon.setStyleSheet(f"border: 2px solid {ACCENT_COLOR};\n"
                                 "border-radius: 10px;\n"
                                 f"background-color: {WHITE_COLOR};")
@@ -32,11 +36,14 @@ class DrawTool(Widget):
         self.icon.setWordWrap(False)
         self.layout.addWidget(self.icon)
 
-        self.label = QLabel(self.central_widget)
+        self.label = Label(self.central_widget)
+        self.label.setColor(DrawTool.COLOR)
 
         self.label.setFont(font_manager.bold())
         self.label.setText(name)
-        self.label.setStyleSheet(f'color: {ACCENT_COLOR};')
+
+        self.color_anim = QPropertyAnimation(self.label, b"color")
+        self.color_anim.setDuration(DrawTool.COLOR_ANIMATION_DURATION)
 
         self.layout.addWidget(self.label)
 
@@ -47,7 +54,7 @@ class DrawTool(Widget):
 
     def eventFilter(self, a0, a1) -> bool:
         super().eventFilter(a0, a1)
-        if isinstance(a1, QHoverEvent):
+        if isinstance(a1, QEnterEvent):
             DrawTool.tool_hovered(self)
         return False
 
@@ -59,12 +66,12 @@ class DrawTool(Widget):
         return self
 
     def hover(self):
-        # print('Hover:', self.label.text())
-        self.label.setStyleSheet(f'color: {DARK_COLOR};')
+        self.color_anim.setEndValue(QColor(DrawTool.HOVER_COLOR))
+        self.color_anim.start()
 
     def unhover(self):
-        # print('Unhover:', self.label.text())
-        self.label.setStyleSheet(f'color: {ACCENT_COLOR};')
+        self.color_anim.setEndValue(QColor(DrawTool.COLOR))
+        self.color_anim.start()
 
     @staticmethod
     def tool_hovered(tool):
