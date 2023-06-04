@@ -93,7 +93,7 @@ class MainWindow(QMainWindow):
                     'Spline': (lambda: self.plot.draw('spline'),),
                 },
                 'Rotation Surface': {
-                    'Rotation Surface': (lambda: self.plot.draw('rotation_surface'),),
+                    'Rot Surf': (lambda: self.plot.draw('rotation_surface'),),
                     'Cylinder': (lambda: self.plot.draw('cylinder'),),
                 },
             }, parent=left_column, font_manager=fm, theme_manager=self.tm)

@@ -13,41 +13,69 @@ class DrawToolGroup(QWidget):
     HEIGHT = 30
     HOVER_HEIGHT = 80
     SPACING = 10
+    BG_COLOR = LIGHT_COLOR
+    HOVER_BG_COLOR = WHITE_COLOR
 
     groupHeightChanged = pyqtSignal(int)
+    groupBackgroundColorChanged = pyqtSignal(QColor)
 
     def __init__(self, name, struct, font_manager):
-        super().__init__()
+        super().__init__(None)
 
         # LAYOUT
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        strange_widget = QWidget()
+        layout.addWidget(strange_widget)
+        self.layout = QVBoxLayout(strange_widget)
+        self.layout.setContentsMargins(DrawToolGroup.SPACING, DrawToolGroup.SPACING,
+                                       DrawToolGroup.SPACING, DrawToolGroup.SPACING)
         self.layout.setSpacing(DrawToolGroup.SPACING)
         self.layout.setAlignment(Qt.AlignTop)
 
-        self._group_height = DrawToolGroup.HEIGHT
-        self.setFixedHeight(DrawToolGroup.HEIGHT)
+        self._group_height = DrawToolGroup.HEIGHT + DrawToolGroup.SPACING * 2
+        self.setFixedHeight(self._group_height)
         self.groupHeightChanged.connect(self.group_height_changed)
 
         self.height_anim = QPropertyAnimation(self, b"group_height")
-        self.height_anim.setDuration(DrawTool.COLOR_ANIMATION_DURATION)
+        self.height_anim.setStartValue(self._group_height)
+        self.height_anim.setDuration(DrawToolGroup.HEIGHT_ANIMATION_DURATION)
         self.height_anim.finished.connect(self.height_anim_finished)
+        self._height_anim_finished_flag = True
+
+        self._bg_color = DrawToolGroup.BG_COLOR
+        self.setStyleSheet(f'border-radius: 10px;'
+                           f'background-color: {DrawToolGroup.BG_COLOR};')
+        self.groupBackgroundColorChanged.connect(self.group_background_color_changed)
+
+        self.background_color_anim = QPropertyAnimation(self, b"group_background_color")
+        self.background_color_anim.setStartValue(QColor(self._bg_color))
+        self.background_color_anim.setDuration(DrawToolGroup.HEIGHT_ANIMATION_DURATION)
+        self.background_color_anim.finished.connect(self.background_color_anim_finished)
 
         self.tools = list()
         for tool_name in struct:
-            # print(tool_name, struct[tool_name])
             tool = DrawTool(tool_name, font_manager).set_on_click_listener(struct[tool_name][0])
             self.tools.append(tool)
             self.layout.addWidget(tool)
         self.hide_tools()
         self.tools_hidden = True
 
-        self.hover_height = DrawToolGroup.HEIGHT * len(self.tools) + (len(self.tools) - 1) * DrawToolGroup.SPACING
+        self.hover_height = DrawToolGroup.HEIGHT * len(self.tools) + (len(self.tools) + 1) * DrawToolGroup.SPACING
 
         self.filter = self.installEventFilter(self)
 
     def height_anim_finished(self):
-        self.hide_tools() if self.tools_hidden else self.show_tools()
+        if self.tools_hidden:
+            self.show_tools()
+            self.tools_hidden = False
+        else:
+            self.tools_hidden = True
+        self._height_anim_finished_flag = True
+
+    def background_color_anim_finished(self):
+        pass
 
     @pyqtProperty(int)
     def group_height(self):
@@ -62,6 +90,20 @@ class DrawToolGroup(QWidget):
     def group_height_changed(self, height):
         self.setFixedHeight(height)
 
+    @pyqtProperty(QColor)
+    def group_background_color(self):
+        return self._bg_color
+
+    @group_background_color.setter
+    def group_background_color(self, color):
+        if self._bg_color != color:
+            self._bg_color = color
+            self.groupBackgroundColorChanged.emit(color)
+
+    def group_background_color_changed(self, color):
+        self.setStyleSheet(f'border-radius: 10px;'
+                           f'background-color: {Color(color)};')
+
     def eventFilter(self, a0, a1) -> bool:
         super().eventFilter(a0, a1)
         if isinstance(a1, QEnterEvent):
@@ -71,16 +113,23 @@ class DrawToolGroup(QWidget):
         return False
 
     def hover(self):
-        # self.show_tools()
-        self.tools_hidden = False
-        self.height_anim.setEndValue(self.hover_height)
-        self.height_anim.start()
+        if len(self.tools) > 1:
+            self.height_anim.setEndValue(self.hover_height)
+            self._height_anim_finished_flag = False
+            self.height_anim.start()
+        self.background_color_anim.setEndValue(QColor(DrawToolGroup.HOVER_BG_COLOR))
+        self.background_color_anim.start()
 
     def unhover(self):
-        self.hide_tools()
-        self.tools_hidden = True
-        self.height_anim.setEndValue(DrawToolGroup.HEIGHT)
-        self.height_anim.start()
+        if not self._height_anim_finished_flag:
+            self.tools_hidden = False
+        if len(self.tools) > 1:
+            self.hide_tools()
+            self.height_anim.setEndValue(DrawToolGroup.HEIGHT + DrawToolGroup.SPACING * 2)
+            self._height_anim_finished_flag = False
+            self.height_anim.start()
+        self.background_color_anim.setEndValue(QColor(DrawToolGroup.BG_COLOR))
+        self.background_color_anim.start()
 
     def show_tools(self):
         for i in range(1, len(self.tools)):
@@ -121,8 +170,7 @@ class DrawTool(QWidget):
         self.icon = QLabel()
         self.icon.setMaximumSize(DrawTool.ICON_SIZE, DrawTool.ICON_SIZE)
         self.icon.setStyleSheet(f"border: 2px solid {ACCENT_COLOR};\n"
-                                "border-radius: 10px;\n"
-                                f"background-color: {WHITE_COLOR};")
+                                "border-radius: 10px;\n")
         self.icon.setPixmap(QPixmap(":/img/img/point.png"))
         self.icon.setScaledContents(True)
         self.icon.setAlignment(Qt.AlignCenter)
