@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal, QPropertyAnimation, pyqtProperty
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel, QWidget, QLineEdit, QApplication
 from PyQt5.QtGui import QPixmap, QMouseEvent, QTransform
 
@@ -89,26 +89,54 @@ class PropertiesBarObject(QWidget):
 
 
 class Arrow(QLabel):
+    ANIMATION_DURATION = 100
+
+    pixmapAngleChanged = pyqtSignal(int)
+
     def __init__(self, parent):
         super().__init__(parent)
-        self.opened_pixmap = PropertiesBarObject.ARROW_PIXMAP
-        self.closed_pixmap = PropertiesBarObject.ARROW_PIXMAP.transformed(QTransform().rotate(90))
         self.opened = True
 
+        self._pixmap_angle = 0
+        self.setPixmap(PropertiesBarObject.ARROW_PIXMAP)
+        self.pixmapAngleChanged.connect(self.pixmap_angle_changed)
+
+        self.angle_change_anim = QPropertyAnimation(self, b"pixmap_angle")
+        self.angle_change_anim.setDuration(Arrow.ANIMATION_DURATION)
+
         self.setFixedSize(PropertiesBarObject.ARROW_SIZE, PropertiesBarObject.ARROW_SIZE)
-        self.setPixmap(self.opened_pixmap)
+
         self.setScaledContents(True)
 
         if parent.clicked:
             self.clicked = parent.clicked
         else:
-            self.clicked = None
+            self.clicked = lambda: print('Nothing is here...')
+
+    @pyqtProperty(int)
+    def pixmap_angle(self):
+        return self._pixmap_angle
+
+    @pixmap_angle.setter
+    def pixmap_angle(self, angle):
+        if self._pixmap_angle != angle:
+            self._pixmap_angle = angle
+            self.pixmapAngleChanged.emit(angle)
+
+    def pixmap_angle_changed(self, angle):
+        self.setPixmap(PropertiesBarObject.ARROW_PIXMAP.transformed(QTransform().rotate(angle)))
 
     def mousePressEvent(self, ev):
         if ev.button() == 1:
             if self.clicked:
                 self.opened = not self.opened
-                self.setPixmap(self.opened_pixmap if self.opened else self.closed_pixmap)
+                if self.opened:
+                    self.angle_change_anim.setStartValue(90)
+                    self.angle_change_anim.setEndValue(0)
+                else:
+                    self.angle_change_anim.setStartValue(0)
+                    self.angle_change_anim.setEndValue(90)
+                self.angle_change_anim.start()
                 self.clicked()
 
     def set_on_click_listener(self, func):

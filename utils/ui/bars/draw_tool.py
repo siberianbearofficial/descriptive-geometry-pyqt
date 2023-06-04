@@ -52,7 +52,6 @@ class DrawToolGroup(QWidget):
         self.background_color_anim = QPropertyAnimation(self, b"group_background_color")
         self.background_color_anim.setStartValue(QColor(self._bg_color))
         self.background_color_anim.setDuration(DrawToolGroup.HEIGHT_ANIMATION_DURATION)
-        self.background_color_anim.finished.connect(self.background_color_anim_finished)
 
         self.tools = list()
         for tool_name in struct:
@@ -73,9 +72,6 @@ class DrawToolGroup(QWidget):
         else:
             self.tools_hidden = True
         self._height_anim_finished_flag = True
-
-    def background_color_anim_finished(self):
-        pass
 
     @pyqtProperty(int)
     def group_height(self):
