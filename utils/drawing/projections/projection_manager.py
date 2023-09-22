@@ -24,12 +24,6 @@ class ProjectionManager:
                                                  line_type=Qt.DashLine)
             return p_xy, p_xz
 
-        elif isinstance(obj, ag.Circle):
-            return self.circle_projections(obj, color, thickness)
-
-        elif isinstance(obj, ag.Arc):
-            return self.arc_projections(obj, color, thickness)
-
         elif isinstance(obj, ag.Segment):
             p1_xy = self.point_projections(obj.p1, 'xy', color, thickness)
             p2_xy = self.point_projections(obj.p2, 'xy', color, thickness)
@@ -63,19 +57,28 @@ class ProjectionManager:
             return self.line_projections(obj, 'xy', color, thickness), self.line_projections(obj, 'xz', color,
                                                                                              thickness)
 
-        elif isinstance(obj, ag.Ellipse):
-            return self.ellipse_projections(obj, 'xy', color, thickness), self.ellipse_projections(obj, 'xz', color,
-                                                                                                   thickness)
+        elif isinstance(obj, ag.Polygon2D):
+            return self.polygon_2d_projections(obj, color, thickness)
 
-        elif isinstance(obj, ag.Sphere):
-            return self.sphere_projections(obj, 'xy', color, thickness), self.sphere_projections(obj, 'xz', color,
-                                                                                                 thickness)
+        elif isinstance(obj, ag.Arc):
+            return self.arc_projections(obj, color, thickness)
 
         elif isinstance(obj, ag.Cylinder):
             return self.cylinder_projections(obj, color, thickness)
 
         elif isinstance(obj, ag.Cone):
             return self.cone_projections(obj, color, thickness)
+
+        elif isinstance(obj, ag.IntersectionLine):
+            return self.intersection_line_projections(obj, color, thickness)
+
+        elif isinstance(obj, ag.Sphere):
+            return self.sphere_projections(obj, 'xy', color, thickness), self.sphere_projections(obj, 'xz', color,
+                                                                                                 thickness)
+
+        elif isinstance(obj, ag.Ellipse):
+            return self.ellipse_projections(obj, 'xy', color, thickness), self.ellipse_projections(obj, 'xz', color,
+                                                                                                   thickness)
 
         elif isinstance(obj, ag.RotationSurface):
             return self.rotation_surface_projections(obj, color, thickness)
@@ -110,7 +113,7 @@ class ProjectionManager:
 
         return ScreenSegment(self.plot, p1, p2, color, thickness)
 
-    def line_projections(self, obj, plane, color, thickness):
+    def line_projections(self, obj, plane, color, thickness=1):
         if plane == 'xy':
             if obj.vector.x == 0 and obj.vector.y == 0:
                 return self.point_projections(obj.point, plane, color, thickness)
@@ -150,49 +153,18 @@ class ProjectionManager:
             return self.line_projections(obj.trace_xy(), plane, color, thickness)
         return self.line_projections(obj.trace_xz(), plane, color, thickness)
 
-    def circle_projections(self, obj, color, thickness):
-        if obj.radius == 0:
-            return self.point_projections(obj.center, 'xy', color, thickness), self.point_projections(obj.center, 'xz',
-                                                                                                      color, thickness)
-        if obj.normal.x == 0 and obj.normal.y == 0:
-            center_xy = self.point_projections(obj.center, 'xy', color, thickness)
-            center_xz = self.point_projections(obj.center, 'xz', color, thickness)
-            return ScreenCircle(self.plot, center_xy, obj.radius * self.zoom,
-                                color, thickness), \
-                ScreenSegment(self.plot, (center_xz.x + obj.radius * self.zoom, center_xz.y),
-                              (center_xz.x - obj.radius * self.zoom, center_xz.y), color, thickness)
-        if obj.normal.x == 0 and obj.normal.z == 0:
-            center_xy = self.point_projections(obj.center, 'xy', color, thickness)
-            center_xz = self.point_projections(obj.center, 'xz', color, thickness)
-            return ScreenSegment(self.plot, (center_xy.x + obj.radius * self.zoom, center_xy.y),
-                                 (center_xy.x - obj.radius * self.zoom, center_xy.y), color, thickness), \
-                ScreenCircle(self.plot, center_xz, obj.radius * self.zoom,
-                             color, thickness)
+    def intersection_line_projections(self, obj: ag.IntersectionLine, color, thickness):
+        return [self.segment_projections(el, 'xy', color, thickness) for el in obj.segments], \
+            [self.segment_projections(el, 'xz', color, thickness) for el in obj.segments]
 
-        # if obj.normal * (ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0)) == 0:
-        #     point1, point2 = obj.intersection(
-        #         ag.Line(obj.center, obj.normal & (ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0))))
-        #     return self.segment_projections(ag.Segment(point1, point2), plane, color),
-
-        vector_sin = obj.normal & (obj.normal + ag.Vector(2, 1, 1))
-        vector_sin = vector_sin * (obj.radius / abs(vector_sin))
-        vector_cos = obj.normal & vector_sin
-        vector_cos = vector_cos * (obj.radius / abs(vector_cos))
-        step = 1 / self.zoom / obj.radius
-        x, lst_xy, lst_xz = 0, [], []
-        while x < 1.57:
-            s, c = math.sin(x), math.cos(x)
-            lst_xy.append(self.get_point(obj.center + vector_sin * s + vector_cos * c, 'xy', color, thickness))
-            lst_xy.append(self.get_point(obj.center + -vector_sin * s + vector_cos * c, 'xy', color, thickness))
-            lst_xy.append(self.get_point(obj.center + vector_sin * s + -vector_cos * c, 'xy', color, thickness))
-            lst_xy.append(self.get_point(obj.center + -vector_sin * s + -vector_cos * c, 'xy', color, thickness))
-
-            lst_xz.append(self.get_point(obj.center + vector_sin * s + vector_cos * c, 'xz', color, thickness))
-            lst_xz.append(self.get_point(obj.center + -vector_sin * s + vector_cos * c, 'xz', color, thickness))
-            lst_xz.append(self.get_point(obj.center + vector_sin * s + -vector_cos * c, 'xz', color, thickness))
-            lst_xz.append(self.get_point(obj.center + -vector_sin * s + -vector_cos * c, 'xz', color, thickness))
-            x += step
-        return tuple(lst_xy), tuple(lst_xz)
+    def polygon_2d_projections(self, obj: ag.Polygon2D, color, thickness):
+        lst_xy = []
+        lst_xz = []
+        for p1, p2 in obj.get_pairs():
+            segment = ag.Segment(p1, p2)
+            lst_xy.append(self.segment_projections(segment, 'xy', color, thickness))
+            lst_xz.append(self.segment_projections(segment, 'xz', color, thickness))
+        return lst_xy, lst_xz
 
     def ellipse_projections(self, obj, plane, color, thickness):
         # TODO: Исправить эллипсы
@@ -220,8 +192,8 @@ class ProjectionManager:
     def cylinder_projections(self, obj, color, thickness):
         v_xy = ag.Vector(0, 0, 1)
         v_xz = ag.Vector(0, 1, 0)
-        circle1 = self.circle_projections(ag.Circle(obj.center1, obj.radius, obj.vector), color, thickness)
-        circle2 = self.circle_projections(ag.Circle(obj.center2, obj.radius, obj.vector), color, thickness)
+        circle1 = self.polygon_2d_projections(ag.Circle(obj.center1, obj.radius, obj.vector), color, thickness)
+        circle2 = self.polygon_2d_projections(ag.Circle(obj.center2, obj.radius, obj.vector), color, thickness)
         if obj.vector | v_xy:
             res_xy = circle1[0], circle2[0]
         else:
@@ -247,8 +219,8 @@ class ProjectionManager:
     def cone_projections(self, obj, color, thickness):
         v_xy = ag.Vector(0, 0, 1)
         v_xz = ag.Vector(0, 1, 0)
-        circle1 = self.circle_projections(ag.Circle(obj.center1, obj.radius1, obj.vector), color, thickness)
-        circle2 = self.circle_projections(ag.Circle(obj.center2, obj.radius2, obj.vector), color, thickness)
+        circle1 = self.polygon_2d_projections(ag.Circle(obj.center1, obj.radius1, obj.vector), color, thickness)
+        circle2 = self.polygon_2d_projections(ag.Circle(obj.center2, obj.radius2, obj.vector), color, thickness)
         if obj.vector | v_xy:
             res_xy = circle1[0], circle2[0]
         else:
@@ -295,32 +267,32 @@ class ProjectionManager:
     def tor_projections(self, obj, plane, color, thickness):
         # TODO: seems like this code does not work correctly
         if obj.tube_radius > obj.radius:
-            circles = *self.circle_projections(ag.Circle(obj.center, obj.radius + obj.tube_radius, obj.vector),
-                                               color, thickness), \
-                *self.circle_projections(ag.Circle(obj.center + obj.vector * (obj.tube_radius / abs(obj.vector)),
-                                                   obj.radius, obj.vector), color, thickness), \
-                *self.circle_projections(ag.Circle(obj.center + obj.vector * (-obj.tube_radius / abs(obj.vector)),
-                                                   obj.radius, obj.vector), color, thickness)
+            circles = *self.polygon_2d_projections(ag.Circle(obj.center, obj.radius + obj.tube_radius, obj.vector),
+                                                   color, thickness), \
+                *self.polygon_2d_projections(ag.Circle(obj.center + obj.vector * (obj.tube_radius / abs(obj.vector)),
+                                                       obj.radius, obj.vector), color, thickness), \
+                *self.polygon_2d_projections(ag.Circle(obj.center + obj.vector * (-obj.tube_radius / abs(obj.vector)),
+                                                       obj.radius, obj.vector), color, thickness)
         else:
-            circles = *self.circle_projections(ag.Circle(obj.center, obj.radius + obj.tube_radius, obj.vector),
-                                               color, thickness), \
-                *self.circle_projections(ag.Circle(obj.center, obj.radius - obj.tube_radius, obj.vector),
-                                         color, thickness), \
-                *self.circle_projections(ag.Circle(obj.center + obj.vector * (obj.tube_radius / abs(obj.vector)),
-                                                   obj.radius, obj.vector), color, thickness), \
-                *self.circle_projections(ag.Circle(obj.center + obj.vector * (-obj.tube_radius / abs(obj.vector)),
-                                                   obj.radius, obj.vector), color, thickness)
+            circles = *self.polygon_2d_projections(ag.Circle(obj.center, obj.radius + obj.tube_radius, obj.vector),
+                                                   color, thickness), \
+                *self.polygon_2d_projections(ag.Circle(obj.center, obj.radius - obj.tube_radius, obj.vector),
+                                             color, thickness), \
+                *self.polygon_2d_projections(ag.Circle(obj.center + obj.vector * (obj.tube_radius / abs(obj.vector)),
+                                                       obj.radius, obj.vector), color, thickness), \
+                *self.polygon_2d_projections(ag.Circle(obj.center + obj.vector * (-obj.tube_radius / abs(obj.vector)),
+                                                       obj.radius, obj.vector), color, thickness)
         if (obj.vector * ag.Vector(0, 0, 1) if plane == 'xy' else ag.Vector(0, 1, 0)) == 0:
             c1, c2 = obj.intersection(ag.Plane(ag.Vector(0, 1, 0) if plane == 'xy' else ag.Vector(0, 0, 1),
                                                obj.center))
-            return *circles, *self.circle_projections(c1, color, thickness), *self.circle_projections(c2, color,
+            return *circles, *self.polygon_2d_projections(c1, color, thickness), *self.polygon_2d_projections(c2, color,
                                                                                                       thickness)
         c1, c2 = obj.intersection(
             ag.Plane(obj.center, obj.vector, ag.Vector(0, 1, 0) if plane == 'xy' else ag.Vector(0, 0, 1)))
         c3, c4 = obj.intersection(
             ag.Plane(obj.center, obj.vector, ag.Vector(1, 0, 0) if plane == 'xy' else ag.Vector(1, 0, 0)))
-        return *circles, *self.circle_projections(c1, color, thickness), *self.circle_projections(c2, color, thickness), \
-            *self.circle_projections(c3, color, thickness), *self.circle_projections(c4, color, thickness)
+        return *circles, *self.polygon_2d_projections(c1, color, thickness), *self.polygon_2d_projections(c2, color, thickness), \
+            *self.polygon_2d_projections(c3, color, thickness), *self.polygon_2d_projections(c4, color, thickness)
 
     def spline_projections(self, obj, color, thickness):
         res1 = []
@@ -338,12 +310,12 @@ class ProjectionManager:
         return res1, res2
 
     def rotation_surface_projections(self, obj, color, thickness):
-        res1, res2 = zip(self.circle_projections(ag.Circle(obj.center1, obj.radius1, obj.vector), color, thickness),
-                         self.circle_projections(ag.Circle(obj.center2, obj.radius2, obj.vector), color, thickness),
+        res1, res2 = zip(self.polygon_2d_projections(ag.Circle(obj.center1, obj.radius1, obj.vector), color, thickness),
+                         self.polygon_2d_projections(ag.Circle(obj.center2, obj.radius2, obj.vector), color, thickness),
                          self.spline_projections(obj.spline1, color, thickness),
                          self.spline_projections(obj.spline2, color, thickness))
-        # res = self.circle_projections(ag.Circle(obj.center1, obj.radius1, obj.vector), color), \
-        #       self.circle_projections(ag.Circle(obj.center2, obj.radius2, obj.vector), color), \
+        # res = self.polygon_2d_projections(ag.Circle(obj.center1, obj.radius1, obj.vector), color), \
+        #       self.polygon_2d_projections(ag.Circle(obj.center2, obj.radius2, obj.vector), color), \
         #       self.spline_projections(obj.spline1, color), self.spline_projections(obj.spline2, color)
         return unpack_inner_tuples(res1), unpack_inner_tuples(res2)
 

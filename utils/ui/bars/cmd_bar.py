@@ -42,11 +42,11 @@ class CmdBar(Widget):
         self.layout.addWidget(self.future)
 
         self.commands = {'segment': ag.Segment, 'point': ag.Point, 'line': ag.Line, 'plane': ag.Plane,
-                         'vector': ag.Vector, 'ellipse': ag.Ellipse, 'sphere': ag.Sphere,
-                         'cylinder': ag.Cylinder, 'cone': ag.Cone, 'spline': ag.Spline, 'spline3d': ag.Spline3D,
-                         'circle': ag.Circle, 'distance': ag.distance, 'angle': ag.angle, 'clear': self.command_clear,
-                         'draw': self.command_draw_object, 'help': CmdBar.command_help, 'mtrx': ag.Matrix,
-                         'save': self.command_serialize, 'load': self.command_deserialize,
+                         # 'vector': ag.Vector, 'ellipse': ag.Ellipse, 'sphere': ag.Sphere,
+                         # 'cylinder': ag.Cylinder, 'cone': ag.Cone, 'spline': ag.Spline, 'spline3d': ag.Spline3D,
+                         # 'circle': ag.Circle, 'distance': ag.distance, 'angle': ag.angle, 'clear': self.command_clear,
+                         # 'draw': self.command_draw_object, 'help': CmdBar.command_help, 'mtrx': ag.Matrix,
+                         # 'save': self.command_serialize, 'load': self.command_deserialize,
                          'reset': self.command_reset}
 
         self.variables = self.commands.copy()

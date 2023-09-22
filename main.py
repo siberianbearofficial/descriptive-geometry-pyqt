@@ -5,6 +5,10 @@ import sys
 
 
 def main():
+    if len(sys.argv) >= 2 and sys.argv[1] == '-t':
+        import core.test_angem
+        return
+    
     app = QApplication(sys.argv)
     widget = MainWindow()
     widget.show()

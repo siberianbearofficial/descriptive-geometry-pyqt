@@ -696,7 +696,8 @@ def get_intersection(plot, step, **kwargs):
     elif step == 3:
         try:
             res = kwargs['obj1'].general_object.ag_object.intersection(kwargs['obj'].general_object.ag_object)
-        except Exception:
+        except Exception as ex:
+            raise ex
             try:
                 res = kwargs['obj'].general_object.ag_object.intersection(kwargs['obj1'].general_object.ag_object)
             except Exception:

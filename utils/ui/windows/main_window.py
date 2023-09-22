@@ -95,6 +95,8 @@ class MainWindow(QMainWindow):
                 'Rotation Surface': {
                     'Rot Surf': (lambda: self.plot.draw('rotation_surface'),),
                     'Cylinder': (lambda: self.plot.draw('cylinder'),),
+                    'Cone': (lambda: self.plot.draw('cone'),),
+                    'Sphere': (lambda: self.plot.draw('sphere'),),
                 },
             }, parent=left_column, font_manager=fm, theme_manager=self.tm)
 
