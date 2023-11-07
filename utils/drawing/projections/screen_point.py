@@ -1,49 +1,40 @@
+import math
+
 from utils.color import *
 
 
 class ScreenPoint:
-    def __init__(self, plot, x, y, color=BLACK_COLOR, thickness=4):
+    def __init__(self, x, y, color=None, thickness=4):
         self.x = x
         self.y = y
-        self.plot = plot
         self.color = color
         self.thickness = thickness
 
-    def tuple(self):
-        return self.x, self.y
+    def __iter__(self):
+        yield self.x
+        yield self.y
 
-    def list(self):
-        return [self.x, self.y]
-
-    def draw(self, color=None, thickness=None):
-        if thickness is None:
-            thickness = self.thickness
-        if color is None:
-            color = self.color
-        self.plot.draw_point(self.tuple(), color, thickness)
+    def __str__(self):
+        return f"point({self.x:.1f}, {self.y:.1f})"
 
     def move(self, x, y):
         self.x += x
         self.y += y
 
+    def distance(self, other: 'ScreenPoint'):
+        return math.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
+
 
 class ThinScreenPoint:
-    def __init__(self, plot, x, y, color=BLACK_COLOR, thickness=2):
+    def __init__(self, x, y, color=None, thickness=2):
         self.x = x
         self.y = y
-        self.plot = plot
         self.color = color
         self.thickness = thickness
 
-    def tuple(self):
-        return self.x, self.y
-
-    def draw(self, color=None, thickness=None):
-        if thickness is None:
-            thickness = self.thickness
-        if color is None:
-            color = self.color
-        self.plot.draw_point2(self.tuple(), color, thickness)
+    def __iter__(self):
+        yield self.x
+        yield self.y
 
     def move(self, x, y):
         self.x += x

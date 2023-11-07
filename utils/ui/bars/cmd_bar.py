@@ -1,11 +1,9 @@
-from PyQt5.QtWidgets import QVBoxLayout, QLabel, QLineEdit
+from PyQt6.QtWidgets import QVBoxLayout, QLabel, QLineEdit, QWidget
 
 import core.angem as ag
-from utils.ui.widgets.widget import Widget
-from utils.color import *
 
 
-class CmdBar(Widget):
+class CmdBar(QWidget):
     def __init__(self, parent, font_manager, theme_manager):
         super().__init__(parent)
 
@@ -131,4 +129,5 @@ class CmdBar(Widget):
         pass
 
     def set_styles(self):
-        self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))
+        pass
+        # self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))

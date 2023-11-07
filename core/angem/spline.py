@@ -1,5 +1,4 @@
 
-
 class Spline:
     def __init__(self, plane, *points):
         self.plane = plane

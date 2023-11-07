@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QHBoxLayout, QWidget, QPushButton
+from PyQt6.QtWidgets import QMainWindow, QHBoxLayout, QWidget, QPushButton
 from utils.render.render_plot import RenderPlot, ChooseAreaPlot, FinalEditPlot
 from utils.ui.windows.options_window import OptionsWidget
 from utils.color import *

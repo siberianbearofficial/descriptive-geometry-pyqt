@@ -1,28 +1,22 @@
-from utils.color import Color
+from uuid import uuid4
+
+from utils.color import *
 from utils.objects.general_object import GeneralObject
 
 
 class Layer:
     serializable = ['name', 'hidden', 'color', 'thickness']
 
-    def __init__(self, name='', hidden=False, color: Color | str = None, thickness=2, tm=None):
+    def __init__(self, name='', hidden=False, color=RANDOM_COLOR, thickness=2):
+        self.id = uuid4()
         self.hidden = hidden
-        self.tm = tm
-        self.color = self.deserialize_color(color)
+        self.color = color
         self.thickness = thickness
         self.objects = []
         self.name = name
 
     def __getitem__(self, item):
         return self.objects[item]
-
-    def deserialize_color(self, color):
-        if isinstance(color, Color):
-            return color
-        elif isinstance(color, str) and Color.isValidColor(color):
-            return Color(color)
-        elif self.tm:
-            return self.tm.some
 
     def add_object(self, general_object):
         self.objects.append(general_object)

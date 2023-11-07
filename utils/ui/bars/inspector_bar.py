@@ -1,11 +1,10 @@
-from PyQt5.QtWidgets import QVBoxLayout, QScrollArea, QWidget
-from PyQt5.QtCore import Qt
-from utils.ui.widgets.widget import Widget
+from PyQt6.QtWidgets import QVBoxLayout, QScrollArea, QWidget
+from PyQt6.QtCore import Qt
 from utils.ui.bars.inspector_bar_object import InspectorBarObject
 from utils.color import *
 
 
-class InspectorBar(Widget):
+class InspectorBar(QWidget):
     def __init__(self, parent, font_manager, theme_manager):
         super().__init__(parent)
 
@@ -15,7 +14,7 @@ class InspectorBar(Widget):
         self.setStyleSheet(f"background-color: {LIGHT_COLOR}; border-radius: 10px;")
 
         self.layout = QVBoxLayout(self.central_widget)
-        self.layout.setAlignment(Qt.AlignTop)
+        self.layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.layout.setContentsMargins(15, 15, 15, 15)
 
         self.objects_scroll_area = QScrollArea(self.central_widget)
@@ -25,7 +24,7 @@ class InspectorBar(Widget):
         self.objects_central_widget = QWidget()
 
         self.objects_layout = QVBoxLayout(self.objects_central_widget)
-        self.objects_layout.setAlignment(Qt.AlignTop)
+        self.objects_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.objects_layout.setContentsMargins(0, 0, 0, 0)
         self.objects_layout.setSpacing(0)
 
@@ -73,4 +72,4 @@ class InspectorBar(Widget):
             self.objects_layout.itemAt(i).widget().deleteLater()
 
     def set_styles(self):
-        self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))
+        self.setStyleSheet(self.theme_manager.bg_style_sheet)

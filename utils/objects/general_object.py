@@ -1,5 +1,8 @@
+from uuid import uuid4
+
 import core.angem as ag
 import utils.history.serializable as serializable
+import utils.drawing.projections.projection_manager as projections
 from utils.color import *
 from utils.thickness import *
 
@@ -12,25 +15,32 @@ SEP = '-'
 
 
 class GeneralObject:
-    current_id = 1
     serializable = ('name', 'ag_object', 'color', 'thickness', 'config')
 
-    def __init__(self, ag_object=None, color=Color(0, 0, 0), name='', thickness=4, **kwargs):
+    def __init__(self, ag_object, layer_id, color: ObjectColor = LAYER_COLOR, name='', thickness=4, **kwargs):
         self.ag_object = ag_object
+        self.layer_id = layer_id
         self.color = color
         self.name = name
         self.thickness = Thickness.fix(thickness)
         self.config = set_config(ag_object, kwargs)
 
         self.generate_name()
-        self.id = GeneralObject.current_id
-        GeneralObject.current_id += 1
+        self.id = uuid4()
+
+        self.xy_projections = []
+        self.xz_projections = []
+        self.connection_lines = []
+        self.update_projections()
 
     def delete(self):
         if self.name in used_names:
             used_names.remove(self.name)
 
     def generate_name(self):
+        if self.name is None:
+            self.name = 'A'
+            return
         if self.name == 'GENERATE':
             i, ag_class = 1, self.ag_object.__class__.__name__
             while True:
@@ -55,6 +65,8 @@ class GeneralObject:
 
     def __setattr__(self, key, value):
         if key == 'name' and 'name' in self.__dict__:
+            if self.name is None:
+                return
             if isinstance(self.ag_object, ag.Point):
                 used_points.discard(self.name)
                 used_points.add(value)
@@ -77,17 +89,18 @@ class GeneralObject:
         super(GeneralObject, self).__setattr__(key, value)
 
     def __del__(self):
-        if isinstance(self.ag_object, ag.Point):
-            used_points.discard(self.name)
-        elif isinstance(self.ag_object, ag.Segment):
-            if self.name.count(SEP) == 1:
-                for el in self.name.split(SEP):
-                    used_points.discard(el)
-        elif isinstance(self.ag_object, ag.Plane) and self.config.get('draw_3p', False):
-            if self.name.count(SEP) == 2:
-                for el in self.name.split(SEP):
-                    used_points.discard(el)
-        used_names.discard(self.name)
+        pass
+        # if isinstance(self.ag_object, ag.Point):
+        #     used_points.discard(self.name)
+        # elif isinstance(self.ag_object, ag.Segment):
+        #     if self.name.count(SEP) == 1:
+        #         for el in self.name.split(SEP):
+        #             used_points.discard(el)
+        # elif isinstance(self.ag_object, ag.Plane) and self.config.get('draw_3p', False):
+        #     if self.name.count(SEP) == 2:
+        #         for el in self.name.split(SEP):
+        #             used_points.discard(el)
+        # used_names.discard(self.name)
 
     @staticmethod
     def get_alpha(lower=False):
@@ -195,6 +208,16 @@ class GeneralObject:
             self.ag_object = unpack_ag_object(dct)
             return True
         return False
+
+    def update_projections(self):
+        self.xy_projections, self.xz_projections, self.connection_lines = projections.get_projection(
+            self.ag_object, self.color, self.thickness)
+        if not isinstance(self.xy_projections, (tuple, list)):
+            self.xy_projections = (self.xy_projections,)
+        if not isinstance(self.xz_projections, (tuple, list)):
+            self.xz_projections = (self.xz_projections,)
+        if not isinstance(self.connection_lines, (tuple, list)):
+            self.connection_lines = (self.connection_lines,)
 
 
 def set_config(obj, config):

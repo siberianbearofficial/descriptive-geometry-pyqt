@@ -1,13 +1,12 @@
-from PyQt5.QtCore import Qt, QPropertyAnimation
-from PyQt5.QtWidgets import QLabel, QHBoxLayout
-from PyQt5.QtGui import QPixmap, QEnterEvent
+from PyQt6.QtCore import Qt, QPropertyAnimation
+from PyQt6.QtWidgets import QLabel, QHBoxLayout, QWidget
+from PyQt6.QtGui import QPixmap, QEnterEvent
 
 from utils.ui.widgets.label import Label
-from utils.ui.widgets.widget import Widget
 from utils.color import *
 
 
-class Tool(Widget):
+class Tool(QWidget):
     hovered_tool = None
     COLOR_ANIMATION_DURATION = 100
     COLOR = ACCENT_COLOR

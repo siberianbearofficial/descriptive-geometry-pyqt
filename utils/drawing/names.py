@@ -68,19 +68,6 @@ def get_alpha(lower=False):
             s = str(i)
 
 
-def projections(plot, ag_object, config):
-    proj = plot.pm.get_projection(ag_object, (0, 0, 0), 4, **config)
-    xy_projection, xz_projection = proj[0], proj[1]
-    connection_lines = proj[2] if len(proj) >= 3 else tuple()
-    if not isinstance(xy_projection, (tuple, list)):
-        xy_projection = xy_projection,
-    if not isinstance(xz_projection, (tuple, list)):
-        xz_projection = xz_projection,
-    if not isinstance(connection_lines, (tuple, list)):
-        connection_lines = connection_lines,
-    return xy_projection, xz_projection, connection_lines
-
-
 def name_to_point(plot, pos):
     name = plot.lm.get_name_to_new_obj(pos)
     if name:

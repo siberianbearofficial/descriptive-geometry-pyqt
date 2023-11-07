@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QMenuBar, QAction
+from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import QMenuBar
 
 
 class MenuBar(QMenuBar):
@@ -36,5 +37,5 @@ class MenuBar(QMenuBar):
         return action
 
     def set_styles(self):
-        self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))
+        self.theme_manager.auto_css(self, palette='Menu')
 

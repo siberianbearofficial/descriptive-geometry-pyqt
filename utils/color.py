@@ -1,4 +1,6 @@
-from PyQt5.QtGui import QColor
+import random
+
+from PyQt6.QtGui import QColor
 
 from random import randint
 
@@ -47,7 +49,7 @@ class Color(QColor):
             return False
 
     def __str__(self):
-        return f'rgba({self.red()}, {self.green()}, {self.blue()}, {self.alpha()})'
+        return self.name()
 
     @staticmethod
     def random():
@@ -57,21 +59,18 @@ class Color(QColor):
         return Color(red, green, blue)
 
 
-ACCENT_COLOR = Color('#00ABB3')
-DARK_COLOR = Color('#3C4048')
-LIGHT_COLOR = Color('#EAEAEA')
-WHITE_COLOR = Color('#FFFFFF')
-BLACK_COLOR = Color('#000000')
-CONNECT_LINE_COLOR = Color(180, 180, 180)
-DRAW_COLOR = Color(0, 162, 232)
-SELECTION_COLOR = Color(250, 30, 30)
+class ObjectColor:
+    RANDOM = 1
+    FROM_LAYER = 2
+    STANDARD = 3
+    OTHER = 4
 
-# if __name__ == '__main__':
-#     a = Color('#f8a2bb')
-#     b = Color(18, 25, 10)
-#     c = Color(35, 26, 152, 199)
-#     d = Color('241, 45, 14')
-#     e = Color('32, 87, 188, 187')
-#     f = Color('rgba(222, 182, 99)')
-#     g = Color('rgba(77, 188, 166, 155)')
-#     print(a, b, c, d, e, f, g, sep='\n')
+    def __init__(self, color, color_type=4):
+        self.type = color_type
+        self.color = color
+
+
+LAYER_COLOR = ObjectColor(None, ObjectColor.FROM_LAYER)
+RANDOM_COLOR = ObjectColor(None, ObjectColor.RANDOM)
+STD_COLORS = [ObjectColor(i, ObjectColor.STANDARD) for i in range(12)]
+

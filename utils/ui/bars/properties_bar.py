@@ -1,168 +1,61 @@
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLayout, QComboBox, \
-    QColorDialog, QScrollArea, QWidget
-from PyQt5.QtCore import Qt
+from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLayout, QComboBox, \
+    QColorDialog, QScrollArea, QWidget, QLineEdit
+from PyQt6.QtCore import Qt
 
 from utils.ui.bars.properties_bar_object import PropertiesBarObject
+from utils.ui.widgets.color_button import ColorButton
 from utils.ui.widgets.line_edit_widget import LineEditWidget
-from utils.ui.widgets.widget import Widget
 from utils.color import *
 from utils.thickness import *
 
 
-class PropertiesBar(Widget):
-    def __init__(self, parent, font_manager, theme_manager):
-        super().__init__(parent)
-
-        self.current_object = None
-        self.set_obj_name = None
-        self.set_obj_color = None
-        self.set_obj_thickness = None
-        self.set_obj_layer = None
-        self.set_obj_ag_object = None
-        self.set_obj_config = None
-        self.layers_list = []
-        self.font_manager = font_manager
+class PropertiesBar(QWidget):
+    def __init__(self, theme_manager):
+        super().__init__()
         self.theme_manager = theme_manager
+        self._labels = []
+        self.mouse_pos = None
 
-        self.setStyleSheet(f"background-color: {WHITE_COLOR}; border-radius: 10px;")
-        self.layout = QVBoxLayout(self.central_widget)
-        self.layout.setAlignment(Qt.AlignTop)
-        self.layout.setContentsMargins(15, 15, 15, 15)
+        self.setFixedSize(250, 350)
+        self.setWindowFlag(Qt.WindowType.Tool, True)
 
-        # Name
-        name = QVBoxLayout()
-        name_label = QLabel(self.central_widget)
-        name_label.setFixedHeight(20)
+        strange_layout = QHBoxLayout()
+        self.setLayout(strange_layout)
+        strange_layout.setContentsMargins(0, 0, 0, 0)
+        strange_widget = QWidget()
+        strange_layout.addWidget(strange_widget)
 
-        name_label.setFont(font_manager.bold())
-        name_label.setStyleSheet(f"color: {ACCENT_COLOR};")
-        name_label.setText('Name')
-        name.addWidget(name_label)
+        main_layout = QVBoxLayout()
+        main_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        strange_widget.setLayout(main_layout)
 
-        self.name_line_edit = LineEditWidget(self.central_widget)
-        self.name_line_edit.setFixedHeight(30)
-        self.name_line_edit.setFont(font_manager.bold())
-        self.name_line_edit.setStyleSheet(f"color: {ACCENT_COLOR};\n"
-                                          f"background-color: {LIGHT_COLOR};\n"
-                                          f"border: 2px solid {ACCENT_COLOR};\n"
-                                          "padding-left: 3px;")
-        self.name_line_edit.connect(lambda: self.on_name_change(self.name_line_edit.text()))
-        name.addWidget(self.name_line_edit)
+        top_layout = QHBoxLayout()
+        main_layout.addLayout(top_layout)
 
-        self.layout.addLayout(name)
+        self._name_edit = QLineEdit()
+        main_layout.addWidget(self._name_edit)
 
-        # Color, Layer, Thickness
-        self.clt = QHBoxLayout()
-        self.clt.setSpacing(10)
-        self.clt.setAlignment(Qt.AlignLeft)
+        layer_layout = QHBoxLayout()
+        layer_layout.setContentsMargins(0, 0, 0, 0)
+        layer_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        main_layout.addLayout(layer_layout)
 
-        # Color
-        color = QVBoxLayout()
-        color.setSpacing(5)
+        label = QLabel("Слой:")
+        self._labels.append(label)
+        layer_layout.addWidget(label)
 
-        color_label = QLabel(self.central_widget)
-        color_label.setFixedHeight(20)
-        color_label.setFont(font_manager.bold())
-        color_label.setStyleSheet(f"color: {ACCENT_COLOR};")
-        color_label.setText('Color')
-        color.addWidget(color_label)
+        self._layer_box = QComboBox()
+        self._layer_box.setMinimumWidth(120)
+        layer_layout.addWidget(self._layer_box)
 
-        self.color_button = QPushButton(self.central_widget)
-        self.color_button.setFixedSize(30, 30)
-        self.color_button.setStyleSheet(f"color: {ACCENT_COLOR};\n"
-                                        f"background-color: {WHITE_COLOR};\n"
-                                        f"border: 2px solid {ACCENT_COLOR};\n"
-                                        "padding-top: 3px;")
-        self.color_button_stylesheet = self.color_button.styleSheet().split('\n')
-        self.color_button.setText("")
-        self.color_button.clicked.connect(self.on_color_change)
+        color_layout = QHBoxLayout()
+        color_layout.setContentsMargins(0, 0, 0, 0)
+        color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        main_layout.addLayout(color_layout)
 
-        color.addWidget(self.color_button)
-
-        self.clt.addLayout(color)
-
-        # Layer
-        layer = QVBoxLayout()
-        layer.setSizeConstraint(QLayout.SetMinimumSize)
-        layer.setSpacing(5)
-
-        layer_label = QLabel(self.central_widget)
-        layer_label.setFixedHeight(20)
-        layer_label.setFont(font_manager.bold())
-        layer_label.setStyleSheet(f"color: {ACCENT_COLOR};")
-        layer_label.setText('Layer')
-        layer.addWidget(layer_label)
-
-        self.layer_combobox = QComboBox(self.central_widget)
-        self.layer_combobox.setFixedSize(70, 30)
-        self.layer_combobox.setFont(font_manager.bold())
-        self.layer_combobox.setLayoutDirection(Qt.RightToLeft)
-        self.layer_combobox.setStyleSheet("QComboBox {"
-                                          f"color: {ACCENT_COLOR};"
-                                          f"background-color: {LIGHT_COLOR};"
-                                          f"border: 2px solid {ACCENT_COLOR};"
-                                          "padding-right: 1px;"
-                                          "}"
-                                          "QComboBox::drop-down:button {"
-                                          "border-radius: 5px;"
-                                          "}")
-        self.layer_combobox.setMaxVisibleItems(6)
-        self.layer_combobox.currentIndexChanged.connect(
-            lambda: self.on_layer_change(self.layer_combobox.currentIndex()))
-        layer.addWidget(self.layer_combobox)
-
-        self.clt.addLayout(layer)
-
-        # Thickness
-        thickness = QVBoxLayout()
-        thickness.setSpacing(5)
-
-        thickness_label = QLabel(self.central_widget)
-        thickness_label.setFixedHeight(20)
-        thickness_label.setFont(font_manager.bold())
-        thickness_label.setStyleSheet(f"color: {ACCENT_COLOR};")
-        thickness_label.setText('Thickness')
-        thickness.addWidget(thickness_label)
-
-        self.thickness_combobox = QComboBox(self.central_widget)
-        self.thickness_combobox.setFixedSize(70, 30)
-        self.thickness_combobox.setFont(font_manager.bold())
-        self.thickness_combobox.setLayoutDirection(Qt.RightToLeft)
-        self.thickness_combobox.setStyleSheet("QComboBox {"
-                                              f"color: {ACCENT_COLOR};"
-                                              f"background-color: {LIGHT_COLOR};"
-                                              f"border: 2px solid {ACCENT_COLOR};"
-                                              "padding-right: 1px;"
-                                              "}"
-                                              "QComboBox::drop-down:button {"
-                                              "border-radius: 5px;"
-                                              "}")
-        self.thickness_combobox.setMaxVisibleItems(3)
-        self.thickness_combobox.addItem("light")
-        self.thickness_combobox.addItem("medium")
-        self.thickness_combobox.addItem("bold")
-        self.thickness_combobox.currentIndexChanged.connect(
-            lambda: self.on_thickness_change(self.thickness_combobox.currentIndex()))
-        thickness.addWidget(self.thickness_combobox)
-        self.clt.addLayout(thickness)
-        self.layout.addLayout(self.clt)
-
-        # Objects
-        self.objects_scroll_area = QScrollArea(self.central_widget)
-        self.objects_scroll_area.setStyleSheet(f"background-color: {LIGHT_COLOR}; border-radius: 10px;")
-        self.objects_scroll_area.setWidgetResizable(True)
-        self.objects_scroll_area.verticalScrollBar().setStyleSheet('QScrollBar {height: 0px;}')
-
-        objects_central_widget = QWidget()
-        self.obj_layout = QVBoxLayout(objects_central_widget)
-        self.obj_layout.setContentsMargins(0, 0, 0, 0)
-        self.obj_layout.setAlignment(Qt.AlignTop)
-
-        self.objects_scroll_area.setWidget(objects_central_widget)
-
-        self.layout.addWidget(self.objects_scroll_area)
-
-        self.obj = None
+        self._color_button = ColorButton(self.theme_manager)
+        self._color_button.setFixedSize(50, 22)
+        color_layout.addWidget(self._color_button)
 
     def set_obj_name_func(self, func):
         self.set_obj_name = func
@@ -299,5 +192,37 @@ class PropertiesBar(Widget):
         self.name_line_edit.clear()
         self.thickness_combobox.setCurrentIndex(0)
 
+    def mousePressEvent(self, a0) -> None:
+        if a0.button() == Qt.MouseButton.LeftButton:
+            self.mouse_pos = a0.pos()
+        else:
+            super().mousePressEvent(a0)
+
+    def mouseReleaseEvent(self, a0) -> None:
+        if a0.button() == Qt.MouseButton.LeftButton:
+            self.mouse_pos = None
+        else:
+            super().mousePressEvent(a0)
+
+    def mouseMoveEvent(self, a0) -> None:
+        if self.mouse_pos is not None:
+            pos = self.pos() + a0.pos() - self.mouse_pos
+            if pos.x() < 5:
+                pos.setX(5)
+            if pos.y() < 5:
+                pos.setY(5)
+            if pos.x() > self.parent().width() - self.width() - 15:
+                pos.setX(self.parent().width() - self.width() - 15)
+            if pos.y() > self.parent().height() - self.height() - 15:
+                pos.setY(self.parent().height() - self.height() - 15)
+            self.move(pos)
+        else:
+            super().mouseMoveEvent(a0)
+
     def set_styles(self):
-        self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))
+        self.setStyleSheet(self.theme_manager.base_css(palette='Menu'))
+        for el in self._labels:
+            self.theme_manager.auto_css(el)
+        for el in [self._name_edit, self._layer_box]:
+            self.theme_manager.auto_css(el)
+        self._color_button.set_styles()

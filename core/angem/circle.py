@@ -3,10 +3,11 @@ import math
 import core.angem as ag
 from core.angem import Polygon2D
 from core.angem.vector import Vector
+from core.config import GRAPHICS
 
 
 class Circle(Polygon2D):
-    COUNT = 20
+    COUNT = GRAPHICS * 10
 
     def __init__(self, center, radius, normal=Vector(0, 0, 1)):
         self.center = center

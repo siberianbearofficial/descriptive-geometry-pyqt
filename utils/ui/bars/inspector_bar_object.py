@@ -1,10 +1,9 @@
-from PyQt5.QtWidgets import QHBoxLayout, QLabel
-from PyQt5.QtGui import QPixmap, QTransform
-from utils.ui.widgets.widget import Widget
+from PyQt6.QtWidgets import QHBoxLayout, QLabel, QWidget
+from PyQt6.QtGui import QPixmap, QTransform
 from utils.color import *
 
 
-class InspectorBarObject(Widget):
+class InspectorBarObject(QWidget):
     EYE_SIZE = 20
     EYE_PIXMAP = None
 

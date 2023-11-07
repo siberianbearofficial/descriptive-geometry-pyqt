@@ -13,6 +13,8 @@ from core.angem.arc import Arc
 from core.angem.cylinder import Cylinder
 from core.angem.cone import Cone
 from core.angem.sphere import Sphere
+from core.angem.tor import Tor
+from core.angem.spline import Spline
 
 from core.angem.utils import distance, angle
 

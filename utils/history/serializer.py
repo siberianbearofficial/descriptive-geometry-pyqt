@@ -1,8 +1,8 @@
 import json
 import os
 
-from PyQt5.QtCore import QSettings
-from PyQt5.QtWidgets import QFileDialog
+from PyQt6.QtCore import QSettings
+from PyQt6.QtWidgets import QFileDialog
 
 
 class Serializer:
@@ -14,7 +14,7 @@ class Serializer:
         self.recent_directory = None
         self.current_file = None
 
-        self.reg_file = QSettings('settings.ini', QSettings.IniFormat)
+        self.reg_file = QSettings('settings.ini', QSettings.Format.IniFormat)
         self.file_extension = '.dg'
         self.program_name = 'Descriptive Geometry'
 

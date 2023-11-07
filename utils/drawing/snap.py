@@ -70,8 +70,8 @@ class SnapManager:
         snap_xy, snap_type_xy, obj_xy = self.get_snap((screen_x, screen_y), 'xy', snap_type=True, snap_dist=1)
         snap_xz, snap_type_xz, obj_xz = self.get_snap((screen_x, screen_z), 'xz', x=screen_x, y=screen_y,
                                                       snap_type=True, snap_dist=1)
-        point = self.plot.pm.convert_screen_x_to_ag_x(snap_xy[0]), self.plot.pm.convert_screen_y_to_ag_y(snap_xy[1]), \
-                self.plot.pm.convert_screen_y_to_ag_z(snap_xz[1])
+        point = self.plot.pm.screen_x_to_ag_x(snap_xy[0]), self.plot.pm.screen_y_to_ag_y(snap_xy[1]), \
+                self.plot.pm.screen_y_to_ag_z(snap_xz[1])
         if snap_type_xy != snap_type_xz or obj_xy != obj_xz or snap_type_xy is None or snap_type_xy == self.snaps[4]:
             return point
         obj = obj_xy.ag_object

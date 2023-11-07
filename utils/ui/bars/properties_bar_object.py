@@ -1,6 +1,6 @@
-from PyQt5.QtCore import Qt, pyqtSignal, QPropertyAnimation, pyqtProperty
-from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel, QWidget, QLineEdit, QApplication
-from PyQt5.QtGui import QPixmap, QMouseEvent, QTransform
+from PyQt6.QtCore import Qt, pyqtSignal, QPropertyAnimation, pyqtProperty
+from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel, QWidget, QLineEdit, QApplication
+from PyQt6.QtGui import QPixmap, QMouseEvent, QTransform
 
 from utils.ui.widgets.line_edit_widget import LineEditWidget
 from utils.color import *
@@ -25,7 +25,7 @@ class PropertiesBarObject(QWidget):
         self.layout = QVBoxLayout()
         self.set_margin(15)
         self.layout.setSpacing(5)
-        self.layout.setAlignment(Qt.AlignTop)
+        self.layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.setLayout(self.layout)
 
         self.container = QHBoxLayout()
@@ -54,7 +54,7 @@ class PropertiesBarObject(QWidget):
         if isinstance(struct, dict):
             self.objects_widget = QWidget()
             objects_layout = QVBoxLayout(self.objects_widget)
-            objects_layout.setAlignment(Qt.AlignTop)
+            objects_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
             objects_layout.setContentsMargins(0, 0, 0, 0)
             objects_layout.setSpacing(5)
             for key, item in struct.items():

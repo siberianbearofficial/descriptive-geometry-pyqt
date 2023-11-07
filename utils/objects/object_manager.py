@@ -1,77 +1,57 @@
-from utils.objects.layer import Layer
-from utils.objects.general_object import GeneralObject
-from utils.history.history_manager import HistoryManager
+import random
+from uuid import UUID
+
+from PyQt6.QtCore import pyqtSignal, QObject
+
 from utils.color import *
+from utils.history.history_manager import HistoryManager
+from utils.objects.general_object import GeneralObject
+from utils.objects.layer import Layer
 
 
-class ObjectManager:
-    def __init__(self, func_plot_update, func_plot_obj, plot_full_update, func_object_selected):
-        self.layers = [Layer.empty()]
-        self.current_layer = 0
+class ObjectManager(QObject):
+    objectAdded = pyqtSignal(GeneralObject)
+    objectDeleted = pyqtSignal(UUID)
+    objectSelected = pyqtSignal(object)
+
+    layerAdded = pyqtSignal(Layer)
+    layerDeleted = pyqtSignal(UUID)
+    layerSelected = pyqtSignal(UUID)
+    layerColorChanged = pyqtSignal(UUID)
+    layerNameChanged = pyqtSignal(UUID)
+    layerHiddenChanged = pyqtSignal(UUID)
+
+    def __init__(self, tm):
+        super().__init__()
+        self.theme_manager = tm
+        self.objects = dict()
         self.selected_object = None
-        self.selected_object_index = None
-        self.last_selected_object_index = None
-        self.func_plot_update = func_plot_update
-        self.func_plot_obj = func_plot_obj
-        self.plot_full_update = plot_full_update
-        self.func_object_selected = func_object_selected
+
+        layer = Layer.empty()
+        self.layers = {layer.id: layer}
+        self.current_layer = layer.id
+
         self.hm = HistoryManager(self)
 
-        self.func_layer_add = None
-        self.func_layer_delete = None
-        self.func_layer_hide = None
-        self.func_layer_select = None
-        self.func_layer_rename = None
-        self.func_layer_color = None
-        self.func_layer_thickness = None
-        self.func_layers_clear = None
-
-        self.funcs_layer = None
-
-        self.objects_changed = None
-        self.current_object_changed = None
-
-    def set_layers_func(self, func_layer_add, func_layer_delete, func_layer_hide, func_layer_select, func_layer_rename,
-                        func_layer_color, func_layer_thickness, func_layers_clear):
-        self.func_layer_add = func_layer_add
-        self.func_layer_delete = func_layer_delete
-        self.func_layer_hide = func_layer_hide
-        self.func_layer_select = func_layer_select
-        self.func_layer_rename = func_layer_rename
-        self.func_layer_color = func_layer_color
-        self.func_layer_thickness = func_layer_thickness
-        self.func_layers_clear = func_layers_clear
-
-        self.funcs_layer = {
-            'add': self.func_layer_add,
-            'delete': self.func_layer_delete,
-            'hide': self.func_layer_hide,
-            'select': self.func_layer_select,
-            'name': self.func_layer_rename,
-            'color': self.func_layer_color,
-            'thickness': self.func_layer_thickness,
-            'clear': self.func_layers_clear,
-        }
-
-    def add_object(self, ag_object, name='', color=Color(0, 0, 0), history_record=True, **config):
-        if color is None:
-            color = Color.random()
-        if history_record:
-            self.hm.add_record('add_object', index=(self.current_layer, len(self.layers[self.current_layer].objects)))
-        obj = GeneralObject(ag_object, color, name, **config)
-        self.layers[self.current_layer].add_object(obj)
-        self.func_plot_obj(obj.id, obj)
-        self.func_plot_update()
-        if self.objects_changed:
-            self.objects_changed(self.layers[self.current_layer])
+    def new_object(self, ag_object, layer_id=None):
+        name = ''
+        if layer_id is None:
+            layer_id = self.current_layer
+        layer = self.layers[layer_id]
+        if layer.color.type == ObjectColor.RANDOM:
+            color = random.choice(STD_COLORS)
+        else:
+            color = layer.color
+        obj = GeneralObject(ag_object, layer_id, color, name)
+        self.objects[obj.id] = obj
+        self.objectAdded.emit(obj)
 
     def add_object_from_dict(self, dct, history_record=True):
         if history_record:
             self.hm.add_record('add_object', index=(self.current_layer, len(self.layers[self.current_layer].objects)))
         obj = GeneralObject.from_dict(dct)
         self.layers[self.current_layer].add_object(obj)
-        self.func_plot_obj(obj.id, obj)
-        self.func_plot_update()
+        self.objectAdded.emit(obj)
         if self.objects_changed:
             self.objects_changed(self.layers[self.current_layer])
 
@@ -91,7 +71,7 @@ class ObjectManager:
         if history_record:
             self.hm.add_record('delete_object', dict=obj.to_dict(), index=(layer, index))
         self.layers[layer].delete_object(index)
-        self.func_plot_obj(obj.id, None)
+        self.objectDeleted.emit(obj.id)
         if (layer, index) == self.selected_object_index:
             self.selected_object_index = None
         for func in self.func_object_selected:
@@ -112,69 +92,61 @@ class ObjectManager:
         for func in self.func_layer_add:
             func(self.layers[-1] if index is None else self[index], (len(self.layers) - 1 if index is None else index))
 
-    def select_layer(self, index, history_record=True):
+    def new_layer(self):
+        layer = Layer.empty()
+        self.layers[layer.id] = layer
+        self.layerAdded.emit(layer)
+
+    def select_layer(self, layer_id, history_record=True):
         if history_record:
             self.hm.add_record('select_layer', layer=self.current_layer)
-        if 0 <= index < len(self.layers):
-            self.current_layer = index
-        for func in self.func_layer_select:
-            func(index)
-        if self.objects_changed:
-            self.objects_changed(self.layers[self.current_layer])
+        self.current_layer = layer_id
+        self.layerSelected.emit(layer_id)
 
     def select_object(self, _id):
-        self.last_selected_object_index = self.selected_object_index
-        if _id == 0:
-            self.selected_object = None
-            self.selected_object_index = None
-            for func in self.func_object_selected:
-                func(None)
-        else:
-            self.selected_object_index = self.find_by_id(_id)
-            self.selected_object = self.layers[self.selected_object_index[0]].objects[self.selected_object_index[1]]
-            for func in self.func_object_selected:
-                func(self.selected_object)
-        self.current_object_changed(self.selected_object_index)
+        self.last_selected_object = self.selected_object
+        self.selected_object = _id
+        self.objectSelected.emit(_id)
 
     def set_object_hidden(self, hidden):
         # TODO: show and hide objects
         raise NotImplementedError
 
-    def set_layer_hidden(self, ind, hidden, history_record=True):
-        if self[ind].hidden == hidden:
+    def set_layer_hidden(self, layer_id, hidden, history_record=True):
+        if self[layer_id].hidden == hidden:
             return
         if history_record:
-            self.hm.add_record('layer_hidden', index=ind, hidden=self[ind].hidden)
-        self.layers[ind].hidden = hidden
-        self.plot_full_update(self.get_all_objects())
+            self.hm.add_record('layer_hidden', index=layer_id, hidden=self[layer_id].hidden)
+        self.layers[layer_id].hidden = hidden
+        self.layerHiddenChanged.emit(layer_id)
 
-    def delete_layer(self, index, history_record=True):
-        if index == self.current_layer:
+    def delete_layer(self, layer_id, history_record=True):
+        if layer_id == self.current_layer:
             return
         if history_record:
-            self.hm.add_record('delete_layer', dict=self.layers[index].to_dict(), index=index)
-        self.layers.pop(index)
-        if self.current_layer >= index:
-            self.current_layer -= 1
-        for func in self.func_layer_delete:
-            func(index)
-        self.plot_full_update(self.get_all_objects())
-        if self.objects_changed:
-            self.objects_changed(self.layers[self.current_layer])
+            self.hm.add_record('delete_layer', dict=self.layers[layer_id].to_dict(), index=layer_id)
+        self.layers.pop(layer_id)
+        self.layerDeleted.emit(layer_id)
 
     def get_all_objects(self):
         """
         Yields all non-hidden objects.
         :return: objects
         """
-
-        for layer in self.layers:
-            if layer.hidden:
-                continue
-            for obj in layer.objects:
+        for obj in self.objects.values():
+            if not self.layers[obj.layer_id].hidden:
                 yield obj
 
+    def get_object(self, obj_id):
+        return self.objects[obj_id]
+
+    def get_object_color(self, obj_id):
+        obj = self.objects[obj_id]
+        if obj.color.type == ObjectColor.STANDARD:
+            return self.theme_manager['Colors'][obj.color.color]
+
     def set_layer_color(self, color, layer=None, history_record=True):
+        print(color, layer)
         if layer is None:
             layer = self.current_layer
         if self[layer].color == color:
@@ -182,8 +154,7 @@ class ObjectManager:
         if history_record:
             self.hm.add_record('layer_color', index=layer, color=self[layer].color)
         self.layers[layer].color = color
-        for func in self.func_layer_color:
-            func(layer, color)
+        self.layerColorChanged.emit(layer)
 
     def set_layer_attr(self, attr_name, attr, layer=None, history_record=True):
         if layer is None:
@@ -204,8 +175,7 @@ class ObjectManager:
         if history_record:
             self.hm.add_record('layer_name', index=layer, name=self[layer].name)
         self.layers[layer].name = name
-        for func in self.func_layer_rename:
-            func(layer, name)
+        self.layerNameChanged.emit(layer)
 
     def set_layer_thickness(self, thickness, layer=None, history_record=True):
         if layer is None:

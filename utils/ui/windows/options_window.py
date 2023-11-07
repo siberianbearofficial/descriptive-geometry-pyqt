@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSpinBox, QDoubleSpinBox, \
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSpinBox, QDoubleSpinBox, \
     QLineEdit, QCheckBox, QComboBox, QFileDialog, QPushButton, QApplication
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 
 
 class OptionsWindow(QMainWindow):
@@ -29,7 +29,7 @@ class OptionsWindow(QMainWindow):
         self.button_widget = QWidget()
         self.button_widget.setFixedHeight(50)
         layout = QHBoxLayout()
-        layout.setAlignment(Qt.AlignRight)
+        layout.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.enter_button = QPushButton("OK")
         self.enter_button.setFixedSize(100, 30)
@@ -79,19 +79,19 @@ class OptionsWidget(QWidget):
         self.widgets = dict()
 
         layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignTop)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         for key, item in dct.items():
             label = QLabel(str(key), self)
             widget, value = self.get_widget(key, item)
             if item.get('name') == OptionsWindow.NAME_LEFT:
                 h_layout = QHBoxLayout()
-                h_layout.setAlignment(Qt.AlignLeft)
+                h_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
                 h_layout.addWidget(label)
                 h_layout.addWidget(widget)
                 layout.addLayout(h_layout)
             elif item.get('name') == OptionsWindow.NAME_RIGHT:
                 h_layout = QHBoxLayout()
-                h_layout.setAlignment(Qt.AlignLeft)
+                h_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
                 h_layout.addWidget(widget)
                 h_layout.addWidget(label)
                 layout.addLayout(h_layout)

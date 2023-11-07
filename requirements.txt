@@ -1,1 +1,4 @@
-PyQt5~=5.15.9
+PyQt6~=6.5.3
+Pillow~=10.0.0
+requests~=2.31.0
+numpy~=1.26.1

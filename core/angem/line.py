@@ -1,3 +1,5 @@
+import numpy as np
+
 import core.angem as ag
 
 
@@ -41,56 +43,22 @@ class Line:
             z = self.point.z + self.vector.z * k
             return ag.Point(x, y, z)
         if isinstance(other, Line):
-            if abs((self.vector & other.vector) * ag.Vector(self.point, other.point)) > eps or self | other:
+            # Преобразуем данные в массивы NumPy
+            line1_direction = np.array([self.vector.x, self.vector.y, self.vector.z])
+            line1_point = np.array([self.point.x, self.point.y, self.point.z])
+            line2_direction = np.array([other.vector.x, other.vector.y, other.vector.z])
+            line2_point = np.array([other.point.x, other.point.y, other.point.z])
+
+            # Проверяем, что прямые не параллельны
+            if np.allclose(np.cross(line1_direction, line2_direction), 0):
                 return None
-            if self.vector.x == 0 and other.vector.x == 0:
-                if self.vector.y != 0 and other.vector.y != 0:
-                    y = (self.vector.z / self.vector.y * self.point.y - other.vector.z / other.vector.y * other.point.y
-                         - self.point.z + other.point.z) / (
-                                self.vector.z / self.vector.y - other.vector.z / other.vector.y)
-                    return ag.Point(self.point.x, y, self.z(y=y))
-                else:
-                    z = (self.vector.y / self.vector.z * self.point.z - other.vector.y / other.vector.z * other.point.z
-                         - self.point.y + other.point.y) / (
-                                    self.vector.y / self.vector.z - other.vector.y / other.vector.z)
-                    return ag.Point(self.point.x, self.y(z=z), z)
-            if self.vector.y == 0 and other.vector.y == 0:
-                if self.vector.x != 0 and other.vector.x != 0:
-                    x = (self.vector.z / self.vector.x * self.point.x - other.vector.z / other.vector.x * other.point.x
-                         - self.point.z + other.point.z) / (
-                                self.vector.z / self.vector.x - other.vector.z / other.vector.x)
-                    return ag.Point(x, self.point.y, self.z(x=x))
-                else:
-                    z = (self.vector.x / self.vector.z * self.point.z - other.vector.x / other.vector.z * other.point.z
-                         - self.point.x + other.point.x) / (
-                                    self.vector.x / self.vector.z - other.vector.x / other.vector.z)
-                    return ag.Point(self.x(z=z), self.point.y, z)
-            if self.vector.z == 0 and other.vector.z == 0:
-                if self.vector.x != 0 and other.vector.x != 0:
-                    x = (self.vector.y / self.vector.x * self.point.x - other.vector.y / other.vector.x * other.point.x
-                         - self.point.y + other.point.y) / (
-                                self.vector.y / self.vector.x - other.vector.y / other.vector.x)
-                    return ag.Point(x, self.y(x=x), self.point.z)
-                else:
-                    y = (self.vector.x / self.vector.y * self.point.y - other.vector.x / other.vector.y * other.point.y
-                         - self.point.x + other.point.x) / (
-                                self.vector.x / self.vector.y - other.vector.x / other.vector.y)
-                    return ag.Point(self.x(y=y), y, self.point.z)
-            if self.vector.x == 0:
-                return ag.Point(self.point.x, other.y(x=self.point.x), other.z(x=self.point.x))
-            if self.vector.y == 0:
-                return ag.Point(other.x(y=self.point.y), self.point.y, other.z(y=self.point.y))
-            if self.vector.z == 0:
-                return ag.Point(other.x(z=self.point.z), other.y(z=self.point.z), self.point.z)
-            if other.vector.x == 0:
-                return ag.Point(other.point.x, self.y(x=other.point.x), self.z(x=other.point.x))
-            if other.vector.y == 0:
-                return ag.Point(self.x(y=other.point.y), other.point.y, self.z(y=other.point.y))
-            if other.vector.z == 0:
-                return ag.Point(self.x(z=other.point.z), self.y(z=other.point.z), other.point.z)
-            y = (self.vector.x / self.vector.y * self.point.y - other.vector.x / other.vector.y * other.point.y -
-                 self.point.x + other.point.x) / (self.vector.x / self.vector.y - other.vector.x / other.vector.y)
-            return ag.Point(self.x(y=y), y, self.z(y=y))
+
+            # Вычисляем координаты точки пересечения
+            t = np.linalg.lstsq(
+                np.vstack((line1_direction, -line2_direction)).T, line2_point - line1_point, rcond=None)[0]
+            intersection_point = line1_point + t[0] * line1_direction
+
+            return ag.Point(*intersection_point)
         raise ValueError(f'unsupported operand type: "{other.__class__.__name__}"')
 
     def is_on(self, other):

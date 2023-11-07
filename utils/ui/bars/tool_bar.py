@@ -1,12 +1,11 @@
-from PyQt5.QtGui import QMouseEvent
-from PyQt5.QtWidgets import QVBoxLayout
+from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtWidgets import QVBoxLayout, QWidget
 from utils.ui.bars.tool import Tool
-from utils.ui.widgets.widget import Widget
 
 
-class ToolBar(Widget):
-    def __init__(self, struct, parent, font_manager, theme_manager):
-        super().__init__(parent)
+class ToolBar(QWidget):
+    def __init__(self, struct, font_manager, theme_manager):
+        super().__init__()
 
         self.tools = list()
         self.theme_manager = theme_manager
@@ -14,15 +13,16 @@ class ToolBar(Widget):
         self.setMouseTracking(True)
 
         # Layout
-        self.layout = QVBoxLayout(self.central_widget)
-        self.layout.setContentsMargins(10, 10, 10, 10)
-        self.layout.setSpacing(0)
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(0)
 
         for name in struct:
-            tool = Tool(name, font_manager, self.central_widget).set_on_click_listener(struct[name][0]).set_image(
+            tool = Tool(name, font_manager).set_on_click_listener(struct[name][0]).set_image(
                 struct[name][1])
             self.tools.append(tool)
-            self.layout.addWidget(tool)
+            layout.addWidget(tool)
 
     def set_images(self, *tool_images):
         for i in range(len(tool_images)):
@@ -41,4 +41,4 @@ class ToolBar(Widget):
         return False
 
     def set_styles(self):
-        self.setStyleSheet(self.theme_manager.get_style_sheet(self.__class__.__name__))
+        self.setStyleSheet(self.theme_manager.bg_style_sheet)

@@ -1,5 +1,5 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QImage, QPainter, QFont
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QImage, QPainter, QFont
 
 from utils.drawing.plot import Plot
 from utils.render.render_label import RenderLabel

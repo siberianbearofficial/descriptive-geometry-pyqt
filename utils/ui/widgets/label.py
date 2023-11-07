@@ -1,6 +1,6 @@
-from PyQt5.QtCore import pyqtSignal, pyqtProperty
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QLabel
+from PyQt6.QtCore import pyqtSignal, pyqtProperty
+from PyQt6.QtGui import QColor
+from PyQt6.QtWidgets import QLabel
 
 from utils.color import Color
 
