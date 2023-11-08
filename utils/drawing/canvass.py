@@ -37,8 +37,14 @@ class Canvass(QWidget):
         self.temp_objects = []
         self.hover_objects = []
 
-        self.object_manager.objectAdded.connect(lambda: self.full_update())
-        self.object_manager.objectSelected.connect(lambda: self.full_update())
+        self.object_manager.objectAdded.connect(self.full_update)
+        self.object_manager.objectSelected.connect(self.full_update)
+        self.object_manager.objectDeleted.connect(self.full_update)
+        self.object_manager.objectColorChanged.connect(self.full_update)
+        self.object_manager.layerDeleted.connect(self.full_update)
+        self.object_manager.layerColorChanged.connect(self.full_update)
+        self.object_manager.layerHiddenChanged.connect(self.full_update)
+        self.object_manager.objectAgChanged.connect(self.full_update)
         
     def set_scale(self, scale=1):
         self.scale = scale
@@ -114,7 +120,7 @@ class Canvass(QWidget):
         if a0.key() == Qt.Key.Key_Escape:
             if self.drawer:
                 self.drawer.esc()
-        if a0.key() == Qt.Key.Key_Return:
+        elif a0.key() == Qt.Key.Key_Return:
             if self.drawer:
                 self.drawer.enter()
 

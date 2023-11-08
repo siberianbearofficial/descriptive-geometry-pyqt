@@ -81,9 +81,15 @@ def segment_projections(obj, plane, color, thickness):
 
 def line_projections(obj, plane, color, thickness=1):
     if plane == 'xy':
-        segment = obj.cut_by_y(0, CANVASS_Y // 2)
+        if obj.vector.y:
+            segment = obj.cut_by_y(0, CANVASS_Y // 2)
+        else:
+            segment = obj.cut_by_x(screen_x_to_ag_x(0), screen_x_to_ag_x(CANVASS_X))
     else:
-        segment = obj.cut_by_z(0, CANVASS_Y // 2)
+        if obj.vector.z:
+            segment = obj.cut_by_z(0, CANVASS_Y // 2)
+        else:
+            segment = obj.cut_by_x(screen_x_to_ag_x(0), screen_x_to_ag_x(CANVASS_X))
     return segment_projections(segment, plane, color, thickness)
 
 

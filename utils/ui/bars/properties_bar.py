@@ -1,19 +1,28 @@
+from uuid import UUID
+
 from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLayout, QComboBox, \
     QColorDialog, QScrollArea, QWidget, QLineEdit
 from PyQt6.QtCore import Qt
 
+from utils.objects.general_object import GeneralObject
+from utils.objects.object_manager import ObjectManager
 from utils.ui.bars.properties_bar_object import PropertiesBarObject
+from utils.ui.widgets.button import Button
 from utils.ui.widgets.color_button import ColorButton
+from utils.ui.widgets.line_edit import LineEdit
 from utils.ui.widgets.line_edit_widget import LineEditWidget
 from utils.color import *
 from utils.thickness import *
 
 
 class PropertiesBar(QWidget):
-    def __init__(self, theme_manager):
+    def __init__(self, theme_manager, object_manager: ObjectManager):
         super().__init__()
         self.theme_manager = theme_manager
+        self.object_manager = object_manager
         self._labels = []
+        self.object = None
+        self.object_dict = None
         self.mouse_pos = None
 
         self.setFixedSize(250, 350)
@@ -26,19 +35,39 @@ class PropertiesBar(QWidget):
         strange_layout.addWidget(strange_widget)
 
         main_layout = QVBoxLayout()
-        main_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        main_layout.setContentsMargins(1, 1, 1, 4)
         strange_widget.setLayout(main_layout)
 
         top_layout = QHBoxLayout()
+        top_layout.setContentsMargins(7, 7, 5, 7)
         main_layout.addLayout(top_layout)
 
+        self._object_label = QLabel()
+        top_layout.addWidget(self._object_label)
+
+        self._button_close = Button(self.theme_manager, 'delete')
+        self._button_close.setFixedSize(28, 28)
+        self._button_close.clicked.connect(self.hide)
+        top_layout.addWidget(self._button_close, 1, Qt.AlignmentFlag.AlignRight)
+
+        self._scroll_area = QScrollArea()
+        main_layout.addWidget(self._scroll_area)
+        self._scroll_widget = QWidget()
+        self._scroll_area.setWidget(self._scroll_widget)
+        self._scroll_area.setWidgetResizable(True)
+
+        scroll_layout = QVBoxLayout()
+        scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self._scroll_widget.setLayout(scroll_layout)
+
+        # self._name_edit = LineEdit(self.theme_manager)
         self._name_edit = QLineEdit()
-        main_layout.addWidget(self._name_edit)
+        scroll_layout.addWidget(self._name_edit)
 
         layer_layout = QHBoxLayout()
         layer_layout.setContentsMargins(0, 0, 0, 0)
         layer_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        main_layout.addLayout(layer_layout)
+        scroll_layout.addLayout(layer_layout)
 
         label = QLabel("Слой:")
         self._labels.append(label)
@@ -51,146 +80,47 @@ class PropertiesBar(QWidget):
         color_layout = QHBoxLayout()
         color_layout.setContentsMargins(0, 0, 0, 0)
         color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        main_layout.addLayout(color_layout)
+        scroll_layout.addLayout(color_layout)
 
-        self._color_button = ColorButton(self.theme_manager)
+        self._color_button = ColorButton(self.theme_manager, layer=True)
         self._color_button.setFixedSize(50, 22)
+        self._color_button.colorChanged.connect(self._on_color_changed)
         color_layout.addWidget(self._color_button)
 
-    def set_obj_name_func(self, func):
-        self.set_obj_name = func
-        return self
+        self.object_items = dict()
+        self.children_layout = QVBoxLayout()
+        scroll_layout.addLayout(self.children_layout)
 
-    def set_obj_color_func(self, func):
-        self.set_obj_color = func
-        return self
+        self.object_manager.objectSelected.connect(self.open_object)
 
-    def set_obj_layer_func(self, func):
-        self.set_obj_layer = func
-        return self
-
-    def set_obj_thickness_func(self, func):
-        self.set_obj_thickness = func
-        return self
-
-    def set_obj_ag_object_func(self, func):
-        self.set_obj_ag_object = func
-        return self
-
-    def set_obj_config_func(self, func):
-        self.set_obj_config = func
-        return self
-
-    def set_layers_list(self, layers_list):
-        self.layers_list = layers_list
-        return self
-
-    def update_layers_widget(self, *args):
-        self.layer_combobox.clear()
-        for layer in self.layers_list:
-            self.layer_combobox.addItem(layer.name)
-
-    def on_layer_change(self, layer):
-        if self.set_obj_layer and layer >= 0:
-            self.set_obj_layer(int(layer))
-
-    def on_color_change(self):
-        if self.set_obj_color:
-            color = Color(QColorDialog.getColor(self.current_object.color))
-            self.change_stylesheet(self.color_button, f'background-color: {color};')
-            self.set_obj_color(color=color)
-
-    def change_stylesheet(self, obj=None, new_style_sheet=None):
-        self.color_button_stylesheet[1] = new_style_sheet
-        self.color_button.setStyleSheet('\n'.join(self.color_button_stylesheet))
-        # print('\n'.join(self.color_button_stylesheet))
-
-    def on_thickness_change(self, thickness):
-        if self.set_obj_thickness:
-            match thickness:
-                case 0:
-                    self.set_obj_thickness(thickness=Thickness.LIGHT_THICKNESS)
-                case 1:
-                    self.set_obj_thickness(thickness=Thickness.MEDIUM_THICKNESS)
-                case 2:
-                    self.set_obj_thickness(thickness=Thickness.BOLD_THICKNESS)
-                case _:
-                    self.set_obj_thickness(thickness=Thickness.fix(thickness))
-
-    def on_name_change(self, name):
-        if self.set_obj_name:
-            self.set_obj_name(name=name)
-
-    def on_ag_object_change(self, path, value):
-        self.set_obj_ag_object(self.change_current_object_dict(path, value, self.current_object.to_dict()['ag_object']))
-
-    def change_current_object_dict(self, path, value, dct):
-        if len(path) == 1:
-            dct[path[0]] = value
-            return dct
-        dct.update({path[0]: self.change_current_object_dict(path[1:], value, dct[path[0]])})
-        return dct
-
-    def open_object(self, obj):
-        if obj:
-            # print('Object:', obj)
-            self.current_object = obj
-            self.show_object()
-            self.show()
-        elif self.current_object:
-            self.clear_objects()
+    def open_object(self, obj_id: UUID | None):
+        if obj_id is None:
+            self.object = None
             self.hide()
-            self.current_object = None
+            for el in self.object_items.values():
+                el.setParent(None)
+            self.object_items.clear()
+        else:
+            self.object = self.object_manager.get_object(obj_id)
+            self.object_dict = self.object.to_dict()
+            self.show()
+            self._object_label.setText(self.object.ag_object.__class__.__name__)
+            self._name_edit.setText(self.object.name)
+            self._color_button.set_color(self.object.color)
+            for key, item in self.object_dict['ag_object'].items():
+                if key == 'class':
+                    continue
+                self.children_layout.addWidget(widget := PropertiesBarObject(
+                    self.theme_manager, key, self.object_dict['ag_object']))
+                self.object_items[key] = widget
+                widget.valueChanged.connect(self._on_ag_obj_changed)
+            self.set_styles()
 
-    def clear_objects(self):
-        for i in range(self.obj_layout.count() - 1, -1, -1):
-            self.obj_layout.itemAt(i).widget().deleteLater()
+    def _on_ag_obj_changed(self):
+        self.object_manager.set_object_ag_obj(self.object_dict['ag_object'])
 
-    def show_objects(self, struct):
-        self.clear_objects()
-        self.obj = PropertiesBarObject(struct=struct['ag_object'], parent=self.central_widget,
-                                       font_manager=self.font_manager, name='Objects',
-                                       on_editing_finished=self.on_ag_object_change).set_margin(0)
-        self.obj_layout.addWidget(self.obj)
-
-    def thickness_to_ind(self, thickness):
-        match thickness:
-            case Thickness.LIGHT_THICKNESS:
-                return 0
-            case Thickness.MEDIUM_THICKNESS:
-                return 1
-            case Thickness.BOLD_THICKNESS:
-                return 2
-            case _:
-                return self.thickness_to_ind(Thickness.fix(thickness))
-
-    def show_object(self):
-        self.name_line_edit.setText(self.current_object.name)
-        self.change_stylesheet(self.color_button, f'background-color: {self.current_object.color};')
-
-        self.thickness_combobox.setCurrentIndex(self.thickness_to_ind(self.current_object.thickness))
-
-        match self.current_object.thickness:
-            case Thickness.LIGHT_THICKNESS:
-                self.thickness_combobox.setCurrentIndex(0)
-            case Thickness.MEDIUM_THICKNESS:
-                self.thickness_combobox.setCurrentIndex(1)
-            case Thickness.BOLD_THICKNESS:
-                self.thickness_combobox.setCurrentIndex(2)
-            case _:
-                self.current_object.thickness = Thickness.fix(self.current_object.thickness)
-
-        self.layer_combobox.setCurrentIndex(0)  # TODO: set current layer
-        self.show_objects(self.current_object.to_dict())
-
-    def hide(self):
-        super().hide()
-        return self
-
-    def clear(self):
-        self.current_object = None
-        self.name_line_edit.clear()
-        self.thickness_combobox.setCurrentIndex(0)
+    def _on_color_changed(self, color):
+        self.object_manager.set_object_color(color)
 
     def mousePressEvent(self, a0) -> None:
         if a0.button() == Qt.MouseButton.LeftButton:
@@ -221,8 +151,14 @@ class PropertiesBar(QWidget):
 
     def set_styles(self):
         self.setStyleSheet(self.theme_manager.base_css(palette='Menu'))
+        self._scroll_widget.setStyleSheet('border: none;')
+        self.theme_manager.auto_css(self._scroll_area, border=False, palette='Menu')
+        self._scroll_area.setStyleSheet('border: none;')
         for el in self._labels:
             self.theme_manager.auto_css(el)
-        for el in [self._name_edit, self._layer_box]:
+        for el in [self._layer_box, self._object_label, self._button_close, self._name_edit]:
             self.theme_manager.auto_css(el)
+        for el in self.object_items.values():
+            el.set_styles()
+        # self._name_edit.set_styles()
         self._color_button.set_styles()

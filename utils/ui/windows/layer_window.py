@@ -9,6 +9,7 @@ from core.config import APP_NAME
 from utils.objects.layer import Layer
 from utils.ui.widgets.button import Button
 from utils.ui.widgets.color_button import ColorButton
+from utils.ui.widgets.line_edit import LineEdit
 from utils.ui.widgets.line_edit_widget import LineEditWidget
 from utils.color import *
 
@@ -146,7 +147,7 @@ class LayerItem(QWidget):
         else:
             self._button_show.hide()
 
-        self._color_button = ColorButton(self.tm)
+        self._color_button = ColorButton(self.tm, _random=True)
         self._color_button.setFixedSize(32, 22)
         self._color_button.colorChanged.connect(lambda color: self.colorChanged.emit(self._layer.id, color))
         main_layout.addWidget(self._color_button)
@@ -170,7 +171,6 @@ class LayerItem(QWidget):
         self.hiddenChanged.emit(self._layer.id, False)
 
     def set_hidden(self, flag):
-        print(flag)
         if flag:
             self._button_hide.hide()
             self._button_show.show()
@@ -194,29 +194,3 @@ class LayerItem(QWidget):
             self.tm.auto_css(el)
         self._color_button.set_styles()
         self._name_edit.set_styles()
-
-
-class LineEdit(QLineEdit):
-    def __init__(self, tm, text=''):
-        super().__init__()
-        self.tm = tm
-        self.setText(text)
-        self.setReadOnly(True)
-        self.editingFinished.connect(self._on_editing_finished)
-
-    def mouseDoubleClickEvent(self, a0) -> None:
-        if a0.button() == Qt.MouseButton.LeftButton:
-            self.setReadOnly(False)
-            self.set_styles()
-        else:
-            super().mouseDoubleClickEvent(a0)
-
-    def _on_editing_finished(self):
-        self.setReadOnly(True)
-        self.set_styles()
-
-    def set_styles(self):
-        if self.isReadOnly():
-            self.tm.auto_css(self, palette='Menu', border=False)
-        else:
-            self.tm.auto_css(self, palette='Main')

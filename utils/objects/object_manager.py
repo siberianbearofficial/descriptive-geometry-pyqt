@@ -13,6 +13,9 @@ class ObjectManager(QObject):
     objectAdded = pyqtSignal(GeneralObject)
     objectDeleted = pyqtSignal(UUID)
     objectSelected = pyqtSignal(object)
+    objectColorChanged = pyqtSignal(UUID)
+    objectAgChanged = pyqtSignal(UUID)
+    objectRenamed = pyqtSignal(UUID)
 
     layerAdded = pyqtSignal(Layer)
     layerDeleted = pyqtSignal(UUID)
@@ -55,30 +58,19 @@ class ObjectManager(QObject):
         if self.objects_changed:
             self.objects_changed(self.layers[self.current_layer])
 
-    def find_by_id(self, _id):
-        for i in range(len(self.layers)):
-            for j in range(len(self.layers[i].objects)):
-                if self.layers[i].objects[j].id == _id:
-                    return i, j
+    def delete_object(self, obj_id=None, history_record=True):
+        if obj_id is None:
+            obj_id = self.selected_object
+        if not isinstance(obj_id, UUID):
+            return
+        obj = self.get_object(obj_id)
 
-    def delete_object(self, layer=None, index=None, history_record=True):
-        if layer is None or index is None:
-            obj = self.selected_object
-            layer, index = self.selected_object_index
-        else:
-            obj = self.layers[layer].objects[index]
-
-        if history_record:
-            self.hm.add_record('delete_object', dict=obj.to_dict(), index=(layer, index))
-        self.layers[layer].delete_object(index)
-        self.objectDeleted.emit(obj.id)
-        if (layer, index) == self.selected_object_index:
-            self.selected_object_index = None
-        for func in self.func_object_selected:
-            func(None)
-        self.func_plot_update()
-        if self.objects_changed:
-            self.objects_changed(self.layers[self.current_layer])
+        # if history_record:
+        #     self.hm.add_record('delete_object', dict=obj.to_dict(), index=obj_id)
+        self.objects.pop(obj_id)
+        self.objectDeleted.emit(obj_id)
+        if obj_id == self.selected_object:
+            self.select_object(None)
 
     def add_layer(self, name=None, index=None, hidden=False, dct=None, history_record=True):
         if not name and not dct:
@@ -104,19 +96,12 @@ class ObjectManager(QObject):
         self.layerSelected.emit(layer_id)
 
     def select_object(self, _id):
-        self.last_selected_object = self.selected_object
         self.selected_object = _id
         self.objectSelected.emit(_id)
 
-    def set_object_hidden(self, hidden):
-        # TODO: show and hide objects
-        raise NotImplementedError
-
     def set_layer_hidden(self, layer_id, hidden, history_record=True):
-        if self[layer_id].hidden == hidden:
-            return
         if history_record:
-            self.hm.add_record('layer_hidden', index=layer_id, hidden=self[layer_id].hidden)
+            self.hm.add_record('layer_hidden', index=layer_id, hidden=self.layers[layer_id].hidden)
         self.layers[layer_id].hidden = hidden
         self.layerHiddenChanged.emit(layer_id)
 
@@ -140,19 +125,21 @@ class ObjectManager(QObject):
     def get_object(self, obj_id):
         return self.objects[obj_id]
 
+    def get_layer(self, layer_id):
+        return self.layers[layer_id]
+
     def get_object_color(self, obj_id):
         obj = self.objects[obj_id]
         if obj.color.type == ObjectColor.STANDARD:
             return self.theme_manager['Colors'][obj.color.color]
+        if obj.color.type == ObjectColor.FROM_LAYER:
+            return self.theme_manager['Colors'][self.layers[obj.layer_id].color.color]
 
     def set_layer_color(self, color, layer=None, history_record=True):
-        print(color, layer)
         if layer is None:
             layer = self.current_layer
-        if self[layer].color == color:
-            return
         if history_record:
-            self.hm.add_record('layer_color', index=layer, color=self[layer].color)
+            self.hm.add_record('layer_color', index=layer, color=self.layers[layer].color)
         self.layers[layer].color = color
         self.layerColorChanged.emit(layer)
 
@@ -170,10 +157,8 @@ class ObjectManager(QObject):
     def set_layer_name(self, name, layer=None, history_record=True):
         if layer is None:
             layer = self.current_layer
-        if self[layer].name == name:
-            return
         if history_record:
-            self.hm.add_record('layer_name', index=layer, name=self[layer].name)
+            self.hm.add_record('layer_name', index=layer, name=self.layers[layer].name)
         self.layers[layer].name = name
         self.layerNameChanged.emit(layer)
 
@@ -191,24 +176,22 @@ class ObjectManager(QObject):
     def set_object_name(self, name, index=None, history_record=True):
         if index is None:
             index = self.selected_object_index or self.last_selected_object_index
-        if self[index].name == name:
-            return
+        obj = self.get_object(index)
         if history_record:
-            self.hm.add_record('set_obj_name', name=self[index].name, index=index)
-        obj = self[index]
+            self.hm.add_record('set_obj_name', name=obj.name, index=index)
         obj.set_name(name)
-        self.func_plot_obj(obj.id, obj)
+        self.objectRenamed.emit(obj.id)
 
-    def set_object_color(self, color, index=None, history_record=True):
-        if index is None:
-            index = self.selected_object_index or self.last_selected_object_index
-        if self[index].color == color:
-            return
+    def set_object_color(self, color: ObjectColor, obj_id=None, history_record=True):
+        if obj_id is None:
+            obj_id = self.selected_object
+        obj = self.get_object(obj_id)
+        if color.type == ObjectColor.FROM_LAYER and self.layers[obj.layer_id].color.type == ObjectColor.RANDOM:
+            color = random.choice(STD_COLORS)
         if history_record:
-            self.hm.add_record('set_obj_color', color=self[index].color, index=index)
-        obj = self[index]
+            self.hm.add_record('set_obj_color', color=obj.color, index=obj_id)
         obj.set_color(color)
-        self.func_plot_obj(obj.id, obj)
+        self.objectColorChanged.emit(obj_id)
 
     def set_object_thickness(self, thickness, index=None, history_record=True):
         if index is None:
@@ -221,16 +204,14 @@ class ObjectManager(QObject):
         obj.set_thickness(thickness)
         self.func_plot_obj(obj.id, obj)
 
-    def set_object_ag_obj(self, dct, index=None, history_record=True):
-        if index is None:
-            index = self.selected_object_index or self.last_selected_object_index
-        if self[index].to_dict()['ag_object'] == dct:
-            return
-        if history_record:
-            self.hm.add_record('set_obj_ag_object', dct=self[index].thickness, index=index)
-        obj = self[index]
+    def set_object_ag_obj(self, dct, obj_id=None, history_record=True):
+        if obj_id is None:
+            obj_id = self.selected_object
+        # if history_record:
+        #     self.hm.add_record('set_obj_ag_object', dct=self[index].thickness, index=index)
+        obj = self.get_object(obj_id)
         obj.set_ag_object(dct)
-        self.func_plot_obj(obj.id, obj)
+        self.objectAgChanged.emit(obj_id)
 
     def set_object_config(self, config, index=None, history_record=True):
         if index is None:
@@ -269,11 +250,6 @@ class ObjectManager(QObject):
                     self.selected_object_index = None
         if index is not None and history_record:
             self.hm.add_record('set_obj_layer', layer=index[0], index=(new_layer, len(self[new_layer].objects) - 1))
-
-    def __getitem__(self, item):
-        if isinstance(item, tuple):
-            return self.layers[item[0]].objects[item[1]]
-        return self.layers[item]
 
     def serialize(self):
         ready = {'current_layer': self.current_layer, 'layers': [layer.to_dict() for layer in self.layers]}

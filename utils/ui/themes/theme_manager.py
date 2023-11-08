@@ -1013,7 +1013,7 @@ QMenuBar::item:selected {{
         path = f"{data_dir}/{name}_{QColor(*color).name()}.png"
         if not os.path.isfile(path):
             os.makedirs(data_dir, exist_ok=True)
-            image = Image.open(io.BytesIO(resources.get(name)))
+            image = Image.open(io.BytesIO(resources[name]))
 
             # image = image.convert("RGBA")
             datas = image.getdata()

@@ -8,7 +8,7 @@ from utils.color import *
 class ColorButton(QPushButton):
     colorChanged = pyqtSignal(ObjectColor)
 
-    def __init__(self, theme_manager, color: ObjectColor = RANDOM_COLOR, _random=True, layer=False, other=False):
+    def __init__(self, theme_manager, color: ObjectColor = RANDOM_COLOR, _random=False, layer=False, other=False):
         super().__init__()
         self.color = color
         self._theme_manager = theme_manager
@@ -27,8 +27,12 @@ class ColorButton(QPushButton):
             self.colorChanged.emit(self.color)
         self.set_styles()
 
+    def set_color(self, color):
+        self.color = color
+        self.set_styles()
+
     def set_styles(self):
-        if self.color.type == ObjectColor.RANDOM:
+        if self.color.type == ObjectColor.RANDOM or self.color.type == ObjectColor.FROM_LAYER:
             self._theme_manager.auto_css(self, palette='Main')
             self.setIcon(QIcon(self._theme_manager.get_image('random')))
             return
@@ -59,6 +63,13 @@ class ColorWindow(QMenu):
             self._button_random.hide()
         main_layout.addWidget(self._button_random)
 
+        self._button_layer = QPushButton("Цвет слоя")
+        self._button_layer.setFixedHeight(22)
+        self._button_layer.clicked.connect(lambda: self.return_color(LAYER_COLOR))
+        if not layer:
+            self._button_layer.hide()
+        main_layout.addWidget(self._button_layer)
+
         grid_layout = QGridLayout()
         main_layout.addLayout(grid_layout)
         self._color_buttons = []
@@ -83,7 +94,7 @@ class ColorWindow(QMenu):
 
     def set_styles(self):
         self.tm.auto_css(self)
-        for el in [self._button_random]:
+        for el in [self._button_random, self._button_layer]:
             self.tm.auto_css(el, border=False)
         for i in range(12):
             self._color_buttons[i].setStyleSheet(self.tm.button_css(palette='Main').replace(

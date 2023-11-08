@@ -54,9 +54,10 @@ class MainWindow(QMainWindow):
         self.top_bar.intersectionClicked.connect(lambda: self.plot.draw(Drawer.INTERSECTION))
 
         # Properties bar
-        self.properties_bar = PropertiesBar(self.tm)
+        self.properties_bar = PropertiesBar(self.tm, self.object_manager)
         self.properties_bar.setParent(self.plot)
-        # self.properties_bar.show()
+        self.properties_bar.move(5, 5)
+        self.properties_bar.hide()
 
         # Layer window
 
@@ -119,7 +120,7 @@ class MainWindow(QMainWindow):
                     {
                         'Undo': (lambda: self.object_manager.hm.undo(), 'Alt+Z'),
                         'Redo': (lambda: self.object_manager.hm.undo(redo=True), 'Alt+Shift+Z'),
-                        'Delete': (lambda: self.object_manager.delete_object(), 'Alt+Delete'),
+                        'Delete': (lambda: self.object_manager.delete_object(), 'Delete'),
                         'Copy': (lambda: print('copy'), 'Ctrl+C'),
                         'Paste': (lambda: print('paste'), 'Ctrl+V'),
                     },

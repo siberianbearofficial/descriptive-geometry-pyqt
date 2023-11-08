@@ -204,10 +204,8 @@ class GeneralObject:
         return False
 
     def set_ag_object(self, dct):
-        if dct != self.to_dict()['ag_object']:
-            self.ag_object = unpack_ag_object(dct)
-            return True
-        return False
+        self.ag_object = unpack_ag_object(dct)
+        self.update_projections()
 
     def update_projections(self):
         self.xy_projections, self.xz_projections, self.connection_lines = projections.get_projection(
