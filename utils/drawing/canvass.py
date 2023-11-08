@@ -18,7 +18,6 @@ class Canvass(QWidget):
         self.theme_manager = theme_manager
         self.object_manager = object_manager
         self.painter = QPainter()
-        self.sm = snap.SnapManager(self)
         self.drawer = None
 
         self.bg_color = ''
