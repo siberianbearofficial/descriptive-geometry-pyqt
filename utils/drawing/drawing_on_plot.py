@@ -4,11 +4,11 @@ from typing import Literal
 from core.config import CANVASS_Y
 from utils.drawing.projections.projection_manager import ScreenPoint, ThinScreenPoint
 from utils.drawing.projections.projection_manager import ScreenSegment
-from utils.drawing.snap import distance, nearest_point
 import core.angem as ag
 from PyQt6.QtCore import Qt, QThread, QPoint
 
 import utils.drawing.projections.projection_manager as projections
+from utils.drawing.snap import SnapManager
 from utils.objects.general_object import GeneralObject
 
 SEP = ','
@@ -961,8 +961,8 @@ class _AGObject:
 
     def __sub__(self, other: '_AGObject'):
         return _AgAriphmeticObject(self, other, self.ag_class.__sub__)
-    
-    
+
+
 class _AgAriphmeticObject:
     def __init__(self, obj1, obj2, func):
         self.obj1 = obj1
@@ -990,6 +990,7 @@ class Drawer(QThread):
         super().__init__()
         self.canvass = canvass
         self.obj = obj
+        self.sm = SnapManager(self.canvass.object_manager)
         self.inversion = inversion
 
         self._on_mouse_move = None
@@ -1074,11 +1075,19 @@ class Drawer(QThread):
         else:
             self.canvass.set_hover_objects(obj)
 
-    def _select_screen_point(self, *objects):
+    def _select_screen_point(self, *objects, plane='xy', x=None, c=None):
         self._res_pos = None
 
-        self._on_mouse_move = lambda pos: self._update([obj(pos) for obj in objects])
-        self._on_mouse_left = lambda pos: self._set_res_pos(pos)
+        def mouse_move(pos):
+            pos = self.sm.get_snap(pos, plane, x, c)
+            self._update([obj(pos) for obj in objects])
+
+        def mouse_left(pos):
+            pos = self.sm.get_snap(pos, plane, x, c)
+            self._set_res_pos(pos)
+
+        self._on_mouse_move = mouse_move
+        self._on_mouse_left = mouse_left
         self._on_mouse_right = lambda pos: self.terminate()
 
         while True:
@@ -1142,24 +1151,24 @@ class Drawer(QThread):
 
     def draw_point(self):
         x, y = self._select_screen_point(self._screen_point())
-        _, z = self._select_screen_point(self._screen_point(x=x), self._connection_line(x, y, x2=x))
+        _, z = self._select_screen_point(self._screen_point(x=x), self._connection_line(x, y, x2=x), plane='xz', x=x)
         self.result = self._ag_point(x, y, z)()
 
     def draw_segment(self):
         x1, y1 = self._select_screen_point(self._screen_point())
         x2, y2 = self._select_screen_point(self._screen_point(), self._screen_segment(x1, y1))
-        _, z1 = self._select_screen_point(self._screen_point(x=x1), self._connection_line(x1, y1, x2=x1))
+        _, z1 = self._select_screen_point(self._screen_point(x=x1), self._connection_line(x1, y1, x2=x1), plane='xz')
         _, z2 = self._select_screen_point(self._screen_point(x=x2), self._connection_line(x2, y2, x2=x2),
-                                          self._screen_segment(x1, z1, x2=x2))
+                                          self._screen_segment(x1, z1, x2=x2), plane='xz')
         self.result = ag.Segment(self._ag_point(x1, y1, z1)(), self._ag_point(x2, y2, z2)())
 
     def draw_line(self):
         x1, y1 = self._select_screen_point(self._screen_point())
         x2, y2 = self._select_screen_point(self._screen_point(), self._screen_segment(x1, y1))
-        _, z1 = self._select_screen_point(self._screen_point(x=x1), self._connection_line(x1, y1, x2=x1))
+        _, z1 = self._select_screen_point(self._screen_point(x=x1), self._connection_line(x1, y1, x2=x1), plane='xz')
         p1 = self._ag_point(x1, y1, z1)()
         _, z2 = self._select_screen_point(self._screen_point(x=x2), self._connection_line(x2, y2, x2=x2),
-                                          self._ag_object(ag.Line, p1, self._ag_point(x=x2, y=y2)))
+                                          self._ag_object(ag.Line, p1, self._ag_point(x=x2, y=y2)), plane='xz')
         self.result = ag.Line(self._ag_point(x1, y1, z1)(), self._ag_point(x2, y2, z2)())
 
     def draw_perpendicular(self):
@@ -1178,7 +1187,7 @@ class Drawer(QThread):
     def draw_plane(self):
         x, _ = self._select_screen_point(self._screen_point(y=CANVASS_Y // 2))
         x2, y2 = self._select_screen_point(self._screen_point(), self._screen_segment(x, CANVASS_Y // 2))
-        x3, z3 = self._select_screen_point(self._screen_point(), self._screen_segment(x, CANVASS_Y // 2))
+        x3, z3 = self._select_screen_point(self._screen_point(), self._screen_segment(x, CANVASS_Y // 2), plane='xz')
         self.result = ag.Plane(self._ag_point(x, CANVASS_Y // 2, CANVASS_Y // 2)(),
                                self._ag_point(x2, y2, CANVASS_Y // 2)(),
                                self._ag_point(x3, CANVASS_Y // 2, z3)())
@@ -1188,20 +1197,21 @@ class Drawer(QThread):
         x2, y2 = self._select_screen_point(self._screen_point(), self._screen_segment(x1, y1))
         x3, y3 = self._select_screen_point(self._screen_point(), self._screen_segment(x1, y1),
                                            self._screen_segment(x2, y2))
-        _, z1 = self._select_screen_point(self._screen_point(x=x1), self._connection_line(x1, y1, x2=x1))
+        _, z1 = self._select_screen_point(self._screen_point(x=x1), self._connection_line(x1, y1, x2=x1), plane='xz')
         _, z2 = self._select_screen_point(self._screen_point(x=x2), self._connection_line(x2, y2, x2=x2),
-                                          self._screen_segment(x1, z1, x2=x2))
+                                          self._screen_segment(x1, z1, x2=x2), plane='xz')
         _, z3 = self._select_screen_point(self._screen_point(x=x3), self._connection_line(x3, y3, x2=x3),
-                                          self._screen_segment(x1, z1, x2=x3), self._screen_segment(x2, z2, x2=x3))
+                                          self._screen_segment(x1, z1, x2=x3), self._screen_segment(x2, z2, x2=x3),
+                                          plane='xz')
         self.result = ag.Plane(self._ag_point(x1, y1, z1)(), self._ag_point(x2, y2, z2)(),
                                self._ag_point(x3, y3, z3)())
 
     def draw_cylinder(self):
         x1, y1 = self._select_screen_point(self._screen_point())
         x2, y2 = self._select_screen_point(self._screen_point(), self._screen_segment(x1, y1))
-        _, z1 = self._select_screen_point(self._screen_point(x=x1), self._connection_line(x1, y1, x2=x1))
+        _, z1 = self._select_screen_point(self._screen_point(x=x1), self._connection_line(x1, y1, x2=x1), plane='xz')
         _, z2 = self._select_screen_point(self._screen_point(x=x2), self._connection_line(x2, y2, x2=x2),
-                                          self._screen_segment(x1, z1, x2=x2))
+                                          self._screen_segment(x1, z1, x2=x2), plane='xz')
         p1 = self._ag_point(x1, y1, z1)()
         p2 = self._ag_point(x2, y2, z2)()
         plane = ag.Plane(ag.Vector(p1, p2), p1)
@@ -1222,9 +1232,9 @@ class Drawer(QThread):
     def draw_cone(self):
         x1, y1 = self._select_screen_point(self._screen_point())
         x2, y2 = self._select_screen_point(self._screen_point(), self._screen_segment(x1, y1))
-        _, z1 = self._select_screen_point(self._screen_point(x=x1), self._connection_line(x1, y1, x2=x1))
+        _, z1 = self._select_screen_point(self._screen_point(x=x1), self._connection_line(x1, y1, x2=x1), plane='xz')
         _, z2 = self._select_screen_point(self._screen_point(x=x2), self._connection_line(x2, y2, x2=x2),
-                                          self._screen_segment(x1, z1, x2=x2))
+                                          self._screen_segment(x1, z1, x2=x2), plane='xz')
         p1 = self._ag_point(x1, y1, z1)()
         p2 = self._ag_point(x2, y2, z2)()
         plane = ag.Plane(ag.Vector(p1, p2), p1)
@@ -1244,7 +1254,7 @@ class Drawer(QThread):
 
     def draw_tor(self):
         x1, y1 = self._select_screen_point(self._screen_point())
-        _, z1 = self._select_screen_point(self._screen_point(x=x1), self._connection_line(x1, y1, x2=x1))
+        _, z1 = self._select_screen_point(self._screen_point(x=x1), self._connection_line(x1, y1, x2=x1), plane='xz')
         center = self._ag_point(x1, y1, z1)()
 
         xd, yd = self._select_screen_point(lambda pos: ag.Circle(center, ag.distance(
@@ -1256,7 +1266,7 @@ class Drawer(QThread):
             self._ag_object(ag.Circle, center, radius, self._ag_object(ag.Vector, center, self._ag_point(z=z1))))
         self._temp_objects.pop()
         _, z2 = self._select_screen_point(
-            self._ag_object(ag.Circle, center, radius, self._ag_object(ag.Vector, center, self._ag_point(x2, y2))))
+            self._ag_object(ag.Circle, center, radius, self._ag_object(ag.Vector, center, self._ag_point(x2, y2))), plane='xz')
         vector = ag.Vector(center, self._ag_point(x2, y2, z2)())
         self._temp_objects.pop()
 
@@ -1268,7 +1278,7 @@ class Drawer(QThread):
 
     def draw_sphere(self):
         x, y = self._select_screen_point(self._screen_point())
-        _, z = self._select_screen_point(self._screen_point(x=x), self._connection_line(x, y, x2=x))
+        _, z = self._select_screen_point(self._screen_point(x=x), self._connection_line(x, y, x2=x), plane='xz')
         p = self._ag_point(x, y, z)()
         xd, yd = self._select_screen_point(self._ag_object(ag.Sphere, p, lambda pos: ag.distance(
             p, self._ag_point(z=z)(pos))))
