@@ -1,5 +1,5 @@
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QWidget, QHBoxLayout
+from PyQt6.QtWidgets import QWidget, QHBoxLayout, QPushButton
 
 from utils.ui.widgets.button import Button
 from utils.ui.widgets.layer_box import LayerBox
@@ -7,6 +7,7 @@ from utils.ui.widgets.layer_box import LayerBox
 
 class TopBar(QWidget):
     intersectionClicked = pyqtSignal()
+    inversionChanged = pyqtSignal(bool)
 
     def __init__(self, theme_manager, object_manager):
         super().__init__()
@@ -38,6 +39,10 @@ class TopBar(QWidget):
         self.layer_box = LayerBox(self.theme_manager, self.object_manager)
         layout.addWidget(self.layer_box)
 
+        self.plane_box = PlaneIndicator(self.theme_manager)
+        self.plane_box.inversionChanged.connect(self.inversionChanged.emit)
+        layout.addWidget(self.plane_box)
+
         self._widget = QWidget()
         layout.addWidget(self._widget, 100)
 
@@ -55,6 +60,7 @@ class TopBar(QWidget):
                    self.button_authorization]:
             self.theme_manager.auto_css(el)
         self.layer_box.set_styles()
+        self.plane_box.set_styles()
         self._widget.setStyleSheet('border: none;')
 
 
@@ -62,3 +68,47 @@ class TopBarButton(Button):
     def __init__(self, theme_manager, image, tooltip):
         super().__init__(theme_manager, image, css='Menu', tooltip=tooltip)
         self.setFixedSize(30, 30)
+
+
+class PlaneIndicator(QWidget):
+    inversionChanged = pyqtSignal(bool)
+
+    def __init__(self, tm):
+        super().__init__()
+        self.tm = tm
+
+        layout = QHBoxLayout()
+        layout.setSpacing(0)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+
+        self.button_xy = QPushButton('XY')
+        self.button_xy.setCheckable(True)
+        self.button_xy.setChecked(True)
+        self.button_xy.setFixedSize(28, 24)
+        self.button_xy.clicked.connect(self._on_xy_clicked)
+        layout.addWidget(self.button_xy)
+
+        self.button_xz = QPushButton('XZ')
+        self.button_xz.setCheckable(True)
+        self.button_xz.setFixedSize(28, 24)
+        self.button_xz.clicked.connect(self._on_xz_clicked)
+        layout.addWidget(self.button_xz)
+
+    def _on_xy_clicked(self, flag):
+        if flag:
+            self.button_xz.setChecked(False)
+            self.inversionChanged.emit(False)
+        self.button_xy.setChecked(True)
+
+    def _on_xz_clicked(self, flag):
+        if flag:
+            self.button_xy.setChecked(False)
+            self.inversionChanged.emit(True)
+        self.button_xz.setChecked(True)
+
+    def set_styles(self):
+        self.button_xy.setFont(self.tm.font_medium)
+        self.button_xz.setFont(self.tm.font_medium)
+        self.button_xy.setStyleSheet(self.tm.button_css(palette='Menu', border=True, br_right=False))
+        self.button_xz.setStyleSheet(self.tm.button_css(palette='Menu', border=True, br_left=False))

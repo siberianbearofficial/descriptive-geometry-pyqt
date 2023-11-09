@@ -121,6 +121,9 @@ class Plot(QScrollArea):
         else:
             self.canvass.set_scale(new_zoom)
 
+    def set_inversion(self, flag):
+        self.canvass.inversion = flag
+
     def end(self):
         self.setMouseTracking(False)
         self.cmd_command = None

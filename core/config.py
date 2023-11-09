@@ -6,5 +6,5 @@ GRAPHICS = 2
 APP_NAME = "DescriptiveGeometry"
 APP_ORGANISATION = "ComplexVisions"
 APP_URL = ""
-APP_VERSION = '3.0.3'
+APP_VERSION = '3.0.5'
 

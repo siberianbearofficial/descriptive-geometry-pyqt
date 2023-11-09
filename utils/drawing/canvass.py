@@ -19,6 +19,7 @@ class Canvass(QWidget):
         self.theme_manager = theme_manager
         self.object_manager = object_manager
         self.painter = QPainter()
+        self.inversion = False
         self.drawer = None
         self.object_mover = None
 
@@ -159,7 +160,7 @@ class Canvass(QWidget):
 
     def start_drawing(self, object_type):
         self.setMouseTracking(True)
-        self.drawer = Drawer(self, object_type)
+        self.drawer = Drawer(self, object_type, inversion=self.inversion)
         self.drawer.finished.connect(self.end_drawing)
         self.drawer.start()
 

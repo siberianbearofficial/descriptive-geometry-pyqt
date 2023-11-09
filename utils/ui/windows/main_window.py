@@ -52,6 +52,7 @@ class MainWindow(QMainWindow):
         # Plot
         self.plot = Plot(self.tm, self.object_manager)
         self.top_bar.intersectionClicked.connect(lambda: self.plot.draw(Drawer.INTERSECTION))
+        self.top_bar.inversionChanged.connect(self.plot.set_inversion)
 
         # Properties bar
         self.properties_bar = PropertiesBar(self.tm, self.object_manager)
