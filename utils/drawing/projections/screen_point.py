@@ -4,7 +4,7 @@ from utils.color import *
 
 
 class ScreenPoint:
-    def __init__(self, x, y, color=None, thickness=4):
+    def __init__(self, x, y, color=None, thickness=5):
         self.x = x
         self.y = y
         self.color = color

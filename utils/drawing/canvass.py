@@ -6,6 +6,7 @@ from core.config import CANVASS_Y, CANVASS_X
 from utils.color import Color
 from utils.drawing import snap
 from utils.drawing.drawing_on_plot import Drawer
+from utils.drawing.projections.movable_point import ObjectMoveManager
 from utils.drawing.projections.screen_point import ScreenPoint
 from utils.drawing.projections.screen_segment import ScreenSegment
 from utils.objects.general_object import GeneralObject
@@ -19,6 +20,7 @@ class Canvass(QWidget):
         self.object_manager = object_manager
         self.painter = QPainter()
         self.drawer = None
+        self.object_mover = None
 
         self.bg_color = ''
         self.default_color = ''
@@ -37,7 +39,7 @@ class Canvass(QWidget):
         self.hover_objects = []
 
         self.object_manager.objectAdded.connect(self.full_update)
-        self.object_manager.objectSelected.connect(self.full_update)
+        self.object_manager.objectSelected.connect(self._on_object_selected)
         self.object_manager.objectDeleted.connect(self.full_update)
         self.object_manager.objectColorChanged.connect(self.full_update)
         self.object_manager.layerDeleted.connect(self.full_update)
@@ -63,12 +65,13 @@ class Canvass(QWidget):
     def draw_point(self, point, color=None, thickness=1):
         if color is None:
             color = self.default_color
-        self.set_pen(color, thickness * self.thickness_scale)
+        thickness *= self.thickness_scale
+        self.set_pen(color, thickness)
         brush = self.painter.brush()
         self.painter.setBrush(Color(self.bg_color))
         self.painter.drawEllipse(
-            int(point[0] * self.scale - 5 * self.thickness_scale), int(point[1] * self.scale - 5 * self.thickness_scale),
-            int(10 * self.thickness_scale), int(10 * self.thickness_scale))
+            int(point[0] * self.scale - 1 * thickness), int(point[1] * self.scale - 1 * thickness),
+            int(2 * thickness), int(2 * thickness))
         self.painter.setBrush(brush)
 
     def draw_object(self, obj, hover=False, selected=False, color=None):
@@ -101,8 +104,11 @@ class Canvass(QWidget):
             self.draw_object(el)
         for el in self.hover_objects:
             self.draw_object(el, hover=True)
-        if self.object_manager.selected_object is not None:
-            self.draw_object(self.object_manager.get_object(self.object_manager.selected_object), selected=True)
+        # if self.object_manager.selected_object is not None:
+        #     self.draw_object(self.object_manager.get_object(self.object_manager.selected_object), selected=True)
+        if self.object_mover is not None:
+            for point in self.object_mover.points:
+                self.draw_object(point.point)
 
         # self.set_pen(BLACK_COLOR, 4)
         # self.lm.draw()
@@ -127,6 +133,8 @@ class Canvass(QWidget):
         if a0.button() == Qt.MouseButton.LeftButton:
             if self.drawer:
                 self.drawer.mouse_left(a0.pos() / self.scale)
+            elif self.object_mover and self.object_mover.mouse_left(a0.pos() / self.scale, self.scale):
+                pass
             else:
                 obj = self.object_by_pos((a0.pos().x() / self.scale, a0.pos().y() / self.scale))
                 self.object_manager.select_object(None if obj is None else obj.id)
@@ -140,7 +148,14 @@ class Canvass(QWidget):
     def mouseMoveEvent(self, a0) -> None:
         if self.drawer:
             self.drawer.mouse_move(a0.pos() / self.scale)
+        elif self.object_mover:
+            self.object_mover.mouse_move(a0.pos() / self.scale)
         super().mouseMoveEvent(a0)
+
+    def mouseReleaseEvent(self, a0) -> None:
+        if self.object_mover:
+            self.object_mover.mouse_left_release()
+        super().mouseReleaseEvent(a0)
 
     def start_drawing(self, object_type):
         self.setMouseTracking(True)
@@ -167,6 +182,13 @@ class Canvass(QWidget):
                 if isinstance(el, ScreenSegment) and el.distance(pos) <= 3 / self.scale:
                     return obj
         return None
+
+    def _on_object_selected(self, obj_id):
+        if obj_id is None:
+            self.object_mover = None
+        else:
+            self.object_mover = ObjectMoveManager(self, self.object_manager.get_object(obj_id))
+        self.full_update()
 
     def full_update(self):
         self.temp_objects = tuple()

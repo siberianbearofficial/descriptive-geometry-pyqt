@@ -35,11 +35,12 @@ class PropertiesBar(QWidget):
         strange_layout.addWidget(strange_widget)
 
         main_layout = QVBoxLayout()
+        main_layout.setSpacing(0)
         main_layout.setContentsMargins(1, 1, 1, 4)
         strange_widget.setLayout(main_layout)
 
         top_layout = QHBoxLayout()
-        top_layout.setContentsMargins(7, 7, 5, 7)
+        top_layout.setContentsMargins(7, 7, 5, 5)
         main_layout.addLayout(top_layout)
 
         self._object_label = QLabel()
@@ -97,10 +98,9 @@ class PropertiesBar(QWidget):
         if obj_id is None:
             self.object = None
             self.hide()
-            for el in self.object_items.values():
-                el.setParent(None)
-            self.object_items.clear()
+            self.clear()
         else:
+            self.clear()
             self.object = self.object_manager.get_object(obj_id)
             self.object_dict = self.object.to_dict()
             self.show()
@@ -115,6 +115,11 @@ class PropertiesBar(QWidget):
                 self.object_items[key] = widget
                 widget.valueChanged.connect(self._on_ag_obj_changed)
             self.set_styles()
+
+    def clear(self):
+        for el in self.object_items.values():
+            el.setParent(None)
+        self.object_items.clear()
 
     def _on_ag_obj_changed(self):
         self.object_manager.set_object_ag_obj(self.object_dict['ag_object'])
